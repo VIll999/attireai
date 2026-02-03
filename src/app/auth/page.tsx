@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { Suspense, useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
@@ -12,7 +12,7 @@ import {
   createUserWithEmailAndPassword,
 } from "@/lib/firebase";
 
-export default function AuthPage() {
+function AuthForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { user, loading } = useAuth();
@@ -25,14 +25,12 @@ export default function AuthPage() {
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
-    // Check URL for signup mode
     if (searchParams.get("mode") === "signup") {
       setIsSignUp(true);
     }
   }, [searchParams]);
 
   useEffect(() => {
-    // Redirect if already logged in
     if (!loading && user) {
       router.push("/dashboard");
     }
@@ -277,5 +275,21 @@ export default function AuthPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+function LoadingFallback() {
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-slate-50">
+      <div className="w-8 h-8 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin" />
+    </div>
+  );
+}
+
+export default function AuthPage() {
+  return (
+    <Suspense fallback={<LoadingFallback />}>
+      <AuthForm />
+    </Suspense>
   );
 }
