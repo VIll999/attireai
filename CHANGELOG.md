@@ -19,6 +19,30 @@ Format: Each team member should add their changes under the current date with th
 
 ---
 
+## [0.2.0] - 2026-02-03
+
+### Added
+
+#### Congtian Wu
+- Landing page with hero section, features, and CTA
+- Authentication page with email/password and Google sign-in
+- Dashboard page with profile completion and quick actions
+- Firebase Authentication integration
+- User sync from Firebase to MySQL database
+- SQLAlchemy User model matching database schema
+- API endpoints: `POST /users/sync`, `GET /users/me`
+- Frontend API client for backend calls
+- AuthContext with automatic user sync after login
+
+### Fixed
+
+#### Congtian Wu
+- CORS configuration for Vercel deployment
+- MySQL driver compatibility (mysql:// to mysql+pymysql://)
+- Auth page build error with Suspense boundary
+
+---
+
 ## [0.1.0] - 2026-02-03
 
 ### Added
@@ -38,10 +62,11 @@ Format: Each team member should add their changes under the current date with th
   - `lint.sh` - Run linters
 - Vercel deployment for frontend
 - Railway deployment for backend
-- Railway MySQL database
+- Railway MySQL database with schema
+- Database tables: users, measurement_profiles, color_profiles, style_preferences, outfit_recommendations, recommendation_items, saved_outfits, virtual_try_ons, subscriptions
 - API proxy configuration (Next.js → FastAPI)
 - Basic API endpoints: `/health`, `/users/`
-- Project documentation
+- Project documentation (README, SETUP guide)
 
 ---
 
