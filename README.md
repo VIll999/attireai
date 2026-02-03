@@ -1,6 +1,6 @@
 # AttireAI
 
-AI-powered fashion recommendation application for CS 407 Senior Project.
+AI-powered fashion recommendation application for CS 407 Senior Project (Team 11).
 
 ## Team
 
