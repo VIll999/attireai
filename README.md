@@ -1,36 +1,112 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# AttireAI
 
-## Getting Started
+AI-powered fashion recommendation application for CS 407 Senior Project.
 
-First, run the development server:
+## Team
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+- Yuanfei Song
+- Yichen Dai
+- Congtian Wu
+- Ekaterina Tszyao
+
+## Tech Stack
+
+| Layer | Technology |
+|-------|------------|
+| Frontend | Next.js 16, React 19, TypeScript, TailwindCSS 4 |
+| Backend | FastAPI, Python 3.12, SQLAlchemy |
+| Database | MySQL 9.4 (Railway) |
+| Auth | Firebase Authentication (planned) |
+| Storage | AWS S3 (planned) |
+| Hosting | Vercel (frontend), Railway (backend + database) |
+
+## Project Structure
+
+```
+attireai/
+├── src/                    # Next.js frontend
+│   └── app/                # App Router pages
+├── backend/                # FastAPI backend
+│   ├── app/
+│   │   ├── main.py         # FastAPI entry point
+│   │   ├── config.py       # Settings
+│   │   ├── routers/        # API endpoints
+│   │   ├── models/         # Pydantic models
+│   │   ├── services/       # Business logic
+│   │   └── db/             # Database utilities
+│   ├── requirements.txt
+│   └── Dockerfile
+├── scripts/                # Development scripts
+│   ├── setup.sh            # Initial project setup
+│   ├── start-local.sh      # Start both servers
+│   ├── start-backend.sh    # Start backend only
+│   ├── start-frontend.sh   # Start frontend only
+│   └── stop-all.sh         # Stop all servers
+└── docs/                   # Documentation
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Live URLs
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+| Environment | URL |
+|-------------|-----|
+| Frontend (Vercel) | https://attireai.vercel.app |
+| Backend (Railway) | https://attireai-production.up.railway.app |
+| API Docs | https://attireai-production.up.railway.app/docs |
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Quick Start
 
-## Learn More
+```bash
+# 1. Clone the repository
+git clone https://github.com/VIll999/attireai.git
+cd attireai
 
-To learn more about Next.js, take a look at the following resources:
+# 2. Run setup (installs all dependencies)
+./scripts/setup.sh
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+# 3. Start local development
+./scripts/start-local.sh
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+- Frontend: http://localhost:3000
+- Backend: http://localhost:8000
+- API Docs: http://localhost:8000/docs
 
-## Deploy on Vercel
+## Available Scripts
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+| Script | Description |
+|--------|-------------|
+| `./scripts/setup.sh` | Install dependencies, create .env files |
+| `./scripts/start-local.sh` | Start frontend + backend |
+| `./scripts/start-backend.sh [port]` | Start backend (default: 8000) |
+| `./scripts/start-frontend.sh` | Start frontend |
+| `./scripts/stop-all.sh` | Stop all running servers |
+| `./scripts/lint.sh` | Run linters |
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Documentation
+
+- [Setup Guide](docs/SETUP.md) - Detailed setup instructions
+- [Changelog](CHANGELOG.md) - Version history and updates
+
+## API Endpoints
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/` | Welcome message |
+| GET | `/health` | Health check |
+| GET | `/docs` | Swagger UI documentation |
+| POST | `/users/` | Create user |
+| GET | `/users/me` | Get current user |
+
+*More endpoints coming soon*
+
+## Database
+
+MySQL hosted on Railway. See [docs/SETUP.md](docs/SETUP.md) for connection details.
+
+## Contributing
+
+1. Create a feature branch: `git checkout -b feature/your-feature`
+2. Make changes and commit: `git commit -m "Add your feature"`
+3. Push to branch: `git push origin feature/your-feature`
+4. Create a Pull Request
+5. Update CHANGELOG.md with your changes
