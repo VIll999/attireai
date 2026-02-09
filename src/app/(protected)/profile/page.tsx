@@ -3,52 +3,27 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
-import { updateUserProfile, getCurrentUser, uploadProfilePicture } from "@/lib/api";
-
-interface BackendUser {
-  id: string;
-  name: string;
-  email: string;
-  profile_picture_url: string | null;
-  subscription_tier: string;
-  created_at: string;
-  updated_at: string;
-}
+import { updateUserProfile, uploadProfilePicture } from "@/lib/api";
 
 export default function ProfilePage() {
-  const { user, signOut } = useAuth();
+  const { user, dbUser, signOut, updateDbUser } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
   const [name, setName] = useState("");
   const [profilePictureUrl, setProfilePictureUrl] = useState("");
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-  const [backendUser, setBackendUser] = useState<BackendUser | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
   const [error, setError] = useState("");
 
-  // Fetch user data from backend
+  // Initialize form fields from dbUser
   useEffect(() => {
-    const fetchUser = async () => {
-      if (!user) return;
-
-      try {
-        const data = await getCurrentUser(user.uid);
-        setBackendUser(data);
-        setName(data.name);
-        setProfilePictureUrl(data.profile_picture_url || "");
-      } catch (err) {
-        console.error("Failed to fetch user:", err);
-        setError("Failed to load profile data");
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchUser();
-  }, [user]);
+    if (dbUser) {
+      setName(dbUser.name);
+      setProfilePictureUrl(dbUser.profile_picture_url || "");
+    }
+  }, [dbUser]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -102,7 +77,8 @@ export default function ProfilePage() {
         name: name.trim(),
         profile_picture_url: newProfilePictureUrl || undefined,
       });
-      setBackendUser(updatedUser);
+      // Update context so all pages see the new data
+      updateDbUser(updatedUser);
       setProfilePictureUrl(newProfilePictureUrl);
       setSelectedFile(null);
       setPreviewUrl(null);
@@ -121,9 +97,9 @@ export default function ProfilePage() {
 
   const handleCancel = () => {
     // Reset to original values
-    if (backendUser) {
-      setName(backendUser.name);
-      setProfilePictureUrl(backendUser.profile_picture_url || "");
+    if (dbUser) {
+      setName(dbUser.name);
+      setProfilePictureUrl(dbUser.profile_picture_url || "");
     }
     setSelectedFile(null);
     setPreviewUrl(null);
@@ -133,9 +109,9 @@ export default function ProfilePage() {
 
   if (!user) return null;
 
-  const displayName = backendUser?.name || user.displayName || user.email?.split("@")[0] || "User";
-  const displayEmail = backendUser?.email || user.email || "";
-  const displayPicture = backendUser?.profile_picture_url || user.photoURL || "";
+  const displayName = dbUser?.name || user.displayName || user.email?.split("@")[0] || "User";
+  const displayEmail = dbUser?.email || user.email || "";
+  const displayPicture = dbUser?.profile_picture_url || user.photoURL || "";
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -201,7 +177,7 @@ export default function ProfilePage() {
           </p>
         </div>
 
-        {isLoading ? (
+        {!dbUser ? (
           <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-8">
             <div className="flex justify-center">
               <div className="w-8 h-8 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin" />
@@ -229,7 +205,7 @@ export default function ProfilePage() {
                   <h2 className="text-2xl font-bold">{displayName}</h2>
                   <p className="text-indigo-100">{displayEmail}</p>
                   <span className="inline-block mt-2 px-3 py-1 bg-white/20 rounded-full text-sm">
-                    {backendUser?.subscription_tier || "FREE"} Plan
+                    {dbUser?.subscription_tier || "FREE"} Plan
                   </span>
                 </div>
               </div>
@@ -362,8 +338,8 @@ export default function ProfilePage() {
                     Member Since
                   </label>
                   <p className="px-4 py-3 bg-slate-50 rounded-lg text-slate-900">
-                    {backendUser?.created_at
-                      ? new Date(backendUser.created_at).toLocaleDateString("en-US", {
+                    {dbUser?.created_at
+                      ? new Date(dbUser.created_at).toLocaleDateString("en-US", {
                           year: "numeric",
                           month: "long",
                           day: "numeric",

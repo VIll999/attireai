@@ -8,7 +8,7 @@ import { auth, deleteUser } from "@/lib/firebase";
 import { deleteUserFromBackend } from "@/lib/api";
 
 export default function DashboardPage() {
-  const { user, signOut } = useAuth();
+  const { user, dbUser, signOut } = useAuth();
   const router = useRouter();
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -66,21 +66,21 @@ export default function DashboardPage() {
             </div>
             <div className="flex items-center gap-4">
               <Link href="/profile" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
-                <div className="w-10 h-10 bg-indigo-100 rounded-full flex items-center justify-center">
-                  {user.photoURL ? (
+                <div className="w-10 h-10 bg-indigo-100 rounded-full flex items-center justify-center overflow-hidden">
+                  {dbUser?.profile_picture_url || user.photoURL ? (
                     <img
-                      src={user.photoURL}
+                      src={dbUser?.profile_picture_url || user.photoURL || ""}
                       alt="Profile"
-                      className="w-10 h-10 rounded-full"
+                      className="w-10 h-10 rounded-full object-cover"
                     />
                   ) : (
                     <span className="text-indigo-600 font-semibold">
-                      {user.email?.charAt(0).toUpperCase()}
+                      {(dbUser?.email || user.email)?.charAt(0).toUpperCase()}
                     </span>
                   )}
                 </div>
                 <span className="hidden sm:block text-sm text-slate-600">
-                  {user.displayName || user.email}
+                  {dbUser?.name || user.displayName || user.email}
                 </span>
               </Link>
               <button
@@ -99,7 +99,7 @@ export default function DashboardPage() {
         {/* Welcome Section */}
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-slate-900">
-            Welcome back{user.displayName ? `, ${user.displayName.split(" ")[0]}` : ""}!
+            Welcome back{dbUser?.name ? `, ${dbUser.name.split(" ")[0]}` : ""}!
           </h1>
           <p className="text-slate-600 mt-1">
             Ready to find your perfect outfit?

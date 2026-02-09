@@ -20,11 +20,9 @@ async def sync_user(user_data: UserCreate, db: Session = Depends(get_db)):
     existing_user = db.query(User).filter(User.firebase_uid == user_data.firebase_uid).first()
 
     if existing_user:
-        # Update user info if changed
-        existing_user.name = user_data.name
+        # Only update email (in case it changed in Firebase)
+        # Do NOT overwrite name or profile_picture_url - those are editable by user
         existing_user.email = user_data.email
-        if user_data.profile_picture_url:
-            existing_user.profile_picture_url = user_data.profile_picture_url
         db.commit()
         db.refresh(existing_user)
         return existing_user
@@ -33,11 +31,9 @@ async def sync_user(user_data: UserCreate, db: Session = Depends(get_db)):
     existing_by_email = db.query(User).filter(User.email == user_data.email).first()
 
     if existing_by_email:
-        # Update firebase_uid and other info (user deleted Firebase account and created new one)
+        # Update firebase_uid only (user deleted Firebase account and created new one)
+        # Do NOT overwrite name or profile_picture_url - those are editable by user
         existing_by_email.firebase_uid = user_data.firebase_uid
-        existing_by_email.name = user_data.name
-        if user_data.profile_picture_url:
-            existing_by_email.profile_picture_url = user_data.profile_picture_url
         db.commit()
         db.refresh(existing_by_email)
         return existing_by_email
