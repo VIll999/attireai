@@ -53,3 +53,19 @@ export async function getCurrentUser(firebaseUid: string): Promise<UserResponse>
 
   return response.json();
 }
+
+/**
+ * Delete current user from backend database
+ */
+export async function deleteUserFromBackend(firebaseUid: string): Promise<void> {
+  const response = await fetch(`${API_URL}/users/me`, {
+    method: "DELETE",
+    headers: {
+      "X-Firebase-UID": firebaseUid,
+    },
+  });
+
+  if (!response.ok && response.status !== 204) {
+    throw new Error("Failed to delete user");
+  }
+}

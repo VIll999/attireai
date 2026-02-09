@@ -29,6 +29,19 @@ async def sync_user(user_data: UserCreate, db: Session = Depends(get_db)):
         db.refresh(existing_user)
         return existing_user
 
+    # Check if user exists by email (handles case where Firebase account was deleted and recreated)
+    existing_by_email = db.query(User).filter(User.email == user_data.email).first()
+
+    if existing_by_email:
+        # Update firebase_uid and other info (user deleted Firebase account and created new one)
+        existing_by_email.firebase_uid = user_data.firebase_uid
+        existing_by_email.name = user_data.name
+        if user_data.profile_picture_url:
+            existing_by_email.profile_picture_url = user_data.profile_picture_url
+        db.commit()
+        db.refresh(existing_by_email)
+        return existing_by_email
+
     # Create new user
     new_user = User(
         firebase_uid=user_data.firebase_uid,
@@ -66,3 +79,26 @@ async def get_current_user(
         )
 
     return user
+
+
+@router.delete("/me", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_current_user(
+    x_firebase_uid: Optional[str] = Header(None),
+    db: Session = Depends(get_db)
+):
+    """
+    Delete current user by Firebase UID from header.
+    """
+    if not x_firebase_uid:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Missing Firebase UID header",
+        )
+
+    user = db.query(User).filter(User.firebase_uid == x_firebase_uid).first()
+
+    if user:
+        db.delete(user)
+        db.commit()
+
+    return None
