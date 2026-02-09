@@ -21,12 +21,29 @@ export default function LandingPage() {
               {loading ? (
                 <div className="w-20 h-10 bg-slate-200 rounded-lg animate-pulse" />
               ) : user ? (
-                <Link
-                  href="/dashboard"
-                  className="px-5 py-2.5 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700 transition-colors"
-                >
-                  Dashboard
-                </Link>
+                <div className="flex items-center gap-3">
+                  <Link
+                    href="/dashboard"
+                    className="px-5 py-2.5 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700 transition-colors"
+                  >
+                    Dashboard
+                  </Link>
+                  <Link href="/dashboard" className="flex items-center gap-2">
+                    <div className="w-10 h-10 bg-indigo-100 rounded-full flex items-center justify-center border-2 border-indigo-200">
+                      {user.photoURL ? (
+                        <img
+                          src={user.photoURL}
+                          alt="Profile"
+                          className="w-10 h-10 rounded-full"
+                        />
+                      ) : (
+                        <span className="text-indigo-600 font-semibold">
+                          {user.email?.charAt(0).toUpperCase()}
+                        </span>
+                      )}
+                    </div>
+                  </Link>
+                </div>
               ) : (
                 <>
                   <Link
