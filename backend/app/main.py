@@ -14,10 +14,16 @@ app = FastAPI(
 
 # CORS middleware
 import os
+import json
 
 # CORS origins from env var or defaults
 cors_origins_str = os.getenv("CORS_ORIGINS", "http://localhost:3000,https://attireai-cyan.vercel.app")
-origins = [origin.strip() for origin in cors_origins_str.split(",")]
+
+# Handle both JSON array and comma-separated formats
+try:
+    origins = json.loads(cors_origins_str)
+except json.JSONDecodeError:
+    origins = [origin.strip() for origin in cors_origins_str.split(",")]
 
 app.add_middleware(
     CORSMiddleware,
