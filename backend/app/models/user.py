@@ -36,3 +36,9 @@ class UserProfile(UserResponse):
     has_color_profile: bool = False
     has_style_preferences: bool = False
     profile_completion: int = 0
+
+
+class UserUpdate(BaseModel):
+    """Data for updating user profile"""
+    name: Optional[str] = None
+    profile_picture_url: Optional[str] = None

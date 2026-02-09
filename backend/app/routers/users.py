@@ -4,7 +4,7 @@ from typing import Optional
 
 from app.db.database import get_db
 from app.db.models import User
-from app.models.user import UserCreate, UserResponse
+from app.models.user import UserCreate, UserResponse, UserUpdate
 
 router = APIRouter()
 
@@ -77,6 +77,41 @@ async def get_current_user(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="User not found",
         )
+
+    return user
+
+
+@router.put("/me", response_model=UserResponse)
+async def update_current_user(
+    user_data: UserUpdate,
+    x_firebase_uid: Optional[str] = Header(None),
+    db: Session = Depends(get_db)
+):
+    """
+    Update current user profile.
+    """
+    if not x_firebase_uid:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Missing Firebase UID header",
+        )
+
+    user = db.query(User).filter(User.firebase_uid == x_firebase_uid).first()
+
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found",
+        )
+
+    # Update fields if provided
+    if user_data.name is not None:
+        user.name = user_data.name
+    if user_data.profile_picture_url is not None:
+        user.profile_picture_url = user_data.profile_picture_url
+
+    db.commit()
+    db.refresh(user)
 
     return user
 

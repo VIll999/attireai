@@ -59,13 +59,13 @@ export default function DashboardPage() {
                 <Link href="/measurements" className="text-slate-600 hover:text-slate-900">
                   Measurements
                 </Link>
-                <Link href="/saved" className="text-slate-600 hover:text-slate-900">
-                  Saved
+                <Link href="/profile" className="text-slate-600 hover:text-slate-900">
+                  Profile
                 </Link>
               </div>
             </div>
             <div className="flex items-center gap-4">
-              <div className="flex items-center gap-3">
+              <Link href="/profile" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
                 <div className="w-10 h-10 bg-indigo-100 rounded-full flex items-center justify-center">
                   {user.photoURL ? (
                     <img
@@ -82,7 +82,7 @@ export default function DashboardPage() {
                 <span className="hidden sm:block text-sm text-slate-600">
                   {user.displayName || user.email}
                 </span>
-              </div>
+              </Link>
               <button
                 onClick={signOut}
                 className="px-4 py-2 text-slate-600 hover:text-slate-900 font-medium"

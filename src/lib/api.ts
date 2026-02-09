@@ -69,3 +69,52 @@ export async function deleteUserFromBackend(firebaseUid: string): Promise<void> 
     throw new Error("Failed to delete user");
   }
 }
+
+/**
+ * Update current user profile
+ */
+export async function updateUserProfile(
+  firebaseUid: string,
+  data: { name?: string; profile_picture_url?: string }
+): Promise<UserResponse> {
+  const response = await fetch(`${API_URL}/users/me`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+      "X-Firebase-UID": firebaseUid,
+    },
+    body: JSON.stringify(data),
+  });
+
+  if (!response.ok) {
+    throw new Error("Failed to update profile");
+  }
+
+  return response.json();
+}
+
+/**
+ * Upload profile picture to S3
+ */
+export async function uploadProfilePicture(
+  firebaseUid: string,
+  file: File
+): Promise<{ url: string }> {
+  const formData = new FormData();
+  formData.append("file", file);
+
+  const response = await fetch(`${API_URL}/upload/profile-picture`, {
+    method: "POST",
+    headers: {
+      "X-Firebase-UID": firebaseUid,
+    },
+    body: formData,
+  });
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({ detail: "Upload failed" }));
+    throw new Error(error.detail || "Failed to upload profile picture");
+  }
+
+  return response.json();
+}
