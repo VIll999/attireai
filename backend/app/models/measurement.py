@@ -14,6 +14,7 @@ class MeasurementCreate(BaseModel):
     inseam: Optional[float] = None
     shoulder_width: Optional[float] = None
     arm_length: Optional[float] = None
+    is_primary: Optional[bool] = None
 
 
 class MeasurementUpdate(BaseModel):
