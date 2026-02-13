@@ -50,12 +50,19 @@ async def create_measurement(
     """Create a new measurement profile. First profile is auto-set as primary."""
     user = get_user_by_uid(x_firebase_uid, db)
 
-    # Check if this is the first profile
+    # First profile is auto-primary, or respect explicit is_primary
     existing_count = (
         db.query(MeasurementProfile)
         .filter(MeasurementProfile.user_id == user.id)
         .count()
     )
+    set_primary = data.is_primary if data.is_primary is not None else (existing_count == 0)
+
+    # If setting as primary, unset all others
+    if set_primary and existing_count > 0:
+        db.query(MeasurementProfile).filter(
+            MeasurementProfile.user_id == user.id,
+        ).update({"is_primary": False})
 
     measurement = MeasurementProfile(
         user_id=user.id,
@@ -68,7 +75,7 @@ async def create_measurement(
         inseam=data.inseam,
         shoulder_width=data.shoulder_width,
         arm_length=data.arm_length,
-        is_primary=existing_count == 0,
+        is_primary=set_primary,
         source="MANUAL",
     )
 

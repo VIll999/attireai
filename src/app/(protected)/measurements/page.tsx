@@ -168,7 +168,7 @@ export default function MeasurementsPage() {
         await updateMeasurement(user.uid, editingId, { ...payload, is_primary: form.is_primary });
         setSuccessMessage("Measurements updated!");
       } else {
-        await createMeasurement(user.uid, payload);
+        await createMeasurement(user.uid, { ...payload, is_primary: form.is_primary });
         setSuccessMessage("Measurements saved!");
       }
 
