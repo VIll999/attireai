@@ -32,7 +32,6 @@ CREATE TABLE IF NOT EXISTS measurement_profiles (
     inseam DECIMAL(5,2),
     shoulder_width DECIMAL(5,2),
     arm_length DECIMAL(5,2),
-    unit ENUM('CM', 'IN') DEFAULT 'CM',
     is_primary BOOLEAN DEFAULT FALSE,
     source ENUM('MANUAL', 'CAMERA') DEFAULT 'MANUAL',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,

@@ -96,6 +96,87 @@ export async function updateUserProfile(
 /**
  * Upload profile picture to S3
  */
+// --- Measurement API ---
+
+export interface MeasurementData {
+  name: string;
+  height?: number | null;
+  weight?: number | null;
+  chest?: number | null;
+  waist?: number | null;
+  hip?: number | null;
+  inseam?: number | null;
+  shoulder_width?: number | null;
+  arm_length?: number | null;
+  is_primary?: boolean;
+}
+
+export interface MeasurementResponse {
+  id: string;
+  user_id: string;
+  name: string;
+  height: number | null;
+  weight: number | null;
+  chest: number | null;
+  waist: number | null;
+  hip: number | null;
+  inseam: number | null;
+  shoulder_width: number | null;
+  arm_length: number | null;
+  is_primary: boolean;
+  source: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export async function getMeasurements(firebaseUid: string): Promise<MeasurementResponse[]> {
+  const response = await fetch(`${API_URL}/measurements`, {
+    headers: { "X-Firebase-UID": firebaseUid },
+  });
+  if (!response.ok) throw new Error("Failed to get measurements");
+  return response.json();
+}
+
+export async function createMeasurement(
+  firebaseUid: string,
+  data: MeasurementData
+): Promise<MeasurementResponse> {
+  const response = await fetch(`${API_URL}/measurements`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "X-Firebase-UID": firebaseUid },
+    body: JSON.stringify(data),
+  });
+  if (!response.ok) throw new Error("Failed to create measurement");
+  return response.json();
+}
+
+export async function updateMeasurement(
+  firebaseUid: string,
+  id: string,
+  data: Partial<MeasurementData>
+): Promise<MeasurementResponse> {
+  const response = await fetch(`${API_URL}/measurements/${id}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json", "X-Firebase-UID": firebaseUid },
+    body: JSON.stringify(data),
+  });
+  if (!response.ok) throw new Error("Failed to update measurement");
+  return response.json();
+}
+
+export async function deleteMeasurement(
+  firebaseUid: string,
+  id: string
+): Promise<void> {
+  const response = await fetch(`${API_URL}/measurements/${id}`, {
+    method: "DELETE",
+    headers: { "X-Firebase-UID": firebaseUid },
+  });
+  if (!response.ok && response.status !== 204) throw new Error("Failed to delete measurement");
+}
+
+// --- Upload API ---
+
 export async function uploadProfilePicture(
   firebaseUid: string,
   file: File
