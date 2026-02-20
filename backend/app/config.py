@@ -18,6 +18,7 @@ class Settings(BaseSettings):
     aws_secret_access_key: str = ""
     aws_region: str = "us-east-1"
     s3_bucket: str = "attireai"
+    cdn_domain: str = "cdn.attire-ai.com"
 
     # CORS
     cors_origins: list[str] = ["http://localhost:3000", "https://attireai.vercel.app"]
