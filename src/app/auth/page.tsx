@@ -138,20 +138,20 @@ function AuthForm() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-950">
-        <div className="w-8 h-8 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin" />
+      <div className="min-h-screen flex items-center justify-center bg-stone-50 dark:bg-stone-950">
+        <div className="w-8 h-8 border-4 border-amber-600 border-t-transparent rounded-full animate-spin" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen flex bg-slate-50 dark:bg-slate-950">
+    <div className="min-h-screen flex bg-stone-50 dark:bg-stone-950">
       {/* Left side - Form */}
       <div className="flex-1 flex items-center justify-center p-8">
         <div className="w-full max-w-md">
           <Link
             href="/"
-            className="inline-flex items-center gap-2 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white mb-8"
+            className="inline-flex items-center gap-2 text-stone-600 dark:text-stone-400 hover:text-stone-900 dark:hover:text-white mb-8"
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -159,13 +159,13 @@ function AuthForm() {
             {t("auth.backToHome")}
           </Link>
 
-          <div className="bg-white dark:bg-slate-900/50 dark:border dark:border-slate-800 rounded-2xl shadow-xl dark:shadow-slate-950/50 p-8">
+          <div className="bg-white dark:bg-stone-900/50 dark:border dark:border-stone-800 rounded-2xl shadow-xl dark:shadow-stone-950/50 p-8">
             {isForgotPassword ? (
               <>
-                <h1 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">
+                <h1 className="text-2xl font-bold text-stone-900 dark:text-white mb-2">
                   {t("auth.resetPassword")}
                 </h1>
-                <p className="text-slate-600 dark:text-slate-400 mb-6">
+                <p className="text-stone-600 dark:text-stone-400 mb-6">
                   {t("auth.resetPasswordDesc")}
                 </p>
 
@@ -183,7 +183,7 @@ function AuthForm() {
                   )}
 
                   <div>
-                    <label htmlFor="email" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                    <label htmlFor="email" className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1">
                       {t("auth.email")}
                     </label>
                     <input
@@ -192,7 +192,7 @@ function AuthForm() {
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       required
-                      className="w-full px-4 py-3 border border-slate-300 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none dark:bg-slate-800/50 dark:text-white dark:placeholder-slate-500"
+                      className="w-full px-4 py-3 border border-stone-300 dark:border-stone-700 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none dark:bg-stone-800/50 dark:text-white dark:placeholder-stone-500"
                       placeholder="you@example.com"
                     />
                   </div>
@@ -200,7 +200,7 @@ function AuthForm() {
                   <button
                     type="submit"
                     disabled={isLoading}
-                    className="w-full py-3 bg-indigo-600 text-white rounded-lg font-semibold hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="w-full py-3 bg-amber-600 text-white rounded-lg font-semibold hover:bg-amber-700 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {isLoading ? (
                       <span className="flex items-center justify-center gap-2">
@@ -213,7 +213,7 @@ function AuthForm() {
                   </button>
                 </form>
 
-                <p className="mt-6 text-center text-slate-600 dark:text-slate-400">
+                <p className="mt-6 text-center text-stone-600 dark:text-stone-400">
                   {t("auth.rememberPassword")}{" "}
                   <button
                     onClick={() => {
@@ -221,7 +221,7 @@ function AuthForm() {
                       setError("");
                       setSuccessMessage("");
                     }}
-                    className="text-indigo-600 font-medium hover:text-indigo-700"
+                    className="text-amber-600 font-medium hover:text-amber-700"
                   >
                     {t("auth.backToSignIn")}
                   </button>
@@ -229,10 +229,10 @@ function AuthForm() {
               </>
             ) : (
               <>
-                <h1 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">
+                <h1 className="text-2xl font-bold text-stone-900 dark:text-white mb-2">
                   {isSignUp ? t("auth.createAccount") : t("auth.welcomeBack")}
                 </h1>
-                <p className="text-slate-600 dark:text-slate-400 mb-6">
+                <p className="text-stone-600 dark:text-stone-400 mb-6">
                   {isSignUp
                     ? t("auth.startJourney")
                     : t("auth.signInContinue")}
@@ -242,7 +242,7 @@ function AuthForm() {
                 <button
                   onClick={handleGoogleSignIn}
                   disabled={isLoading}
-                  className="w-full flex items-center justify-center gap-3 px-4 py-3 border border-slate-300 dark:border-slate-700 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800/50 disabled:opacity-50 dark:text-slate-200"
+                  className="w-full flex items-center justify-center gap-3 px-4 py-3 border border-stone-300 dark:border-stone-700 rounded-lg hover:bg-stone-50 dark:hover:bg-stone-800/50 disabled:opacity-50 dark:text-stone-200"
                 >
                   <svg className="w-5 h-5" viewBox="0 0 24 24">
                     <path
@@ -267,10 +267,10 @@ function AuthForm() {
 
                 <div className="relative my-6">
                   <div className="absolute inset-0 flex items-center">
-                    <div className="w-full border-t border-slate-200 dark:border-slate-700" />
+                    <div className="w-full border-t border-stone-200 dark:border-stone-700" />
                   </div>
                   <div className="relative flex justify-center text-sm">
-                    <span className="px-2 bg-white dark:bg-slate-900/50 text-slate-500 dark:text-slate-400">{t("auth.orContinueWithEmail")}</span>
+                    <span className="px-2 bg-white dark:bg-stone-900/50 text-stone-500 dark:text-stone-400">{t("auth.orContinueWithEmail")}</span>
                   </div>
                 </div>
 
@@ -283,7 +283,7 @@ function AuthForm() {
                   )}
 
                   <div>
-                    <label htmlFor="email" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                    <label htmlFor="email" className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1">
                       {t("auth.email")}
                     </label>
                     <input
@@ -292,14 +292,14 @@ function AuthForm() {
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       required
-                      className="w-full px-4 py-3 border border-slate-300 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none dark:bg-slate-800/50 dark:text-white dark:placeholder-slate-500"
+                      className="w-full px-4 py-3 border border-stone-300 dark:border-stone-700 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none dark:bg-stone-800/50 dark:text-white dark:placeholder-stone-500"
                       placeholder="you@example.com"
                     />
                   </div>
 
                   <div>
                     <div className="flex items-center justify-between mb-1">
-                      <label htmlFor="password" className="block text-sm font-medium text-slate-700 dark:text-slate-300">
+                      <label htmlFor="password" className="block text-sm font-medium text-stone-700 dark:text-stone-300">
                         {t("auth.password")}
                       </label>
                       {!isSignUp && (
@@ -309,7 +309,7 @@ function AuthForm() {
                             setIsForgotPassword(true);
                             setError("");
                           }}
-                          className="text-sm text-indigo-600 hover:text-indigo-700"
+                          className="text-sm text-amber-600 hover:text-amber-700"
                         >
                           {t("auth.forgotPassword")}
                         </button>
@@ -321,23 +321,23 @@ function AuthForm() {
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       required
-                      className="w-full px-4 py-3 border border-slate-300 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none dark:bg-slate-800/50 dark:text-white dark:placeholder-slate-500"
+                      className="w-full px-4 py-3 border border-stone-300 dark:border-stone-700 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none dark:bg-stone-800/50 dark:text-white dark:placeholder-stone-500"
                       placeholder={t("auth.passwordPlaceholder")}
                     />
                     {isSignUp && password.length > 0 && (
                       <div className="mt-2 space-y-1">
-                        <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">{t("auth.passwordMustHave")}</p>
+                        <p className="text-xs text-stone-500 dark:text-stone-400 font-medium">{t("auth.passwordMustHave")}</p>
                         <div className="grid grid-cols-2 gap-1">
-                          <p className={`text-xs flex items-center gap-1 ${passwordRequirements.minLength ? 'text-green-600' : 'text-slate-400'}`}>
+                          <p className={`text-xs flex items-center gap-1 ${passwordRequirements.minLength ? 'text-green-600' : 'text-stone-400'}`}>
                             <span>{passwordRequirements.minLength ? '✓' : '○'}</span> {t("auth.minLength")}
                           </p>
-                          <p className={`text-xs flex items-center gap-1 ${passwordRequirements.hasUppercase ? 'text-green-600' : 'text-slate-400'}`}>
+                          <p className={`text-xs flex items-center gap-1 ${passwordRequirements.hasUppercase ? 'text-green-600' : 'text-stone-400'}`}>
                             <span>{passwordRequirements.hasUppercase ? '✓' : '○'}</span> {t("auth.uppercase")}
                           </p>
-                          <p className={`text-xs flex items-center gap-1 ${passwordRequirements.hasLowercase ? 'text-green-600' : 'text-slate-400'}`}>
+                          <p className={`text-xs flex items-center gap-1 ${passwordRequirements.hasLowercase ? 'text-green-600' : 'text-stone-400'}`}>
                             <span>{passwordRequirements.hasLowercase ? '✓' : '○'}</span> {t("auth.lowercase")}
                           </p>
-                          <p className={`text-xs flex items-center gap-1 ${passwordRequirements.hasNumber ? 'text-green-600' : 'text-slate-400'}`}>
+                          <p className={`text-xs flex items-center gap-1 ${passwordRequirements.hasNumber ? 'text-green-600' : 'text-stone-400'}`}>
                             <span>{passwordRequirements.hasNumber ? '✓' : '○'}</span> {t("auth.number")}
                           </p>
                         </div>
@@ -347,7 +347,7 @@ function AuthForm() {
 
                   {isSignUp && (
                     <div>
-                      <label htmlFor="confirmPassword" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                      <label htmlFor="confirmPassword" className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1">
                         {t("auth.confirmPassword")}
                       </label>
                       <input
@@ -356,7 +356,7 @@ function AuthForm() {
                         value={confirmPassword}
                         onChange={(e) => setConfirmPassword(e.target.value)}
                         required
-                        className="w-full px-4 py-3 border border-slate-300 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none dark:bg-slate-800/50 dark:text-white dark:placeholder-slate-500"
+                        className="w-full px-4 py-3 border border-stone-300 dark:border-stone-700 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none dark:bg-stone-800/50 dark:text-white dark:placeholder-stone-500"
                         placeholder={t("auth.confirmPasswordPlaceholder")}
                       />
                     </div>
@@ -365,7 +365,7 @@ function AuthForm() {
                   <button
                     type="submit"
                     disabled={isLoading}
-                    className="w-full py-3 bg-indigo-600 text-white rounded-lg font-semibold hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="w-full py-3 bg-amber-600 text-white rounded-lg font-semibold hover:bg-amber-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {isLoading ? (
                       <span className="flex items-center justify-center gap-2">
@@ -380,14 +380,14 @@ function AuthForm() {
                   </button>
                 </form>
 
-                <p className="mt-6 text-center text-slate-600 dark:text-slate-400">
+                <p className="mt-6 text-center text-stone-600 dark:text-stone-400">
                   {isSignUp ? t("auth.alreadyHaveAccount") : t("auth.dontHaveAccount")}{" "}
                   <button
                     onClick={() => {
                       setIsSignUp(!isSignUp);
                       setError("");
                     }}
-                    className="text-indigo-600 font-medium hover:text-indigo-700"
+                    className="text-amber-600 font-medium hover:text-amber-700"
                   >
                     {isSignUp ? t("auth.signIn") : t("auth.signUp")}
                   </button>
@@ -399,10 +399,10 @@ function AuthForm() {
       </div>
 
       {/* Right side - Branding */}
-      <div className="hidden lg:flex flex-1 bg-gradient-to-br from-indigo-600 to-purple-700 items-center justify-center p-12">
+      <div className="hidden lg:flex flex-1 bg-gradient-to-br from-stone-900 to-stone-800 items-center justify-center p-12">
         <div className="text-center text-white max-w-md">
-          <h2 className="text-4xl font-bold mb-4">{t("auth.brandingTitle")}</h2>
-          <p className="text-xl text-indigo-100 mb-8">
+          <h2 className="text-4xl font-bold tracking-tight mb-4">{t("auth.brandingTitle")}</h2>
+          <p className="text-xl text-stone-300 mb-8">
             {t("auth.brandingSubtitle")}
           </p>
           <div className="space-y-4 text-left">
@@ -413,8 +413,8 @@ function AuthForm() {
               t("auth.feature4"),
             ].map((item, index) => (
               <div key={index} className="flex items-center gap-3">
-                <div className="w-6 h-6 bg-white/20 rounded-full flex items-center justify-center">
-                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                <div className="w-6 h-6 bg-amber-600/30 rounded-full flex items-center justify-center">
+                  <svg className="w-4 h-4 text-amber-400" fill="currentColor" viewBox="0 0 20 20">
                     <path
                       fillRule="evenodd"
                       d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
@@ -422,7 +422,7 @@ function AuthForm() {
                     />
                   </svg>
                 </div>
-                <span className="text-indigo-100">{item}</span>
+                <span className="text-stone-300">{item}</span>
               </div>
             ))}
           </div>
@@ -434,8 +434,8 @@ function AuthForm() {
 
 function LoadingFallback() {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-950">
-      <div className="w-8 h-8 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin" />
+    <div className="min-h-screen flex items-center justify-center bg-stone-50 dark:bg-stone-950">
+      <div className="w-8 h-8 border-4 border-amber-600 border-t-transparent rounded-full animate-spin" />
     </div>
   );
 }

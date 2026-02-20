@@ -85,8 +85,8 @@ export default function VerifyEmailPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-950">
-        <div className="w-8 h-8 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin" />
+      <div className="min-h-screen flex items-center justify-center bg-stone-50 dark:bg-stone-950">
+        <div className="w-8 h-8 border-4 border-amber-600 border-t-transparent rounded-full animate-spin" />
       </div>
     );
   }
@@ -96,13 +96,13 @@ export default function VerifyEmailPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-950 p-4">
+    <div className="min-h-screen flex items-center justify-center bg-stone-50 dark:bg-stone-950 p-4">
       <div className="w-full max-w-md">
-        <div className="bg-white dark:bg-slate-900/50 dark:border dark:border-slate-800 rounded-2xl shadow-xl dark:shadow-slate-950/50 p-8 text-center">
+        <div className="bg-white dark:bg-stone-900/50 dark:border dark:border-stone-800 rounded-2xl shadow-xl dark:shadow-stone-950/50 p-8 text-center">
           {/* Email Icon */}
-          <div className="w-20 h-20 bg-indigo-100 dark:bg-indigo-500/10 rounded-full flex items-center justify-center mx-auto mb-6">
+          <div className="w-20 h-20 bg-amber-100 dark:bg-amber-500/10 rounded-full flex items-center justify-center mx-auto mb-6">
             <svg
-              className="w-10 h-10 text-indigo-600 dark:text-indigo-400"
+              className="w-10 h-10 text-amber-600 dark:text-amber-400"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -116,24 +116,24 @@ export default function VerifyEmailPage() {
             </svg>
           </div>
 
-          <h1 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">
+          <h1 className="text-2xl font-bold text-stone-900 dark:text-white mb-2">
             {t("verifyEmail.title")}
           </h1>
 
           {emailSent ? (
             <>
-              <p className="text-slate-600 dark:text-slate-400 mb-2">
+              <p className="text-stone-600 dark:text-stone-400 mb-2">
                 {t("verifyEmail.sentTo")}
               </p>
-              <p className="text-indigo-600 dark:text-indigo-400 font-medium mb-6">
+              <p className="text-amber-600 dark:text-amber-400 font-medium mb-6">
                 {user.email}
               </p>
-              <p className="text-sm text-slate-500 dark:text-slate-400 mb-6">
+              <p className="text-sm text-stone-500 dark:text-stone-400 mb-6">
                 {t("verifyEmail.autoRedirect")}
               </p>
             </>
           ) : (
-            <p className="text-slate-600 dark:text-slate-400 mb-6">
+            <p className="text-stone-600 dark:text-stone-400 mb-6">
               {t("verifyEmail.pleaseVerify")}
             </p>
           )}
@@ -149,7 +149,7 @@ export default function VerifyEmailPage() {
               <button
                 onClick={handleSendVerification}
                 disabled={isLoading}
-                className="w-full py-3 bg-indigo-600 text-white rounded-lg font-semibold hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full py-3 bg-amber-600 text-white rounded-lg font-semibold hover:bg-amber-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isLoading ? (
                   <span className="flex items-center justify-center gap-2">
@@ -165,7 +165,7 @@ export default function VerifyEmailPage() {
                 <button
                   onClick={handleSendVerification}
                   disabled={isLoading || countdown > 0}
-                  className="w-full py-3 bg-indigo-600 text-white rounded-lg font-semibold hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="w-full py-3 bg-amber-600 text-white rounded-lg font-semibold hover:bg-amber-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {isLoading ? (
                     <span className="flex items-center justify-center gap-2">
@@ -181,7 +181,7 @@ export default function VerifyEmailPage() {
 
                 <button
                   onClick={handleManualCheck}
-                  className="w-full py-3 border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 rounded-lg font-semibold hover:bg-slate-50 dark:hover:bg-slate-800/50"
+                  className="w-full py-3 border border-stone-300 dark:border-stone-700 text-stone-700 dark:text-stone-300 rounded-lg font-semibold hover:bg-stone-50 dark:hover:bg-stone-800/50"
                 >
                   {t("verifyEmail.iveVerified")}
                 </button>
@@ -189,15 +189,15 @@ export default function VerifyEmailPage() {
             )}
           </div>
 
-          <div className="mt-6 pt-6 border-t border-slate-200 dark:border-slate-800">
-            <p className="text-sm text-slate-500 dark:text-slate-400">
+          <div className="mt-6 pt-6 border-t border-stone-200 dark:border-stone-800">
+            <p className="text-sm text-stone-500 dark:text-stone-400">
               {t("verifyEmail.wrongEmail")}{" "}
               <button
                 onClick={async () => {
                   await signOut();
                   router.push("/auth?mode=signup");
                 }}
-                className="text-indigo-600 hover:text-indigo-700 font-medium"
+                className="text-amber-600 hover:text-amber-700 font-medium"
               >
                 {t("verifyEmail.signUpDifferent")}
               </button>
