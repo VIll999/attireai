@@ -80,6 +80,35 @@ function convertForStorage(displayValue: string, field: FieldKey, unit: Unit): n
   return toCm(num);
 }
 
+// Reasonable ranges in CM/kg (metric)
+const MEASUREMENT_RANGES: Record<FieldKey, { min: number; max: number }> = {
+  height: { min: 50, max: 275 },
+  weight: { min: 15, max: 350 },
+  chest: { min: 40, max: 200 },
+  waist: { min: 30, max: 200 },
+  hip: { min: 40, max: 200 },
+  inseam: { min: 25, max: 120 },
+  shoulder_width: { min: 20, max: 80 },
+  arm_length: { min: 30, max: 110 },
+};
+
+function getDisplayRange(field: FieldKey, unit: Unit): { min: number; max: number } {
+  const range = MEASUREMENT_RANGES[field];
+  if (unit === "CM") return range;
+  if (field === "weight") return { min: Math.round(toLbs(range.min)), max: Math.round(toLbs(range.max)) };
+  return { min: Math.round(toInches(range.min)), max: Math.round(toInches(range.max)) };
+}
+
+function clampValue(value: string, field: FieldKey, unit: Unit): string {
+  if (value === "") return "";
+  const num = parseFloat(value);
+  if (isNaN(num)) return value;
+  const { min, max } = getDisplayRange(field, unit);
+  if (num < min) return String(min);
+  if (num > max) return String(max);
+  return value;
+}
+
 export default function MeasurementsPage() {
   const { user } = useAuth();
   const { t } = useLocale();
@@ -88,7 +117,13 @@ export default function MeasurementsPage() {
   const [isEditing, setIsEditing] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState<FormValues>(emptyForm);
-  const [unit, setUnit] = useState<Unit>("CM");
+  const [unit, setUnit] = useState<Unit>(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("preferredUnit");
+      if (saved === "CM" || saved === "IN") return saved;
+    }
+    return "CM";
+  });
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
@@ -232,6 +267,7 @@ export default function MeasurementsPage() {
     }
 
     setUnit(newUnit);
+    localStorage.setItem("preferredUnit", newUnit);
   };
 
   if (!user) return null;
@@ -310,24 +346,35 @@ export default function MeasurementsPage() {
 
               {/* Measurement Fields */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {MEASUREMENT_FIELDS.map((field) => (
-                  <div key={field.key}>
-                    <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1">
-                      {fieldLabels[field.key]}
-                      <span className="text-stone-400 ml-1">
-                        ({unit === "CM" ? field.cmUnit : field.inUnit})
-                      </span>
-                    </label>
-                    <input
-                      type="number"
-                      step="0.1"
-                      value={form[field.key]}
-                      onChange={(e) => setForm({ ...form, [field.key]: e.target.value })}
-                      className="w-full px-4 py-3 border border-stone-300 dark:border-stone-600 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none transition-colors dark:bg-stone-800/50 dark:text-white"
-                      placeholder={`Enter ${fieldLabels[field.key].toLowerCase()}`}
-                    />
-                  </div>
-                ))}
+                {MEASUREMENT_FIELDS.map((field) => {
+                  const range = getDisplayRange(field.key, unit);
+                  return (
+                    <div key={field.key}>
+                      <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1">
+                        {fieldLabels[field.key]}
+                        <span className="text-stone-400 ml-1">
+                          ({unit === "CM" ? field.cmUnit : field.inUnit})
+                        </span>
+                      </label>
+                      <input
+                        type="number"
+                        step="0.1"
+                        min={range.min}
+                        max={range.max}
+                        value={form[field.key]}
+                        onChange={(e) => setForm({ ...form, [field.key]: e.target.value })}
+                        onBlur={(e) => {
+                          const clamped = clampValue(e.target.value, field.key, unit);
+                          if (clamped !== e.target.value) {
+                            setForm((prev) => ({ ...prev, [field.key]: clamped }));
+                          }
+                        }}
+                        className="w-full px-4 py-3 border border-stone-300 dark:border-stone-600 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none transition-colors dark:bg-stone-800/50 dark:text-white"
+                        placeholder={`${range.min} – ${range.max}`}
+                      />
+                    </div>
+                  );
+                })}
               </div>
             </div>
 
