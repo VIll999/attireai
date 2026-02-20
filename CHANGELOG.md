@@ -19,6 +19,62 @@ Format: Each team member should add their changes under the current date with th
 
 ---
 
+## [0.5.0] - 2026-02-19
+
+### Changed
+
+#### Congtian Wu
+- Redesigned UI with warm luxe fashion-brand aesthetic (amber/stone palette)
+- Replaced emoji icons with SVG icons across landing page and dashboard
+- Extracted shared `AppNav` component, eliminating ~130 lines of nav duplication
+- Updated typography: tracking-wide brand name, tighter hero headings, uppercase labels
+- Updated CTA section to dark luxe gradient with gold text
+- Updated auth branding panel to dark stone gradient
+- Updated README with current endpoints, URLs, and project structure
+- Enabled branch protection on `main` (requires 1 approving review)
+
+---
+
+## [0.4.0] - 2026-02-19
+
+### Added
+
+#### Congtian Wu
+- Dark mode support with smooth theme transitions across all pages
+- Internationalization (i18n) with English, Chinese, and Spanish translations
+- Language selector component in navigation
+- Theme toggle button in navigation
+- LocaleContext and ThemeContext providers
+
+---
+
+## [0.3.0] - 2026-02-17
+
+### Added
+
+#### Congtian Wu
+- Profile management page with name editing and profile picture upload
+- AWS S3 integration for profile picture storage
+- CloudFront CDN for serving profile pictures
+- Profile picture upload API endpoint (`POST /upload/profile-picture`)
+- User profile update API endpoint (`PUT /users/me`)
+- User delete API endpoint (`DELETE /users/me`)
+- Measurement profiles with full CRUD operations
+- Unit conversion support (metric/imperial) for measurements
+- Measurement API endpoints: `GET/POST /measurements`, `PUT/DELETE /measurements/{id}`
+- Email verification flow with polling and resend cooldown
+- Password reset functionality
+- Password strength validation on signup
+- Optimized user data fetching with context caching
+
+### Fixed
+
+#### Congtian Wu
+- CORS configuration to handle JSON array format
+- `is_primary` flag not applied when creating new measurement profile
+
+---
+
 ## [0.2.0] - 2026-02-03
 
 ### Added
