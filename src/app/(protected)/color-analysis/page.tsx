@@ -159,6 +159,7 @@ export default function ColorAnalysisPage() {
       }
 
       setSuccessMessage("Color profile saved successfully!");
+      setTimeout(() => setSuccessMessage(""), 3000);
 
     } catch (err: any) {
       setError(err.message || "Failed to save color profile");
@@ -168,37 +169,47 @@ export default function ColorAnalysisPage() {
   };
 
   return (
-    <div className="min-h-screen bg-white dark:bg-gray-900">
-      <AppNav />
-      <main className="container mx-auto px-4 py-8 max-w-4xl">
-        <h1 className="text-3xl font-bold mb-2 text-gray-900 dark:text-white">
-          Color Analysis
-        </h1>
-        <p className="text-gray-600 dark:text-gray-400 mb-8">
-          Upload a photo or manually select your skin tone
-        </p>
+    <div className="min-h-screen bg-stone-50 dark:bg-stone-950">
+      <AppNav activePage="colors" />
+
+      {/* Main Content */}
+      <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Header */}
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold tracking-tight text-stone-900 dark:text-white">
+            Color Analysis
+          </h1>
+          <p className="text-stone-600 dark:text-stone-400 mt-1">
+            Take a photo or select your skin tone to get personalized color recommendations
+          </p>
+        </div>
 
         {/* Error and Success Messages */}
         {error && (
-          <div className="mb-4 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg text-red-800 dark:text-red-200">
+          <div className="mb-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg text-red-600 text-sm">
             {error}
           </div>
         )}
 
         {successMessage && (
-          <div className="mb-4 p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg text-green-800 dark:text-green-200">
+          <div className="mb-4 p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg text-green-600 text-sm">
             {successMessage}
           </div>
         )}
 
-        <div className="space-y-8">
+        <div className="space-y-6">
           {/* Photo Upload/Camera Section */}
-          <section className="bg-gray-50 dark:bg-gray-800 rounded-lg p-6">
-            <h2 className="text-xl font-semibold mb-4 text-gray-900 dark:text-white">
-              Take or Upload Photo for Analysis
-            </h2>
+          <div className="bg-white dark:bg-stone-900/50 rounded-xl shadow-sm border border-stone-200 dark:border-stone-800 overflow-hidden">
+            <div className="p-6 border-b border-stone-200 dark:border-stone-800">
+              <h2 className="text-lg font-semibold text-stone-900 dark:text-white">
+                Take or Upload Photo
+              </h2>
+              <p className="text-sm text-stone-600 dark:text-stone-400 mt-1">
+                Capture a photo with your camera or upload an existing image
+              </p>
+            </div>
 
-            <div className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-8">
+            <div className="p-6">
               {isCameraActive ? (
                 /* Camera View */
                 <div className="space-y-4">
@@ -206,18 +217,18 @@ export default function ColorAnalysisPage() {
                     ref={videoRef}
                     autoPlay
                     playsInline
-                    className="w-full max-w-md mx-auto rounded-lg"
+                    className="w-full max-w-md mx-auto rounded-lg bg-stone-900"
                   />
-                  <div className="flex justify-center gap-4">
+                  <div className="flex justify-center gap-3">
                     <button
                       onClick={takePhoto}
-                      className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium"
+                      className="px-6 py-2.5 bg-amber-600 text-white rounded-lg font-medium hover:bg-amber-700 transition-colors"
                     >
                       Take Photo
                     </button>
                     <button
                       onClick={closeCamera}
-                      className="px-6 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 font-medium"
+                      className="px-6 py-2.5 border border-stone-300 dark:border-stone-600 rounded-lg font-medium hover:bg-stone-50 dark:hover:bg-stone-800 transition-colors text-stone-900 dark:text-white"
                     >
                       Cancel
                     </button>
@@ -231,152 +242,105 @@ export default function ColorAnalysisPage() {
                     alt="Preview"
                     className="max-w-xs mx-auto rounded-lg"
                   />
-                  <button
-                    onClick={() => {
-                      setUploadedPhoto(null);
-                      setPhotoPreview(null);
-                      if (fileInputRef.current) {
-                        fileInputRef.current.value = "";
-                      }
-                    }}
-                    className="block mx-auto text-sm text-red-600 dark:text-red-400 hover:underline"
-                  >
-                    Remove photo
-                  </button>
+                  <div className="text-center">
+                    <button
+                      onClick={() => {
+                        setUploadedPhoto(null);
+                        setPhotoPreview(null);
+                        if (fileInputRef.current) {
+                          fileInputRef.current.value = "";
+                        }
+                      }}
+                      className="text-sm text-red-600 dark:text-red-400 hover:underline"
+                    >
+                      Remove photo
+                    </button>
+                  </div>
                 </div>
               ) : (
-                /* Initial State - Camera or Upload Options */
-                <div className="space-y-6 text-center">
-                  <svg
-                    className="mx-auto h-12 w-12 text-gray-400"
-                    stroke="currentColor"
-                    fill="none"
-                    viewBox="0 0 48 48"
-                    aria-hidden="true"
-                  >
-                    <path
-                      d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02"
-                      strokeWidth={2}
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                  </svg>
-
-                  <div className="flex flex-col sm:flex-row justify-center gap-4">
-                    {/* Open Camera Button */}
+                /* Initial State */
+                <div className="text-center py-8">
+                  <div className="flex flex-col sm:flex-row justify-center gap-3">
                     <button
                       onClick={openCamera}
-                      className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium flex items-center justify-center gap-2"
+                      className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-amber-600 text-white rounded-lg font-medium hover:bg-amber-700 transition-colors"
                     >
-                      <svg
-                        className="w-5 h-5"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"
-                        />
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"
-                        />
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
                       </svg>
                       Open Camera
                     </button>
 
-                    {/* Upload File Button */}
-                    <label className="px-6 py-3 bg-gray-600 text-white rounded-lg hover:bg-gray-700 font-medium cursor-pointer flex items-center justify-center gap-2">
-                      <svg
-                        className="w-5 h-5"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"
-                        />
+                    <label className="inline-flex items-center justify-center gap-2 px-6 py-3 border border-stone-300 dark:border-stone-600 rounded-lg font-medium hover:bg-stone-50 dark:hover:bg-stone-800 transition-colors cursor-pointer text-stone-900 dark:text-white">
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                       </svg>
                       Upload File
                       <input
-                        id="file-upload"
                         ref={fileInputRef}
-                        name="file-upload"
                         type="file"
-                        className="sr-only"
+                        className="hidden"
                         accept="image/*"
                         onChange={handlePhotoChange}
                       />
                     </label>
                   </div>
-
-                  <p className="text-xs text-gray-500 dark:text-gray-400">
-                    Take a photo with your camera or upload an existing image
-                  </p>
                 </div>
               )}
-            </div>
 
-            {/* Hidden canvas for photo capture */}
-            <canvas ref={canvasRef} className="hidden" />
-          </section>
+              {/* Hidden canvas for photo capture */}
+              <canvas ref={canvasRef} className="hidden" />
+            </div>
+          </div>
 
           {/* Manual Skin Tone Selection */}
-          <section className="bg-gray-50 dark:bg-gray-800 rounded-lg p-6">
-            <h2 className="text-xl font-semibold mb-4 text-gray-900 dark:text-white">
-              Or Select Your Skin Tone Manually
-            </h2>
-
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-              {SKIN_TONES.map((tone) => (
-                <button
-                  key={tone.name}
-                  onClick={() => handleSkinToneSelect(tone.name, tone.hex)}
-                  className={`flex flex-col items-center p-4 rounded-lg border-2 transition-all ${
-                    selectedSkinTone === tone.name
-                      ? "border-blue-500 bg-blue-50 dark:bg-blue-900/20"
-                      : "border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500"
-                  }`}
-                >
-                  <div
-                    className="w-16 h-16 rounded-full mb-2 shadow-md"
-                    style={{ backgroundColor: tone.hex }}
-                  />
-                  <span className="text-sm font-medium text-gray-900 dark:text-white">
-                    {tone.name}
-                  </span>
-                  {selectedSkinTone === tone.name && (
-                    <svg
-                      className="w-5 h-5 text-blue-500 mt-1"
-                      fill="currentColor"
-                      viewBox="0 0 20 20"
-                    >
-                      <path
-                        fillRule="evenodd"
-                        d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                        clipRule="evenodd"
-                      />
-                    </svg>
-                  )}
-                </button>
-              ))}
+          <div className="bg-white dark:bg-stone-900/50 rounded-xl shadow-sm border border-stone-200 dark:border-stone-800">
+            <div className="p-6 border-b border-stone-200 dark:border-stone-800">
+              <h2 className="text-lg font-semibold text-stone-900 dark:text-white">
+                Or Select Your Skin Tone Manually
+              </h2>
+              <p className="text-sm text-stone-600 dark:text-stone-400 mt-1">
+                Choose the shade that best matches your skin tone
+              </p>
             </div>
-          </section>
+
+            <div className="p-6">
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
+                {SKIN_TONES.map((tone) => (
+                  <button
+                    key={tone.name}
+                    onClick={() => handleSkinToneSelect(tone.name, tone.hex)}
+                    className={`flex flex-col items-center p-4 rounded-lg border-2 transition-all ${
+                      selectedSkinTone === tone.name
+                        ? "border-amber-600 bg-amber-50 dark:bg-amber-900/20"
+                        : "border-stone-200 dark:border-stone-700 hover:border-stone-300 dark:hover:border-stone-600"
+                    }`}
+                  >
+                    <div
+                      className="w-16 h-16 rounded-full mb-2 shadow-sm border border-stone-200 dark:border-stone-700"
+                      style={{ backgroundColor: tone.hex }}
+                    />
+                    <span className="text-sm font-medium text-stone-900 dark:text-white">
+                      {tone.name}
+                    </span>
+                    {selectedSkinTone === tone.name && (
+                      <svg className="w-5 h-5 text-amber-600 mt-1" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                      </svg>
+                    )}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
 
           {/* Save Button */}
           <div className="flex justify-end">
             <button
               onClick={handleSave}
               disabled={isSaving || (!selectedSkinTone && !uploadedPhoto)}
-              className="px-6 py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+              className="px-6 py-2.5 bg-amber-600 text-white rounded-lg font-medium hover:bg-amber-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isSaving ? "Saving..." : "Save Color Profile"}
             </button>
