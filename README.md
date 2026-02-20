@@ -16,8 +16,8 @@ AI-powered fashion recommendation application for CS 407 Senior Project (Team 11
 | Frontend | Next.js 16, React 19, TypeScript, TailwindCSS 4 |
 | Backend | FastAPI, Python 3.12, SQLAlchemy |
 | Database | MySQL 9.4 (Railway) |
-| Auth | Firebase Authentication (planned) |
-| Storage | AWS S3 (planned) |
+| Auth | Firebase Authentication |
+| Storage | AWS S3 + CloudFront CDN |
 | Hosting | Vercel (frontend), Railway (backend + database) |
 
 ## Project Structure
@@ -25,7 +25,13 @@ AI-powered fashion recommendation application for CS 407 Senior Project (Team 11
 ```
 attireai/
 ├── src/                    # Next.js frontend
-│   └── app/                # App Router pages
+│   ├── app/                # App Router pages
+│   │   ├── auth/           # Login, signup, email verification
+│   │   └── (protected)/    # Dashboard, profile, measurements
+│   ├── components/         # Shared UI components (AppNav)
+│   ├── context/            # React contexts (Auth, Theme, Locale)
+│   ├── lib/                # Firebase config, API client
+│   └── locales/            # i18n translations (EN/ZH/ES)
 ├── backend/                # FastAPI backend
 │   ├── app/
 │   │   ├── main.py         # FastAPI entry point
@@ -49,7 +55,7 @@ attireai/
 
 | Environment | URL |
 |-------------|-----|
-| Frontend (Vercel) | https://attireai.vercel.app |
+| Frontend | https://www.attire-ai.com |
 | Backend (Railway) | https://attireai-production.up.railway.app |
 | API Docs | https://attireai-production.up.railway.app/docs |
 
@@ -93,11 +99,17 @@ cd attireai
 |--------|----------|-------------|
 | GET | `/` | Welcome message |
 | GET | `/health` | Health check |
-| GET | `/docs` | Swagger UI documentation |
-| POST | `/users/` | Create user |
-| GET | `/users/me` | Get current user |
+| POST | `/users/sync` | Sync Firebase user to database |
+| GET | `/users/me` | Get current user profile |
+| PUT | `/users/me` | Update user profile |
+| DELETE | `/users/me` | Delete user account |
+| POST | `/upload/profile-picture` | Upload profile picture to S3 |
+| GET | `/measurements` | Get all measurement profiles |
+| POST | `/measurements` | Create measurement profile |
+| PUT | `/measurements/{id}` | Update measurement profile |
+| DELETE | `/measurements/{id}` | Delete measurement profile |
 
-*More endpoints coming soon*
+Full interactive docs available at `/docs` (Swagger UI).
 
 ## Database
 
@@ -108,5 +120,5 @@ MySQL hosted on Railway. See [docs/SETUP.md](docs/SETUP.md) for connection detai
 1. Create a feature branch: `git checkout -b feature/your-feature`
 2. Make changes and commit: `git commit -m "Add your feature"`
 3. Push to branch: `git push origin feature/your-feature`
-4. Create a Pull Request
+4. Create a Pull Request (requires 1 approving review to merge into `main`)
 5. Update CHANGELOG.md with your changes
