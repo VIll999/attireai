@@ -9,7 +9,10 @@ import {
   createMeasurement,
   updateMeasurement,
   deleteMeasurement,
+  getSizeRecommendations,
   MeasurementResponse,
+  SizingResponse,
+  SizingRecommendation,
 } from "@/lib/api";
 import AppNav from "@/components/AppNav";
 
@@ -128,6 +131,20 @@ export default function MeasurementsPage() {
   const [error, setError] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
 
+  // Sizing state
+  const [sizingData, setSizingData] = useState<SizingResponse | null>(null);
+  const [sizingLoading, setSizingLoading] = useState(false);
+  const [sizingError, setSizingError] = useState("");
+  const [sizingGender, setSizingGender] = useState<"male" | "female">(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("sizingGender");
+      if (saved === "male" || saved === "female") return saved;
+    }
+    return "male";
+  });
+  const [sizingProfileId, setSizingProfileId] = useState<string | null>(null);
+  const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set());
+
   const fieldLabels: Record<string, string> = {
     height: t("measurements.height"),
     weight: t("measurements.weight"),
@@ -154,6 +171,51 @@ export default function MeasurementsPage() {
   useEffect(() => {
     fetchMeasurements();
   }, [fetchMeasurements]);
+
+  // Fetch sizing recommendations
+  const fetchSizing = useCallback(async (profileId: string, gender: "male" | "female") => {
+    if (!user) return;
+    setSizingLoading(true);
+    setSizingError("");
+    try {
+      const data = await getSizeRecommendations(user.uid, profileId, gender);
+      setSizingData(data);
+    } catch (err: unknown) {
+      const error = err as { message?: string };
+      setSizingError(error.message || t("sizing.error"));
+      setSizingData(null);
+    } finally {
+      setSizingLoading(false);
+    }
+  }, [user, t]);
+
+  // Auto-fetch sizing when measurements load or profile/gender changes
+  useEffect(() => {
+    if (measurements.length === 0 || isEditing) return;
+    const profileId = sizingProfileId || measurements.find(m => m.is_primary)?.id || measurements[0]?.id;
+    if (!profileId) return;
+    if (sizingProfileId !== profileId) setSizingProfileId(profileId);
+    const profile = measurements.find(m => m.id === profileId);
+    if (profile && profile.chest && profile.waist && profile.hip) {
+      fetchSizing(profileId, sizingGender);
+    } else {
+      setSizingData(null);
+    }
+  }, [measurements, sizingProfileId, sizingGender, isEditing, fetchSizing]);
+
+  const handleGenderChange = (gender: "male" | "female") => {
+    setSizingGender(gender);
+    localStorage.setItem("sizingGender", gender);
+  };
+
+  const toggleBrandExpand = (brand: string) => {
+    setExpandedBrands(prev => {
+      const next = new Set(prev);
+      if (next.has(brand)) next.delete(brand);
+      else next.add(brand);
+      return next;
+    });
+  };
 
   const handleEdit = (m: MeasurementResponse) => {
     setEditingId(m.id);
@@ -491,7 +553,335 @@ export default function MeasurementsPage() {
             </button>
           </div>
         )}
+
+        {/* Size Recommendations Section */}
+        {!isEditing && measurements.length > 0 && (
+          <SizeRecommendationsSection
+            measurements={measurements}
+            sizingData={sizingData}
+            sizingLoading={sizingLoading}
+            sizingError={sizingError}
+            sizingGender={sizingGender}
+            sizingProfileId={sizingProfileId || measurements.find(m => m.is_primary)?.id || measurements[0]?.id}
+            expandedBrands={expandedBrands}
+            onGenderChange={handleGenderChange}
+            onProfileChange={(id) => setSizingProfileId(id)}
+            onToggleBrand={toggleBrandExpand}
+            t={t}
+          />
+        )}
       </main>
+    </div>
+  );
+}
+
+/* ── Category Labels Map ── */
+const CATEGORY_LABELS: Record<string, string> = {
+  "Sportswear": "sportswear",
+  "Fast Fashion": "fastFashion",
+  "Denim": "denim",
+  "Basics": "basics",
+  "Luxury": "luxury",
+  "Contemporary": "contemporary",
+  "Outdoor": "outdoor",
+};
+
+/* ── Confidence Badge Component ── */
+function ConfidenceBadge({ confidence, t }: { confidence: string; t: (key: string) => string }) {
+  const styles: Record<string, string> = {
+    "Best Fit": "bg-green-100 dark:bg-green-500/10 text-green-700 dark:text-green-400",
+    "Good Fit": "bg-blue-100 dark:bg-blue-500/10 text-blue-700 dark:text-blue-400",
+    "May Run Small": "bg-orange-100 dark:bg-orange-500/10 text-orange-700 dark:text-orange-400",
+    "May Run Large": "bg-orange-100 dark:bg-orange-500/10 text-orange-700 dark:text-orange-400",
+  };
+  const labels: Record<string, string> = {
+    "Best Fit": t("sizing.bestFit"),
+    "Good Fit": t("sizing.goodFit"),
+    "May Run Small": t("sizing.mayRunSmall"),
+    "May Run Large": t("sizing.mayRunLarge"),
+  };
+  return (
+    <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${styles[confidence] || "bg-stone-100 dark:bg-stone-800 text-stone-600"}`}>
+      {labels[confidence] || confidence}
+    </span>
+  );
+}
+
+/* ── Fit Slider Component ── */
+function FitSlider({ label, position, inRange, sizeRange, userValue }: {
+  label: string;
+  position: number;
+  inRange: boolean;
+  sizeRange: [number, number];
+  userValue: number;
+}) {
+  return (
+    <div className="flex items-center gap-3">
+      <span className="text-xs text-stone-500 dark:text-stone-400 w-12 shrink-0">{label}</span>
+      <div className="flex-1 relative">
+        <div className="h-2 bg-stone-200 dark:bg-stone-700 rounded-full overflow-hidden">
+          <div className="h-full bg-stone-300 dark:bg-stone-600 rounded-full" style={{ width: "100%" }} />
+        </div>
+        {/* User position dot */}
+        <div
+          className={`absolute top-1/2 -translate-y-1/2 w-3.5 h-3.5 rounded-full border-2 border-white dark:border-stone-900 shadow-sm ${
+            inRange ? "bg-green-500" : "bg-orange-500"
+          }`}
+          style={{ left: `${Math.max(0, Math.min(100, position * 100))}%`, transform: "translate(-50%, -50%)" }}
+        />
+      </div>
+      <span className="text-xs text-stone-500 dark:text-stone-400 w-20 text-right shrink-0">
+        {userValue} / {sizeRange[0]}-{sizeRange[1]}
+      </span>
+    </div>
+  );
+}
+
+/* ── Body Type Icon ── */
+function BodyTypeIcon({ bodyType }: { bodyType: string }) {
+  const icons: Record<string, React.ReactNode> = {
+    "Hourglass": (
+      <>
+        <ellipse cx="12" cy="5" rx="4" ry="2" />
+        <ellipse cx="12" cy="19" rx="4" ry="2" />
+        <path d="M8 5c0 4 4 5.5 4 7s-4 3-4 7" />
+        <path d="M16 5c0 4-4 5.5-4 7s4 3 4 7" />
+      </>
+    ),
+    "Pear": (
+      <>
+        <ellipse cx="12" cy="5" rx="3" ry="2" />
+        <ellipse cx="12" cy="19" rx="5" ry="2" />
+        <path d="M9 5c0 4 3 5 3 7s-5 3-5 7" />
+        <path d="M15 5c0 4-3 5-3 7s5 3 5 7" />
+      </>
+    ),
+    "Inverted Triangle": (
+      <>
+        <ellipse cx="12" cy="5" rx="5" ry="2" />
+        <ellipse cx="12" cy="19" rx="3" ry="2" />
+        <path d="M7 5c0 4 2 5 5 7 0 2-2 3-3 7" />
+        <path d="M17 5c0 4-2 5-5 7 0 2 2 3 3 7" />
+      </>
+    ),
+    "Rectangle": (
+      <>
+        <ellipse cx="12" cy="5" rx="3.5" ry="2" />
+        <ellipse cx="12" cy="19" rx="3.5" ry="2" />
+        <path d="M8.5 5c0 4.5 0 9.5 0 14" />
+        <path d="M15.5 5c0 4.5 0 9.5 0 14" />
+      </>
+    ),
+    "Apple": (
+      <>
+        <ellipse cx="12" cy="5" rx="3.5" ry="2" />
+        <ellipse cx="12" cy="19" rx="3" ry="2" />
+        <path d="M8.5 5c-1.5 3-2.5 6-2 9 .5 2 2.5 3 5.5 5" />
+        <path d="M15.5 5c1.5 3 2.5 6 2 9-.5 2-2.5 3-5.5 5" />
+      </>
+    ),
+  };
+  return (
+    <svg className="w-8 h-8 text-amber-600 dark:text-amber-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round">
+      {icons[bodyType] || icons["Rectangle"]}
+    </svg>
+  );
+}
+
+/* ── Size Recommendations Section ── */
+function SizeRecommendationsSection({
+  measurements,
+  sizingData,
+  sizingLoading,
+  sizingError,
+  sizingGender,
+  sizingProfileId,
+  expandedBrands,
+  onGenderChange,
+  onProfileChange,
+  onToggleBrand,
+  t,
+}: {
+  measurements: MeasurementResponse[];
+  sizingData: SizingResponse | null;
+  sizingLoading: boolean;
+  sizingError: string;
+  sizingGender: "male" | "female";
+  sizingProfileId: string;
+  expandedBrands: Set<string>;
+  onGenderChange: (g: "male" | "female") => void;
+  onProfileChange: (id: string) => void;
+  onToggleBrand: (brand: string) => void;
+  t: (key: string) => string;
+}) {
+  const selectedProfile = measurements.find(m => m.id === sizingProfileId);
+  const hasSizingMeasurements = selectedProfile && selectedProfile.chest && selectedProfile.waist && selectedProfile.hip;
+
+  // Group recommendations by category
+  const grouped: Record<string, SizingRecommendation[]> = {};
+  if (sizingData) {
+    for (const rec of sizingData.recommendations) {
+      if (!grouped[rec.category]) grouped[rec.category] = [];
+      grouped[rec.category].push(rec);
+    }
+  }
+
+  return (
+    <div className="mt-8">
+      {/* Section Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+        <div>
+          <h2 className="text-2xl font-bold tracking-tight text-stone-900 dark:text-white">{t("sizing.title")}</h2>
+          <p className="text-stone-600 dark:text-stone-400 text-sm mt-1">{t("sizing.subtitle")}</p>
+        </div>
+        <div className="flex items-center gap-3">
+          {/* Gender Toggle */}
+          <div className="flex items-center bg-white dark:bg-stone-900/50 border border-stone-200 dark:border-stone-800 rounded-lg p-1">
+            <button
+              onClick={() => onGenderChange("male")}
+              className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${
+                sizingGender === "male" ? "bg-amber-600 text-white" : "text-stone-500 dark:text-stone-400 hover:text-stone-900 dark:hover:text-white"
+              }`}
+            >
+              {t("sizing.male")}
+            </button>
+            <button
+              onClick={() => onGenderChange("female")}
+              className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${
+                sizingGender === "female" ? "bg-amber-600 text-white" : "text-stone-500 dark:text-stone-400 hover:text-stone-900 dark:hover:text-white"
+              }`}
+            >
+              {t("sizing.female")}
+            </button>
+          </div>
+          {/* Profile Selector */}
+          {measurements.length > 1 && (
+            <select
+              value={sizingProfileId}
+              onChange={(e) => onProfileChange(e.target.value)}
+              className="px-3 py-2 text-sm border border-stone-200 dark:border-stone-700 rounded-lg bg-white dark:bg-stone-800 text-stone-900 dark:text-white focus:ring-2 focus:ring-amber-500 outline-none"
+            >
+              {measurements.map(m => (
+                <option key={m.id} value={m.id}>{m.name}{m.is_primary ? " *" : ""}</option>
+              ))}
+            </select>
+          )}
+        </div>
+      </div>
+
+      {/* Missing measurements message */}
+      {!hasSizingMeasurements && (
+        <div className="bg-white dark:bg-stone-900/50 rounded-xl shadow-sm border border-stone-200 dark:border-stone-800 p-8 text-center">
+          <div className="w-12 h-12 bg-amber-100 dark:bg-amber-500/10 rounded-full flex items-center justify-center mx-auto mb-3">
+            <svg className="w-6 h-6 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
+            </svg>
+          </div>
+          <p className="text-stone-600 dark:text-stone-400">{t("sizing.needMeasurements")}</p>
+        </div>
+      )}
+
+      {/* Loading state */}
+      {sizingLoading && hasSizingMeasurements && (
+        <div className="bg-white dark:bg-stone-900/50 rounded-xl shadow-sm border border-stone-200 dark:border-stone-800 p-8">
+          <div className="flex flex-col items-center gap-3">
+            <div className="w-8 h-8 border-4 border-amber-600 border-t-transparent rounded-full animate-spin" />
+            <p className="text-sm text-stone-500 dark:text-stone-400">{t("sizing.loading")}</p>
+          </div>
+        </div>
+      )}
+
+      {/* Error state */}
+      {sizingError && (
+        <div className="mb-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg text-red-600 text-sm">
+          {sizingError}
+        </div>
+      )}
+
+      {/* Sizing Results */}
+      {sizingData && !sizingLoading && (
+        <div className="space-y-6">
+          {/* Body Type Card */}
+          <div className="bg-white dark:bg-stone-900/50 rounded-xl shadow-sm border border-stone-200 dark:border-stone-800 p-5">
+            <div className="flex items-center gap-4">
+              <div className="w-14 h-14 bg-amber-50 dark:bg-amber-500/10 rounded-xl flex items-center justify-center shrink-0">
+                <BodyTypeIcon bodyType={sizingData.body_type} />
+              </div>
+              <div>
+                <p className="text-xs uppercase tracking-wider text-stone-500 dark:text-stone-400 font-medium">{t("sizing.bodyType")}</p>
+                <p className="text-lg font-semibold text-stone-900 dark:text-white">{sizingData.body_type}</p>
+                <p className="text-sm text-stone-600 dark:text-stone-400">{sizingData.body_type_description}</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Brand Cards by Category */}
+          {Object.entries(grouped).map(([category, recs]) => (
+            <div key={category}>
+              <h3 className="text-sm uppercase tracking-wider text-stone-500 dark:text-stone-400 font-medium mb-3">
+                {t(`sizing.${CATEGORY_LABELS[category] || "basics"}`)} — {recs.length} {t("sizing.brands")}
+              </h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                {recs.map((rec) => {
+                  const isExpanded = expandedBrands.has(rec.brand);
+                  return (
+                    <div
+                      key={rec.brand}
+                      className="bg-white dark:bg-stone-900/50 rounded-xl shadow-sm border border-stone-200 dark:border-stone-800 overflow-hidden hover:shadow-md dark:hover:shadow-stone-900/50 transition-shadow"
+                    >
+                      <button
+                        onClick={() => onToggleBrand(rec.brand)}
+                        className="w-full p-4 text-left"
+                      >
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="font-semibold text-stone-900 dark:text-white">{rec.brand}</span>
+                          <ConfidenceBadge confidence={rec.confidence} t={t} />
+                        </div>
+                        <div className="flex items-end justify-between">
+                          <span className="text-3xl font-bold text-amber-600 dark:text-amber-400">{rec.recommended_size}</span>
+                          <span className="text-xs text-stone-500 dark:text-stone-400">
+                            {t("sizing.fitScore")}: {rec.fit_score}
+                          </span>
+                        </div>
+                      </button>
+
+                      {/* Expanded Details */}
+                      {isExpanded && (
+                        <div className="px-4 pb-4 pt-0 border-t border-stone-100 dark:border-stone-800">
+                          <p className="text-xs text-stone-500 dark:text-stone-400 italic mt-3 mb-3">{rec.sizing_notes}</p>
+                          <div className="space-y-2.5">
+                            <FitSlider
+                              label={t("sizing.chest")}
+                              position={rec.fit_details.chest.position}
+                              inRange={rec.fit_details.chest.in_range}
+                              sizeRange={rec.fit_details.chest.size_range}
+                              userValue={rec.fit_details.chest.user_value}
+                            />
+                            <FitSlider
+                              label={t("sizing.waist")}
+                              position={rec.fit_details.waist.position}
+                              inRange={rec.fit_details.waist.in_range}
+                              sizeRange={rec.fit_details.waist.size_range}
+                              userValue={rec.fit_details.waist.user_value}
+                            />
+                            <FitSlider
+                              label={t("sizing.hip")}
+                              position={rec.fit_details.hip.position}
+                              inRange={rec.fit_details.hip.in_range}
+                              sizeRange={rec.fit_details.hip.size_range}
+                              userValue={rec.fit_details.hip.user_value}
+                            />
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
