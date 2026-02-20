@@ -8,17 +8,22 @@ import { useLocale, Locale } from "@/context/LocaleContext";
 /* ── SVG Icon Components ── */
 function RulerIcon({ className }: { className?: string }) {
   return (
-    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-      <path strokeLinecap="round" strokeLinejoin="round" d="M3 21h18M3 21V3m0 18l3-3m-3-3l3-3m-3-3l3-3m-3-3l3-3M21 3H3m18 0v18m0-18l-3 3m3 3l-3 3m3 3l-3 3m3 3l-3 3" />
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5}>
+      <rect x="2" y="4" width="20" height="16" rx="2" strokeLinecap="round" strokeLinejoin="round" />
+      <path strokeLinecap="round" strokeLinejoin="round" d="M6 4v4M10 4v6M14 4v4M18 4v6" />
     </svg>
   );
 }
 
 function SwatchIcon({ className }: { className?: string }) {
   return (
-    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-      <path strokeLinecap="round" strokeLinejoin="round" d="M4.098 19.902a3.75 3.75 0 005.304 0l6.401-6.402M6.75 21A3.75 3.75 0 013 17.25V4.125C3 3.504 3.504 3 4.125 3h5.25C9.996 3 10.5 3.504 10.5 4.125v14.625a3.75 3.75 0 01-3.75 3.75zm9.15-9.15l4.95-4.95a2.25 2.25 0 000-3.182l-2.122-2.122a2.25 2.25 0 00-3.182 0l-4.95 4.95" />
-      <circle cx="6.75" cy="17.25" r=".75" fill="currentColor" />
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5}>
+      <circle cx="12" cy="12" r="9" strokeLinecap="round" strokeLinejoin="round" />
+      <circle cx="12" cy="7" r="1.5" fill="currentColor" stroke="none" />
+      <circle cx="7.5" cy="11" r="1.5" fill="currentColor" stroke="none" />
+      <circle cx="16.5" cy="11" r="1.5" fill="currentColor" stroke="none" />
+      <circle cx="9" cy="15.5" r="1.5" fill="currentColor" stroke="none" />
+      <circle cx="15" cy="15.5" r="1.5" fill="currentColor" stroke="none" />
     </svg>
   );
 }

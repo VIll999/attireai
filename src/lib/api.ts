@@ -175,6 +175,54 @@ export async function deleteMeasurement(
   if (!response.ok && response.status !== 204) throw new Error("Failed to delete measurement");
 }
 
+// --- Sizing API ---
+
+export interface SizingFitDetail {
+  size_range: [number, number];
+  user_value: number;
+  position: number;
+  in_range: boolean;
+}
+
+export interface SizingRecommendation {
+  brand: string;
+  category: string;
+  sizing_notes: string;
+  recommended_size: string;
+  confidence: string;
+  fit_score: number;
+  fit_details: {
+    chest: SizingFitDetail;
+    waist: SizingFitDetail;
+    hip: SizingFitDetail;
+  };
+}
+
+export interface SizingResponse {
+  measurement_name: string;
+  body_type: string;
+  body_type_description: string;
+  recommendations: SizingRecommendation[];
+}
+
+export async function getSizeRecommendations(
+  firebaseUid: string,
+  measurementId: string,
+  gender: string = "male"
+): Promise<SizingResponse> {
+  const response = await fetch(
+    `${API_URL}/sizing/recommendations?measurement_id=${measurementId}&gender=${gender}`,
+    {
+      headers: { "X-Firebase-UID": firebaseUid },
+    }
+  );
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({ detail: "Failed to get recommendations" }));
+    throw new Error(error.detail || "Failed to get size recommendations");
+  }
+  return response.json();
+}
+
 // --- Upload API ---
 
 export async function uploadProfilePicture(

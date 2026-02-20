@@ -1,0 +1,541 @@
+{
+  "brands": [
+    {
+      "name": "Nike",
+      "category": "Sportswear",
+      "sizing_notes": "Athletic fit, generally runs true to size",
+      "men": {
+        "XS": {"chest": [83, 88], "waist": [68, 73], "hip": [83, 88]},
+        "S":  {"chest": [88, 93], "waist": [73, 78], "hip": [88, 93]},
+        "M":  {"chest": [93, 99], "waist": [78, 84], "hip": [93, 99]},
+        "L":  {"chest": [99, 105], "waist": [84, 90], "hip": [99, 105]},
+        "XL": {"chest": [105, 112], "waist": [90, 97], "hip": [105, 112]},
+        "XXL": {"chest": [112, 119], "waist": [97, 104], "hip": [112, 119]}
+      },
+      "women": {
+        "XS": {"chest": [76, 81], "waist": [58, 63], "hip": [83, 88]},
+        "S":  {"chest": [81, 86], "waist": [63, 68], "hip": [88, 93]},
+        "M":  {"chest": [86, 92], "waist": [68, 74], "hip": [93, 99]},
+        "L":  {"chest": [92, 99], "waist": [74, 81], "hip": [99, 105]},
+        "XL": {"chest": [99, 107], "waist": [81, 89], "hip": [105, 113]},
+        "XXL": {"chest": [107, 115], "waist": [89, 97], "hip": [113, 121]}
+      }
+    },
+    {
+      "name": "Adidas",
+      "category": "Sportswear",
+      "sizing_notes": "Regular fit, European sizing tends to run slightly slim",
+      "men": {
+        "XS": {"chest": [82, 87], "waist": [67, 72], "hip": [82, 87]},
+        "S":  {"chest": [87, 92], "waist": [72, 77], "hip": [87, 92]},
+        "M":  {"chest": [92, 98], "waist": [77, 83], "hip": [92, 98]},
+        "L":  {"chest": [98, 104], "waist": [83, 89], "hip": [98, 104]},
+        "XL": {"chest": [104, 111], "waist": [89, 96], "hip": [104, 111]},
+        "XXL": {"chest": [111, 118], "waist": [96, 103], "hip": [111, 118]}
+      },
+      "women": {
+        "XS": {"chest": [75, 80], "waist": [57, 62], "hip": [82, 87]},
+        "S":  {"chest": [80, 85], "waist": [62, 67], "hip": [87, 92]},
+        "M":  {"chest": [85, 91], "waist": [67, 73], "hip": [92, 98]},
+        "L":  {"chest": [91, 98], "waist": [73, 80], "hip": [98, 104]},
+        "XL": {"chest": [98, 106], "waist": [80, 88], "hip": [104, 112]},
+        "XXL": {"chest": [106, 114], "waist": [88, 96], "hip": [112, 120]}
+      }
+    },
+    {
+      "name": "Under Armour",
+      "category": "Sportswear",
+      "sizing_notes": "Compression and fitted styles run tight; loose fit is true to size",
+      "men": {
+        "S":  {"chest": [86, 91], "waist": [71, 76], "hip": [86, 91]},
+        "M":  {"chest": [91, 97], "waist": [76, 82], "hip": [91, 97]},
+        "L":  {"chest": [97, 103], "waist": [82, 88], "hip": [97, 103]},
+        "XL": {"chest": [103, 110], "waist": [88, 95], "hip": [103, 110]},
+        "XXL": {"chest": [110, 117], "waist": [95, 102], "hip": [110, 117]}
+      },
+      "women": {
+        "XS": {"chest": [77, 82], "waist": [59, 64], "hip": [84, 89]},
+        "S":  {"chest": [82, 87], "waist": [64, 69], "hip": [89, 94]},
+        "M":  {"chest": [87, 93], "waist": [69, 75], "hip": [94, 100]},
+        "L":  {"chest": [93, 100], "waist": [75, 82], "hip": [100, 107]},
+        "XL": {"chest": [100, 108], "waist": [82, 90], "hip": [107, 115]}
+      }
+    },
+    {
+      "name": "Puma",
+      "category": "Sportswear",
+      "sizing_notes": "Similar to Nike, slightly more relaxed fit",
+      "men": {
+        "S":  {"chest": [87, 92], "waist": [73, 78], "hip": [87, 92]},
+        "M":  {"chest": [92, 98], "waist": [78, 84], "hip": [92, 98]},
+        "L":  {"chest": [98, 104], "waist": [84, 90], "hip": [98, 104]},
+        "XL": {"chest": [104, 111], "waist": [90, 97], "hip": [104, 111]},
+        "XXL": {"chest": [111, 118], "waist": [97, 104], "hip": [111, 118]}
+      },
+      "women": {
+        "XS": {"chest": [76, 81], "waist": [58, 63], "hip": [83, 88]},
+        "S":  {"chest": [81, 86], "waist": [63, 68], "hip": [88, 93]},
+        "M":  {"chest": [86, 92], "waist": [68, 74], "hip": [93, 99]},
+        "L":  {"chest": [92, 99], "waist": [74, 81], "hip": [99, 106]},
+        "XL": {"chest": [99, 107], "waist": [81, 89], "hip": [106, 114]}
+      }
+    },
+    {
+      "name": "New Balance",
+      "category": "Sportswear",
+      "sizing_notes": "Relaxed American fit, tends to run slightly large",
+      "men": {
+        "S":  {"chest": [86, 92], "waist": [72, 78], "hip": [86, 92]},
+        "M":  {"chest": [92, 99], "waist": [78, 85], "hip": [92, 99]},
+        "L":  {"chest": [99, 106], "waist": [85, 92], "hip": [99, 106]},
+        "XL": {"chest": [106, 113], "waist": [92, 99], "hip": [106, 113]},
+        "XXL": {"chest": [113, 120], "waist": [99, 106], "hip": [113, 120]}
+      },
+      "women": {
+        "XS": {"chest": [77, 82], "waist": [59, 64], "hip": [84, 89]},
+        "S":  {"chest": [82, 87], "waist": [64, 69], "hip": [89, 94]},
+        "M":  {"chest": [87, 93], "waist": [69, 75], "hip": [94, 100]},
+        "L":  {"chest": [93, 100], "waist": [75, 82], "hip": [100, 107]},
+        "XL": {"chest": [100, 108], "waist": [82, 90], "hip": [107, 115]}
+      }
+    },
+    {
+      "name": "Zara",
+      "category": "Fast Fashion",
+      "sizing_notes": "European cut, runs slim especially in shoulders and torso",
+      "men": {
+        "XS": {"chest": [82, 86], "waist": [66, 70], "hip": [82, 86]},
+        "S":  {"chest": [86, 91], "waist": [70, 76], "hip": [86, 91]},
+        "M":  {"chest": [91, 96], "waist": [76, 82], "hip": [91, 96]},
+        "L":  {"chest": [96, 102], "waist": [82, 88], "hip": [96, 102]},
+        "XL": {"chest": [102, 108], "waist": [88, 94], "hip": [102, 108]},
+        "XXL": {"chest": [108, 114], "waist": [94, 100], "hip": [108, 114]}
+      },
+      "women": {
+        "XS": {"chest": [74, 79], "waist": [56, 61], "hip": [82, 87]},
+        "S":  {"chest": [79, 84], "waist": [61, 66], "hip": [87, 92]},
+        "M":  {"chest": [84, 90], "waist": [66, 72], "hip": [92, 98]},
+        "L":  {"chest": [90, 96], "waist": [72, 78], "hip": [98, 104]},
+        "XL": {"chest": [96, 103], "waist": [78, 85], "hip": [104, 111]}
+      }
+    },
+    {
+      "name": "H&M",
+      "category": "Fast Fashion",
+      "sizing_notes": "Varies by line; basics run true, premium runs slim",
+      "men": {
+        "XS": {"chest": [82, 87], "waist": [68, 73], "hip": [82, 87]},
+        "S":  {"chest": [87, 92], "waist": [73, 78], "hip": [87, 92]},
+        "M":  {"chest": [92, 97], "waist": [78, 83], "hip": [92, 97]},
+        "L":  {"chest": [97, 103], "waist": [83, 89], "hip": [97, 103]},
+        "XL": {"chest": [103, 109], "waist": [89, 95], "hip": [103, 109]},
+        "XXL": {"chest": [109, 116], "waist": [95, 102], "hip": [109, 116]}
+      },
+      "women": {
+        "XS": {"chest": [76, 80], "waist": [58, 62], "hip": [83, 87]},
+        "S":  {"chest": [80, 85], "waist": [62, 67], "hip": [87, 92]},
+        "M":  {"chest": [85, 91], "waist": [67, 73], "hip": [92, 98]},
+        "L":  {"chest": [91, 97], "waist": [73, 79], "hip": [98, 104]},
+        "XL": {"chest": [97, 104], "waist": [79, 86], "hip": [104, 111]},
+        "XXL": {"chest": [104, 112], "waist": [86, 94], "hip": [111, 119]}
+      }
+    },
+    {
+      "name": "Uniqlo",
+      "category": "Fast Fashion",
+      "sizing_notes": "Japanese sizing runs about one size smaller than US; size up",
+      "men": {
+        "XS": {"chest": [80, 85], "waist": [66, 71], "hip": [80, 85]},
+        "S":  {"chest": [85, 90], "waist": [71, 76], "hip": [85, 90]},
+        "M":  {"chest": [90, 96], "waist": [76, 82], "hip": [90, 96]},
+        "L":  {"chest": [96, 102], "waist": [82, 88], "hip": [96, 102]},
+        "XL": {"chest": [102, 108], "waist": [88, 94], "hip": [102, 108]},
+        "XXL": {"chest": [108, 114], "waist": [94, 100], "hip": [108, 114]}
+      },
+      "women": {
+        "XS": {"chest": [73, 78], "waist": [55, 60], "hip": [81, 86]},
+        "S":  {"chest": [78, 83], "waist": [60, 65], "hip": [86, 91]},
+        "M":  {"chest": [83, 89], "waist": [65, 71], "hip": [91, 97]},
+        "L":  {"chest": [89, 95], "waist": [71, 77], "hip": [97, 103]},
+        "XL": {"chest": [95, 102], "waist": [77, 84], "hip": [103, 110]}
+      }
+    },
+    {
+      "name": "ASOS",
+      "category": "Fast Fashion",
+      "sizing_notes": "UK-based sizing, generally true to size with wide range",
+      "men": {
+        "XS": {"chest": [82, 87], "waist": [67, 72], "hip": [83, 88]},
+        "S":  {"chest": [87, 92], "waist": [72, 78], "hip": [88, 93]},
+        "M":  {"chest": [92, 98], "waist": [78, 84], "hip": [93, 99]},
+        "L":  {"chest": [98, 104], "waist": [84, 90], "hip": [99, 105]},
+        "XL": {"chest": [104, 111], "waist": [90, 97], "hip": [105, 112]},
+        "XXL": {"chest": [111, 118], "waist": [97, 104], "hip": [112, 119]}
+      },
+      "women": {
+        "XS": {"chest": [76, 81], "waist": [58, 63], "hip": [83, 88]},
+        "S":  {"chest": [81, 86], "waist": [63, 68], "hip": [88, 93]},
+        "M":  {"chest": [86, 92], "waist": [68, 74], "hip": [93, 99]},
+        "L":  {"chest": [92, 98], "waist": [74, 80], "hip": [99, 105]},
+        "XL": {"chest": [98, 105], "waist": [80, 87], "hip": [105, 112]},
+        "XXL": {"chest": [105, 113], "waist": [87, 95], "hip": [112, 120]}
+      }
+    },
+    {
+      "name": "Mango",
+      "category": "Fast Fashion",
+      "sizing_notes": "Spanish brand, runs slim with European proportions",
+      "men": {
+        "S":  {"chest": [86, 91], "waist": [71, 76], "hip": [86, 91]},
+        "M":  {"chest": [91, 96], "waist": [76, 82], "hip": [91, 96]},
+        "L":  {"chest": [96, 102], "waist": [82, 88], "hip": [96, 102]},
+        "XL": {"chest": [102, 108], "waist": [88, 94], "hip": [102, 108]},
+        "XXL": {"chest": [108, 114], "waist": [94, 100], "hip": [108, 114]}
+      },
+      "women": {
+        "XS": {"chest": [74, 79], "waist": [56, 61], "hip": [82, 87]},
+        "S":  {"chest": [79, 84], "waist": [61, 66], "hip": [87, 92]},
+        "M":  {"chest": [84, 89], "waist": [66, 71], "hip": [92, 97]},
+        "L":  {"chest": [89, 95], "waist": [71, 77], "hip": [97, 103]},
+        "XL": {"chest": [95, 101], "waist": [77, 83], "hip": [103, 109]}
+      }
+    },
+    {
+      "name": "Levi's",
+      "category": "Denim",
+      "sizing_notes": "Classic American fit; denim may shrink slightly after wash",
+      "men": {
+        "S":  {"chest": [87, 93], "waist": [73, 79], "hip": [87, 93]},
+        "M":  {"chest": [93, 99], "waist": [79, 85], "hip": [93, 99]},
+        "L":  {"chest": [99, 105], "waist": [85, 91], "hip": [99, 105]},
+        "XL": {"chest": [105, 112], "waist": [91, 98], "hip": [105, 112]},
+        "XXL": {"chest": [112, 119], "waist": [98, 105], "hip": [112, 119]}
+      },
+      "women": {
+        "XS": {"chest": [76, 81], "waist": [58, 63], "hip": [84, 89]},
+        "S":  {"chest": [81, 86], "waist": [63, 68], "hip": [89, 94]},
+        "M":  {"chest": [86, 92], "waist": [68, 74], "hip": [94, 100]},
+        "L":  {"chest": [92, 99], "waist": [74, 81], "hip": [100, 107]},
+        "XL": {"chest": [99, 107], "waist": [81, 89], "hip": [107, 115]}
+      }
+    },
+    {
+      "name": "Wrangler",
+      "category": "Denim",
+      "sizing_notes": "Relaxed Western fit, generous through hips and thighs",
+      "men": {
+        "S":  {"chest": [88, 94], "waist": [74, 80], "hip": [88, 94]},
+        "M":  {"chest": [94, 100], "waist": [80, 86], "hip": [94, 100]},
+        "L":  {"chest": [100, 107], "waist": [86, 93], "hip": [100, 107]},
+        "XL": {"chest": [107, 114], "waist": [93, 100], "hip": [107, 114]},
+        "XXL": {"chest": [114, 121], "waist": [100, 107], "hip": [114, 121]}
+      },
+      "women": {
+        "S":  {"chest": [82, 87], "waist": [64, 69], "hip": [90, 95]},
+        "M":  {"chest": [87, 93], "waist": [69, 75], "hip": [95, 101]},
+        "L":  {"chest": [93, 100], "waist": [75, 82], "hip": [101, 108]},
+        "XL": {"chest": [100, 108], "waist": [82, 90], "hip": [108, 116]}
+      }
+    },
+    {
+      "name": "Gap",
+      "category": "Denim",
+      "sizing_notes": "Relaxed American fit, generous sizing",
+      "men": {
+        "XS": {"chest": [83, 88], "waist": [69, 74], "hip": [83, 88]},
+        "S":  {"chest": [88, 94], "waist": [74, 80], "hip": [88, 94]},
+        "M":  {"chest": [94, 100], "waist": [80, 86], "hip": [94, 100]},
+        "L":  {"chest": [100, 107], "waist": [86, 93], "hip": [100, 107]},
+        "XL": {"chest": [107, 114], "waist": [93, 100], "hip": [107, 114]},
+        "XXL": {"chest": [114, 121], "waist": [100, 107], "hip": [114, 121]}
+      },
+      "women": {
+        "XS": {"chest": [77, 82], "waist": [59, 64], "hip": [85, 90]},
+        "S":  {"chest": [82, 87], "waist": [64, 69], "hip": [90, 95]},
+        "M":  {"chest": [87, 93], "waist": [69, 75], "hip": [95, 101]},
+        "L":  {"chest": [93, 100], "waist": [75, 82], "hip": [101, 108]},
+        "XL": {"chest": [100, 108], "waist": [82, 90], "hip": [108, 116]},
+        "XXL": {"chest": [108, 116], "waist": [90, 98], "hip": [116, 124]}
+      }
+    },
+    {
+      "name": "Calvin Klein",
+      "category": "Basics",
+      "sizing_notes": "Modern slim fit, underwear and basics run true to size",
+      "men": {
+        "S":  {"chest": [86, 92], "waist": [71, 77], "hip": [86, 92]},
+        "M":  {"chest": [92, 98], "waist": [77, 83], "hip": [92, 98]},
+        "L":  {"chest": [98, 104], "waist": [83, 89], "hip": [98, 104]},
+        "XL": {"chest": [104, 111], "waist": [89, 96], "hip": [104, 111]},
+        "XXL": {"chest": [111, 118], "waist": [96, 103], "hip": [111, 118]}
+      },
+      "women": {
+        "XS": {"chest": [75, 80], "waist": [57, 62], "hip": [83, 88]},
+        "S":  {"chest": [80, 85], "waist": [62, 67], "hip": [88, 93]},
+        "M":  {"chest": [85, 91], "waist": [67, 73], "hip": [93, 99]},
+        "L":  {"chest": [91, 97], "waist": [73, 79], "hip": [99, 105]},
+        "XL": {"chest": [97, 104], "waist": [79, 86], "hip": [105, 112]}
+      }
+    },
+    {
+      "name": "Tommy Hilfiger",
+      "category": "Basics",
+      "sizing_notes": "Classic American fit, slightly more generous than European brands",
+      "men": {
+        "S":  {"chest": [88, 93], "waist": [73, 79], "hip": [88, 93]},
+        "M":  {"chest": [93, 99], "waist": [79, 85], "hip": [93, 99]},
+        "L":  {"chest": [99, 106], "waist": [85, 92], "hip": [99, 106]},
+        "XL": {"chest": [106, 113], "waist": [92, 99], "hip": [106, 113]},
+        "XXL": {"chest": [113, 120], "waist": [99, 106], "hip": [113, 120]}
+      },
+      "women": {
+        "XS": {"chest": [76, 81], "waist": [58, 63], "hip": [84, 89]},
+        "S":  {"chest": [81, 86], "waist": [63, 68], "hip": [89, 94]},
+        "M":  {"chest": [86, 92], "waist": [68, 74], "hip": [94, 100]},
+        "L":  {"chest": [92, 99], "waist": [74, 81], "hip": [100, 107]},
+        "XL": {"chest": [99, 107], "waist": [81, 89], "hip": [107, 115]}
+      }
+    },
+    {
+      "name": "Banana Republic",
+      "category": "Basics",
+      "sizing_notes": "Modern fit, slightly slimmer than Gap (same parent company)",
+      "men": {
+        "XS": {"chest": [83, 88], "waist": [68, 73], "hip": [83, 88]},
+        "S":  {"chest": [88, 93], "waist": [73, 78], "hip": [88, 93]},
+        "M":  {"chest": [93, 99], "waist": [78, 84], "hip": [93, 99]},
+        "L":  {"chest": [99, 105], "waist": [84, 90], "hip": [99, 105]},
+        "XL": {"chest": [105, 112], "waist": [90, 97], "hip": [105, 112]},
+        "XXL": {"chest": [112, 119], "waist": [97, 104], "hip": [112, 119]}
+      },
+      "women": {
+        "XS": {"chest": [76, 81], "waist": [58, 63], "hip": [84, 89]},
+        "S":  {"chest": [81, 86], "waist": [63, 68], "hip": [89, 94]},
+        "M":  {"chest": [86, 92], "waist": [68, 74], "hip": [94, 100]},
+        "L":  {"chest": [92, 99], "waist": [74, 81], "hip": [100, 107]},
+        "XL": {"chest": [99, 107], "waist": [81, 89], "hip": [107, 115]}
+      }
+    },
+    {
+      "name": "J.Crew",
+      "category": "Basics",
+      "sizing_notes": "Classic fit with slightly slim proportions",
+      "men": {
+        "XS": {"chest": [83, 87], "waist": [68, 72], "hip": [83, 87]},
+        "S":  {"chest": [87, 92], "waist": [72, 77], "hip": [87, 92]},
+        "M":  {"chest": [92, 98], "waist": [77, 83], "hip": [92, 98]},
+        "L":  {"chest": [98, 104], "waist": [83, 89], "hip": [98, 104]},
+        "XL": {"chest": [104, 111], "waist": [89, 96], "hip": [104, 111]},
+        "XXL": {"chest": [111, 118], "waist": [96, 103], "hip": [111, 118]}
+      },
+      "women": {
+        "XS": {"chest": [75, 80], "waist": [57, 62], "hip": [83, 88]},
+        "S":  {"chest": [80, 85], "waist": [62, 67], "hip": [88, 93]},
+        "M":  {"chest": [85, 91], "waist": [67, 73], "hip": [93, 99]},
+        "L":  {"chest": [91, 97], "waist": [73, 79], "hip": [99, 105]},
+        "XL": {"chest": [97, 104], "waist": [79, 86], "hip": [105, 112]}
+      }
+    },
+    {
+      "name": "Ralph Lauren",
+      "category": "Luxury",
+      "sizing_notes": "Classic American luxury fit, generous and comfortable",
+      "men": {
+        "S":  {"chest": [89, 94], "waist": [74, 79], "hip": [89, 94]},
+        "M":  {"chest": [94, 100], "waist": [79, 85], "hip": [94, 100]},
+        "L":  {"chest": [100, 107], "waist": [85, 92], "hip": [100, 107]},
+        "XL": {"chest": [107, 114], "waist": [92, 99], "hip": [107, 114]},
+        "XXL": {"chest": [114, 121], "waist": [99, 106], "hip": [114, 121]}
+      },
+      "women": {
+        "XS": {"chest": [77, 82], "waist": [59, 64], "hip": [85, 90]},
+        "S":  {"chest": [82, 87], "waist": [64, 69], "hip": [90, 95]},
+        "M":  {"chest": [87, 93], "waist": [69, 75], "hip": [95, 101]},
+        "L":  {"chest": [93, 100], "waist": [75, 82], "hip": [101, 108]},
+        "XL": {"chest": [100, 108], "waist": [82, 90], "hip": [108, 116]}
+      }
+    },
+    {
+      "name": "Hugo Boss",
+      "category": "Luxury",
+      "sizing_notes": "European luxury fit, slim and tailored",
+      "men": {
+        "S":  {"chest": [86, 91], "waist": [70, 76], "hip": [86, 91]},
+        "M":  {"chest": [91, 97], "waist": [76, 82], "hip": [91, 97]},
+        "L":  {"chest": [97, 103], "waist": [82, 88], "hip": [97, 103]},
+        "XL": {"chest": [103, 109], "waist": [88, 94], "hip": [103, 109]},
+        "XXL": {"chest": [109, 116], "waist": [94, 101], "hip": [109, 116]}
+      },
+      "women": {
+        "XS": {"chest": [74, 79], "waist": [56, 61], "hip": [82, 87]},
+        "S":  {"chest": [79, 84], "waist": [61, 66], "hip": [87, 92]},
+        "M":  {"chest": [84, 90], "waist": [66, 72], "hip": [92, 98]},
+        "L":  {"chest": [90, 96], "waist": [72, 78], "hip": [98, 104]},
+        "XL": {"chest": [96, 103], "waist": [78, 85], "hip": [104, 111]}
+      }
+    },
+    {
+      "name": "Burberry",
+      "category": "Luxury",
+      "sizing_notes": "British luxury, structured fit with classic proportions",
+      "men": {
+        "S":  {"chest": [86, 91], "waist": [71, 76], "hip": [86, 91]},
+        "M":  {"chest": [91, 97], "waist": [76, 82], "hip": [91, 97]},
+        "L":  {"chest": [97, 103], "waist": [82, 88], "hip": [97, 103]},
+        "XL": {"chest": [103, 110], "waist": [88, 95], "hip": [103, 110]},
+        "XXL": {"chest": [110, 117], "waist": [95, 102], "hip": [110, 117]}
+      },
+      "women": {
+        "XS": {"chest": [75, 80], "waist": [57, 62], "hip": [83, 88]},
+        "S":  {"chest": [80, 85], "waist": [62, 67], "hip": [88, 93]},
+        "M":  {"chest": [85, 91], "waist": [67, 73], "hip": [93, 99]},
+        "L":  {"chest": [91, 97], "waist": [73, 79], "hip": [99, 105]},
+        "XL": {"chest": [97, 104], "waist": [79, 86], "hip": [105, 112]}
+      }
+    },
+    {
+      "name": "Gucci",
+      "category": "Luxury",
+      "sizing_notes": "Italian luxury, runs slim with narrow shoulders",
+      "men": {
+        "S":  {"chest": [84, 89], "waist": [69, 74], "hip": [84, 89]},
+        "M":  {"chest": [89, 95], "waist": [74, 80], "hip": [89, 95]},
+        "L":  {"chest": [95, 101], "waist": [80, 86], "hip": [95, 101]},
+        "XL": {"chest": [101, 107], "waist": [86, 92], "hip": [101, 107]},
+        "XXL": {"chest": [107, 114], "waist": [92, 99], "hip": [107, 114]}
+      },
+      "women": {
+        "XS": {"chest": [73, 78], "waist": [55, 60], "hip": [81, 86]},
+        "S":  {"chest": [78, 83], "waist": [60, 65], "hip": [86, 91]},
+        "M":  {"chest": [83, 89], "waist": [65, 71], "hip": [91, 97]},
+        "L":  {"chest": [89, 95], "waist": [71, 77], "hip": [97, 103]},
+        "XL": {"chest": [95, 102], "waist": [77, 84], "hip": [103, 110]}
+      }
+    },
+    {
+      "name": "COS",
+      "category": "Contemporary",
+      "sizing_notes": "Minimalist Scandinavian fit, relaxed and oversized silhouettes",
+      "men": {
+        "XS": {"chest": [84, 89], "waist": [69, 74], "hip": [84, 89]},
+        "S":  {"chest": [89, 94], "waist": [74, 79], "hip": [89, 94]},
+        "M":  {"chest": [94, 100], "waist": [79, 85], "hip": [94, 100]},
+        "L":  {"chest": [100, 106], "waist": [85, 91], "hip": [100, 106]},
+        "XL": {"chest": [106, 113], "waist": [91, 98], "hip": [106, 113]}
+      },
+      "women": {
+        "XS": {"chest": [76, 81], "waist": [58, 63], "hip": [84, 89]},
+        "S":  {"chest": [81, 86], "waist": [63, 68], "hip": [89, 94]},
+        "M":  {"chest": [86, 92], "waist": [68, 74], "hip": [94, 100]},
+        "L":  {"chest": [92, 99], "waist": [74, 81], "hip": [100, 107]},
+        "XL": {"chest": [99, 107], "waist": [81, 89], "hip": [107, 115]}
+      }
+    },
+    {
+      "name": "& Other Stories",
+      "category": "Contemporary",
+      "sizing_notes": "European contemporary fit, slightly relaxed",
+      "women": {
+        "XS": {"chest": [76, 81], "waist": [58, 63], "hip": [84, 89]},
+        "S":  {"chest": [81, 86], "waist": [63, 68], "hip": [89, 94]},
+        "M":  {"chest": [86, 92], "waist": [68, 74], "hip": [94, 100]},
+        "L":  {"chest": [92, 99], "waist": [74, 81], "hip": [100, 107]},
+        "XL": {"chest": [99, 107], "waist": [81, 89], "hip": [107, 115]}
+      }
+    },
+    {
+      "name": "Massimo Dutti",
+      "category": "Contemporary",
+      "sizing_notes": "Spanish brand, smart-casual European fit",
+      "men": {
+        "S":  {"chest": [86, 91], "waist": [71, 76], "hip": [86, 91]},
+        "M":  {"chest": [91, 97], "waist": [76, 82], "hip": [91, 97]},
+        "L":  {"chest": [97, 103], "waist": [82, 88], "hip": [97, 103]},
+        "XL": {"chest": [103, 109], "waist": [88, 94], "hip": [103, 109]},
+        "XXL": {"chest": [109, 116], "waist": [94, 101], "hip": [109, 116]}
+      },
+      "women": {
+        "XS": {"chest": [75, 80], "waist": [57, 62], "hip": [83, 88]},
+        "S":  {"chest": [80, 85], "waist": [62, 67], "hip": [88, 93]},
+        "M":  {"chest": [85, 91], "waist": [67, 73], "hip": [93, 99]},
+        "L":  {"chest": [91, 97], "waist": [73, 79], "hip": [99, 105]},
+        "XL": {"chest": [97, 104], "waist": [79, 86], "hip": [105, 112]}
+      }
+    },
+    {
+      "name": "AllSaints",
+      "category": "Contemporary",
+      "sizing_notes": "British brand, slim rock-inspired fit",
+      "men": {
+        "XS": {"chest": [82, 87], "waist": [67, 72], "hip": [82, 87]},
+        "S":  {"chest": [87, 92], "waist": [72, 77], "hip": [87, 92]},
+        "M":  {"chest": [92, 97], "waist": [77, 82], "hip": [92, 97]},
+        "L":  {"chest": [97, 103], "waist": [82, 88], "hip": [97, 103]},
+        "XL": {"chest": [103, 109], "waist": [88, 94], "hip": [103, 109]}
+      },
+      "women": {
+        "XS": {"chest": [74, 79], "waist": [56, 61], "hip": [82, 87]},
+        "S":  {"chest": [79, 84], "waist": [61, 66], "hip": [87, 92]},
+        "M":  {"chest": [84, 90], "waist": [66, 72], "hip": [92, 98]},
+        "L":  {"chest": [90, 96], "waist": [72, 78], "hip": [98, 104]},
+        "XL": {"chest": [96, 103], "waist": [78, 85], "hip": [104, 111]}
+      }
+    },
+    {
+      "name": "The North Face",
+      "category": "Outdoor",
+      "sizing_notes": "Generous fit to accommodate layering",
+      "men": {
+        "S":  {"chest": [88, 94], "waist": [73, 79], "hip": [88, 94]},
+        "M":  {"chest": [94, 100], "waist": [79, 85], "hip": [94, 100]},
+        "L":  {"chest": [100, 107], "waist": [85, 92], "hip": [100, 107]},
+        "XL": {"chest": [107, 114], "waist": [92, 99], "hip": [107, 114]},
+        "XXL": {"chest": [114, 121], "waist": [99, 106], "hip": [114, 121]}
+      },
+      "women": {
+        "XS": {"chest": [78, 83], "waist": [60, 65], "hip": [85, 90]},
+        "S":  {"chest": [83, 88], "waist": [65, 70], "hip": [90, 95]},
+        "M":  {"chest": [88, 94], "waist": [70, 76], "hip": [95, 101]},
+        "L":  {"chest": [94, 101], "waist": [76, 83], "hip": [101, 108]},
+        "XL": {"chest": [101, 109], "waist": [83, 91], "hip": [108, 116]}
+      }
+    },
+    {
+      "name": "Patagonia",
+      "category": "Outdoor",
+      "sizing_notes": "Regular fit designed for movement and layering",
+      "men": {
+        "S":  {"chest": [87, 93], "waist": [72, 78], "hip": [87, 93]},
+        "M":  {"chest": [93, 99], "waist": [78, 84], "hip": [93, 99]},
+        "L":  {"chest": [99, 106], "waist": [84, 91], "hip": [99, 106]},
+        "XL": {"chest": [106, 113], "waist": [91, 98], "hip": [106, 113]},
+        "XXL": {"chest": [113, 120], "waist": [98, 105], "hip": [113, 120]}
+      },
+      "women": {
+        "XS": {"chest": [77, 82], "waist": [59, 64], "hip": [84, 89]},
+        "S":  {"chest": [82, 87], "waist": [64, 69], "hip": [89, 94]},
+        "M":  {"chest": [87, 93], "waist": [69, 75], "hip": [94, 100]},
+        "L":  {"chest": [93, 100], "waist": [75, 82], "hip": [100, 107]},
+        "XL": {"chest": [100, 108], "waist": [82, 90], "hip": [107, 115]}
+      }
+    },
+    {
+      "name": "Columbia",
+      "category": "Outdoor",
+      "sizing_notes": "Generous American outdoor fit, room for base layers",
+      "men": {
+        "S":  {"chest": [89, 95], "waist": [74, 80], "hip": [89, 95]},
+        "M":  {"chest": [95, 101], "waist": [80, 86], "hip": [95, 101]},
+        "L":  {"chest": [101, 108], "waist": [86, 93], "hip": [101, 108]},
+        "XL": {"chest": [108, 115], "waist": [93, 100], "hip": [108, 115]},
+        "XXL": {"chest": [115, 122], "waist": [100, 107], "hip": [115, 122]}
+      },
+      "women": {
+        "S":  {"chest": [83, 88], "waist": [65, 70], "hip": [90, 95]},
+        "M":  {"chest": [88, 94], "waist": [70, 76], "hip": [95, 101]},
+        "L":  {"chest": [94, 101], "waist": [76, 83], "hip": [101, 108]},
+        "XL": {"chest": [101, 109], "waist": [83, 91], "hip": [108, 116]}
+      }
+    }
+  ]
+}
