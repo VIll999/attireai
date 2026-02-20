@@ -51,8 +51,8 @@ async def upload_file_to_s3(
     except ClientError as e:
         raise Exception(f"Failed to upload file to S3: {e}")
 
-    # Return the public URL
-    url = f"https://{settings.s3_bucket}.s3.{settings.aws_region}.amazonaws.com/{unique_filename}"
+    # Return the CloudFront URL
+    url = f"https://{settings.cdn_domain}/{unique_filename}"
     return url
 
 
@@ -68,10 +68,12 @@ async def delete_file_from_s3(file_url: str) -> bool:
     """
     s3_client = get_s3_client()
 
-    # Extract the key from the URL
-    # URL format: https://bucket.s3.region.amazonaws.com/key
+    # Extract the key from the URL (supports both S3 and CloudFront URLs)
     try:
-        key = file_url.split(f"{settings.s3_bucket}.s3.{settings.aws_region}.amazonaws.com/")[1]
+        if settings.cdn_domain in file_url:
+            key = file_url.split(f"{settings.cdn_domain}/")[1]
+        else:
+            key = file_url.split(f"{settings.s3_bucket}.s3.{settings.aws_region}.amazonaws.com/")[1]
     except IndexError:
         return False
 
