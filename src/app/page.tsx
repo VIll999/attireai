@@ -2,42 +2,100 @@
 
 import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
+import { useTheme } from "@/context/ThemeContext";
+import { useLocale, Locale } from "@/context/LocaleContext";
+
+/* ── SVG Icon Components ── */
+function RulerIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M3 21h18M3 21V3m0 18l3-3m-3-3l3-3m-3-3l3-3m-3-3l3-3M21 3H3m18 0v18m0-18l-3 3m3 3l-3 3m3 3l-3 3m3 3l-3 3" />
+    </svg>
+  );
+}
+
+function SwatchIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M4.098 19.902a3.75 3.75 0 005.304 0l6.401-6.402M6.75 21A3.75 3.75 0 013 17.25V4.125C3 3.504 3.504 3 4.125 3h5.25C9.996 3 10.5 3.504 10.5 4.125v14.625a3.75 3.75 0 01-3.75 3.75zm9.15-9.15l4.95-4.95a2.25 2.25 0 000-3.182l-2.122-2.122a2.25 2.25 0 00-3.182 0l-4.95 4.95" />
+      <circle cx="6.75" cy="17.25" r=".75" fill="currentColor" />
+    </svg>
+  );
+}
+
+function SparklesIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.455 2.456L21.75 6l-1.036.259a3.375 3.375 0 00-2.455 2.456zM16.894 20.567L16.5 21.75l-.394-1.183a2.25 2.25 0 00-1.423-1.423L13.5 18.75l1.183-.394a2.25 2.25 0 001.423-1.423l.394-1.183.394 1.183a2.25 2.25 0 001.423 1.423l1.183.394-1.183.394a2.25 2.25 0 00-1.423 1.423z" />
+    </svg>
+  );
+}
 
 export default function LandingPage() {
   const { user, loading } = useAuth();
+  const { theme, toggleTheme } = useTheme();
+  const { t, locale, setLocale, localeLabels } = useLocale();
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-50 to-slate-100">
+    <div className="min-h-screen bg-gradient-to-b from-stone-50 to-white dark:from-stone-950 dark:to-stone-900">
       {/* Navigation */}
-      <nav className="fixed top-0 w-full bg-white/80 backdrop-blur-md border-b border-slate-200 z-50">
+      <nav className="fixed top-0 w-full bg-white/80 dark:bg-stone-950/80 backdrop-blur-md border-b border-stone-200/60 dark:border-stone-800 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center gap-2">
-              <span className="text-2xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
+              <span className="text-2xl font-bold tracking-wide bg-gradient-to-r from-amber-600 to-yellow-600 bg-clip-text text-transparent">
                 AttireAI
               </span>
             </div>
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-3">
+              {/* Language Selector */}
+              <div className="flex items-center gap-0.5 bg-stone-100 dark:bg-stone-800 rounded-lg p-0.5">
+                {(Object.keys(localeLabels) as Locale[]).map((loc) => (
+                  <button
+                    key={loc}
+                    onClick={() => setLocale(loc)}
+                    className={`px-2.5 py-1 text-xs font-medium rounded-md ${
+                      locale === loc
+                        ? "bg-white dark:bg-stone-700 text-stone-900 dark:text-white shadow-sm"
+                        : "text-stone-500 dark:text-stone-400 hover:text-stone-700 dark:hover:text-stone-300"
+                    }`}
+                  >
+                    {localeLabels[loc]}
+                  </button>
+                ))}
+              </div>
+              {/* Theme Toggle */}
+              <button
+                onClick={toggleTheme}
+                className="p-2 rounded-lg text-stone-500 hover:text-stone-700 dark:text-stone-400 dark:hover:text-stone-200 hover:bg-stone-100 dark:hover:bg-stone-800"
+                aria-label="Toggle theme"
+              >
+                {theme === "dark" ? (
+                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+                  </svg>
+                ) : (
+                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+                  </svg>
+                )}
+              </button>
               {loading ? (
-                <div className="w-20 h-10 bg-slate-200 rounded-lg animate-pulse" />
+                <div className="w-20 h-10 bg-stone-200 dark:bg-stone-800 rounded-lg animate-pulse" />
               ) : user ? (
                 <div className="flex items-center gap-3">
                   <Link
                     href="/dashboard"
-                    className="px-5 py-2.5 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700 transition-colors"
+                    className="px-5 py-2.5 bg-amber-600 text-white rounded-lg font-medium hover:bg-amber-700"
                   >
-                    Dashboard
+                    {t("nav.dashboard")}
                   </Link>
                   <Link href="/dashboard" className="flex items-center gap-2">
-                    <div className="w-10 h-10 bg-indigo-100 rounded-full flex items-center justify-center border-2 border-indigo-200">
+                    <div className="w-10 h-10 bg-amber-100 dark:bg-amber-900/50 rounded-full flex items-center justify-center border-2 border-amber-200 dark:border-amber-700">
                       {user.photoURL ? (
-                        <img
-                          src={user.photoURL}
-                          alt="Profile"
-                          className="w-10 h-10 rounded-full"
-                        />
+                        <img src={user.photoURL} alt="Profile" className="w-10 h-10 rounded-full" />
                       ) : (
-                        <span className="text-indigo-600 font-semibold">
+                        <span className="text-amber-600 dark:text-amber-400 font-semibold">
                           {user.email?.charAt(0).toUpperCase()}
                         </span>
                       )}
@@ -48,15 +106,15 @@ export default function LandingPage() {
                 <>
                   <Link
                     href="/auth"
-                    className="px-4 py-2 text-slate-600 hover:text-slate-900 font-medium transition-colors"
+                    className="px-4 py-2 text-stone-600 dark:text-stone-400 hover:text-stone-900 dark:hover:text-white font-medium"
                   >
-                    Log In
+                    {t("nav.logIn")}
                   </Link>
                   <Link
                     href="/auth?mode=signup"
-                    className="px-5 py-2.5 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700 transition-colors"
+                    className="px-5 py-2.5 bg-amber-600 text-white rounded-lg font-medium hover:bg-amber-700"
                   >
-                    Get Started
+                    {t("nav.getStarted")}
                   </Link>
                 </>
               )}
@@ -68,66 +126,53 @@ export default function LandingPage() {
       {/* Hero Section */}
       <section className="pt-32 pb-20 px-4">
         <div className="max-w-7xl mx-auto text-center">
-          <h1 className="text-5xl sm:text-6xl font-bold text-slate-900 mb-6 leading-tight">
-            Your Personal
-            <span className="bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
-              {" "}AI Stylist
+          <h1 className="text-6xl sm:text-7xl font-bold text-stone-900 dark:text-white mb-6 tracking-tight leading-[1.1]">
+            {t("landing.heroTitle1")}
+            <span className="bg-gradient-to-r from-amber-600 to-yellow-600 bg-clip-text text-transparent">
+              {t("landing.heroTitle2")}
             </span>
           </h1>
-          <p className="text-xl text-slate-600 max-w-2xl mx-auto mb-10">
-            Get personalized outfit recommendations based on your body measurements,
-            coloring, and style preferences. Shop with confidence.
+          <p className="text-xl text-stone-600 dark:text-stone-300 max-w-2xl mx-auto mb-10">
+            {t("landing.heroSubtitle")}
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link
               href="/auth?mode=signup"
-              className="px-8 py-4 bg-indigo-600 text-white rounded-xl font-semibold text-lg hover:bg-indigo-700 transition-colors shadow-lg shadow-indigo-200"
+              className="px-8 py-4 bg-amber-600 text-white rounded-xl font-semibold text-lg hover:bg-amber-700 shadow-lg shadow-amber-500/25 dark:shadow-amber-500/15"
             >
-              Start Free
+              {t("landing.startFree")}
             </Link>
             <Link
               href="#how-it-works"
-              className="px-8 py-4 bg-white text-slate-700 rounded-xl font-semibold text-lg hover:bg-slate-50 transition-colors border border-slate-200"
+              className="px-8 py-4 bg-white dark:bg-stone-800 text-stone-700 dark:text-stone-200 rounded-xl font-semibold text-lg hover:bg-stone-50 dark:hover:bg-stone-700 border border-stone-200 dark:border-stone-700"
             >
-              How It Works
+              {t("landing.howItWorks")}
             </Link>
           </div>
         </div>
       </section>
 
       {/* How It Works */}
-      <section id="how-it-works" className="py-20 px-4 bg-white">
+      <section id="how-it-works" className="py-20 px-4 bg-white dark:bg-stone-900/50">
         <div className="max-w-7xl mx-auto">
-          <h2 className="text-3xl font-bold text-center text-slate-900 mb-12">
-            How It Works
+          <h2 className="text-3xl font-bold text-center tracking-tight text-stone-900 dark:text-white mb-12">
+            {t("landing.howItWorks")}
           </h2>
           <div className="grid md:grid-cols-3 gap-8">
             {[
-              {
-                icon: "📏",
-                title: "Body Measurements",
-                description: "Use your camera or manually input your measurements for accurate sizing recommendations.",
-              },
-              {
-                icon: "🎨",
-                title: "Color Analysis",
-                description: "We analyze your skin tone and hair color to find colors that complement you.",
-              },
-              {
-                icon: "👗",
-                title: "AI Recommendations",
-                description: "Get complete outfit suggestions tailored to your occasion, style, and budget.",
-              },
+              { icon: <RulerIcon className="w-10 h-10 text-amber-600 dark:text-amber-400" />, title: t("landing.bodyMeasurements"), description: t("landing.bodyMeasurementsDesc") },
+              { icon: <SwatchIcon className="w-10 h-10 text-amber-600 dark:text-amber-400" />, title: t("landing.colorAnalysis"), description: t("landing.colorAnalysisDesc") },
+              { icon: <SparklesIcon className="w-10 h-10 text-amber-600 dark:text-amber-400" />, title: t("landing.aiRecommendations"), description: t("landing.aiRecommendationsDesc") },
             ].map((item, index) => (
               <div
                 key={index}
-                className="p-8 rounded-2xl bg-slate-50 text-center hover:shadow-lg transition-shadow"
+                className="p-8 rounded-2xl bg-stone-50 dark:bg-stone-800/50 text-center hover:shadow-lg dark:hover:shadow-stone-900/50 border border-transparent dark:border-stone-700/50"
               >
-                <div className="text-5xl mb-4">{item.icon}</div>
-                <h3 className="text-xl font-semibold text-slate-900 mb-2">
-                  {item.title}
-                </h3>
-                <p className="text-slate-600">{item.description}</p>
+                <div className="w-16 h-16 bg-amber-100 dark:bg-amber-900/30 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                  {item.icon}
+                </div>
+                <h3 className="text-xl font-semibold text-stone-900 dark:text-white mb-2">{item.title}</h3>
+                <p className="text-stone-600 dark:text-stone-400">{item.description}</p>
               </div>
             ))}
           </div>
@@ -137,26 +182,26 @@ export default function LandingPage() {
       {/* Features */}
       <section className="py-20 px-4">
         <div className="max-w-7xl mx-auto">
-          <h2 className="text-3xl font-bold text-center text-slate-900 mb-12">
-            Why AttireAI?
+          <h2 className="text-3xl font-bold text-center tracking-tight text-stone-900 dark:text-white mb-12">
+            {t("landing.whyAttireAI")}
           </h2>
           <div className="grid md:grid-cols-2 gap-6">
             {[
-              { title: "Accurate Sizing", desc: "No more returns due to fit issues" },
-              { title: "Style Matching", desc: "Outfits that match your personality" },
-              { title: "Direct Purchase Links", desc: "Buy items directly from retailers" },
-              { title: "Virtual Try-On", desc: "See outfits on yourself (VIP)" },
+              { title: t("landing.accurateSizing"), desc: t("landing.accurateSizingDesc") },
+              { title: t("landing.styleMatching"), desc: t("landing.styleMatchingDesc") },
+              { title: t("landing.directPurchase"), desc: t("landing.directPurchaseDesc") },
+              { title: t("landing.virtualTryOn"), desc: t("landing.virtualTryOnDesc") },
             ].map((feature, index) => (
               <div
                 key={index}
-                className="p-6 bg-white rounded-xl border border-slate-200 flex items-start gap-4"
+                className="p-6 bg-white dark:bg-stone-800/50 rounded-xl border border-stone-200 dark:border-stone-700/50 flex items-start gap-4 hover:shadow-md dark:hover:shadow-stone-900/50"
               >
-                <div className="w-10 h-10 bg-indigo-100 rounded-lg flex items-center justify-center text-indigo-600 font-bold">
+                <div className="w-10 h-10 bg-amber-100 dark:bg-amber-500/10 rounded-lg flex items-center justify-center text-amber-600 dark:text-amber-400 font-bold shrink-0">
                   {index + 1}
                 </div>
                 <div>
-                  <h3 className="font-semibold text-slate-900">{feature.title}</h3>
-                  <p className="text-slate-600">{feature.desc}</p>
+                  <h3 className="font-semibold text-stone-900 dark:text-white">{feature.title}</h3>
+                  <p className="text-stone-600 dark:text-stone-400">{feature.desc}</p>
                 </div>
               </div>
             ))}
@@ -165,27 +210,27 @@ export default function LandingPage() {
       </section>
 
       {/* CTA */}
-      <section className="py-20 px-4 bg-indigo-600">
+      <section className="py-20 px-4 bg-gradient-to-r from-stone-900 to-stone-800">
         <div className="max-w-3xl mx-auto text-center">
-          <h2 className="text-3xl font-bold text-white mb-4">
-            Ready to Transform Your Style?
+          <h2 className="text-3xl font-bold tracking-tight text-amber-400 mb-4">
+            {t("landing.ctaTitle")}
           </h2>
-          <p className="text-indigo-100 mb-8 text-lg">
-            Join thousands of users who shop smarter with AI-powered recommendations.
+          <p className="text-stone-300 mb-8 text-lg">
+            {t("landing.ctaSubtitle")}
           </p>
           <Link
             href="/auth?mode=signup"
-            className="inline-block px-8 py-4 bg-white text-indigo-600 rounded-xl font-semibold text-lg hover:bg-indigo-50 transition-colors"
+            className="inline-block px-8 py-4 bg-amber-600 text-white rounded-xl font-semibold text-lg hover:bg-amber-700 shadow-lg shadow-black/10"
           >
-            Get Started Free
+            {t("landing.getStartedFree")}
           </Link>
         </div>
       </section>
 
       {/* Footer */}
-      <footer className="py-8 px-4 bg-slate-900 text-slate-400">
+      <footer className="py-8 px-4 bg-stone-900 dark:bg-stone-950 text-stone-400">
         <div className="max-w-7xl mx-auto text-center">
-          <p>&copy; 2026 AttireAI. CS 407 Senior Project - Team 11.</p>
+          <p>{t("landing.footer")}</p>
         </div>
       </footer>
     </div>

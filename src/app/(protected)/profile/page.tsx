@@ -1,12 +1,14 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
+import { useLocale } from "@/context/LocaleContext";
 import { updateUserProfile, uploadProfilePicture } from "@/lib/api";
+import AppNav from "@/components/AppNav";
 
 export default function ProfilePage() {
-  const { user, dbUser, signOut, updateDbUser } = useAuth();
+  const { user, dbUser, updateDbUser } = useAuth();
+  const { t } = useLocale();
   const [isEditing, setIsEditing] = useState(false);
   const [name, setName] = useState("");
   const [profilePictureUrl, setProfilePictureUrl] = useState("");
@@ -32,13 +34,13 @@ export default function ProfilePage() {
     // Validate file type
     const allowedTypes = ["image/jpeg", "image/png", "image/gif", "image/webp"];
     if (!allowedTypes.includes(file.type)) {
-      setError("Invalid file type. Please upload a JPEG, PNG, GIF, or WebP image.");
+      setError(t("profile.invalidFileType"));
       return;
     }
 
     // Validate file size (5MB max)
     if (file.size > 5 * 1024 * 1024) {
-      setError("File too large. Maximum size is 5MB.");
+      setError(t("profile.fileTooLarge"));
       return;
     }
 
@@ -65,7 +67,7 @@ export default function ProfilePage() {
           newProfilePictureUrl = uploadResult.url;
         } catch (uploadErr) {
           console.error("Failed to upload profile picture:", uploadErr);
-          setError("Failed to upload profile picture. Please try again.");
+          setError(t("profile.failedUpload"));
           setIsSaving(false);
           setIsUploading(false);
           return;
@@ -83,13 +85,13 @@ export default function ProfilePage() {
       setSelectedFile(null);
       setPreviewUrl(null);
       setIsEditing(false);
-      setSuccessMessage("Profile updated successfully!");
+      setSuccessMessage(t("profile.profileUpdated"));
 
       // Clear success message after 3 seconds
       setTimeout(() => setSuccessMessage(""), 3000);
     } catch (err) {
       console.error("Failed to update profile:", err);
-      setError("Failed to update profile. Please try again.");
+      setError(t("profile.failedUpdate"));
     } finally {
       setIsSaving(false);
     }
@@ -114,79 +116,28 @@ export default function ProfilePage() {
   const displayPicture = dbUser?.profile_picture_url || user.photoURL || "";
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      {/* Navigation */}
-      <nav className="bg-white border-b border-slate-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center gap-8">
-              <Link href="/dashboard" className="text-2xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
-                AttireAI
-              </Link>
-              <div className="hidden md:flex items-center gap-6">
-                <Link href="/dashboard" className="text-slate-600 hover:text-slate-900">
-                  Dashboard
-                </Link>
-                <Link href="/outfits" className="text-slate-600 hover:text-slate-900">
-                  Outfits
-                </Link>
-                <Link href="/measurements" className="text-slate-600 hover:text-slate-900">
-                  Measurements
-                </Link>
-                <Link href="/profile" className="text-indigo-600 font-medium">
-                  Profile
-                </Link>
-              </div>
-            </div>
-            <div className="flex items-center gap-4">
-              <Link href="/profile" className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-indigo-100 rounded-full flex items-center justify-center overflow-hidden">
-                  {displayPicture ? (
-                    <img
-                      src={displayPicture}
-                      alt="Profile"
-                      className="w-10 h-10 rounded-full object-cover"
-                    />
-                  ) : (
-                    <span className="text-indigo-600 font-semibold">
-                      {displayEmail.charAt(0).toUpperCase()}
-                    </span>
-                  )}
-                </div>
-                <span className="hidden sm:block text-sm text-slate-600">
-                  {displayName}
-                </span>
-              </Link>
-              <button
-                onClick={signOut}
-                className="px-4 py-2 text-slate-600 hover:text-slate-900 font-medium"
-              >
-                Sign Out
-              </button>
-            </div>
-          </div>
-        </div>
-      </nav>
+    <div className="min-h-screen bg-stone-50 dark:bg-stone-950">
+      <AppNav activePage="profile" />
 
       {/* Main Content */}
       <main className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-slate-900">Profile</h1>
-          <p className="text-slate-600 mt-1">
-            Manage your account information
+          <h1 className="text-3xl font-bold tracking-tight text-stone-900 dark:text-white">{t("profile.title")}</h1>
+          <p className="text-stone-600 dark:text-stone-400 mt-1">
+            {t("profile.subtitle")}
           </p>
         </div>
 
         {!dbUser ? (
-          <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-8">
+          <div className="bg-white dark:bg-stone-900/50 rounded-xl shadow-sm border border-stone-200 dark:border-stone-800 p-8">
             <div className="flex justify-center">
-              <div className="w-8 h-8 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin" />
+              <div className="w-8 h-8 border-4 border-amber-600 border-t-transparent rounded-full animate-spin" />
             </div>
           </div>
         ) : (
-          <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+          <div className="bg-white dark:bg-stone-900/50 rounded-xl shadow-sm border border-stone-200 dark:border-stone-800 overflow-hidden">
             {/* Profile Header */}
-            <div className="bg-gradient-to-r from-indigo-600 to-purple-600 px-6 py-8">
+            <div className="bg-gradient-to-r from-stone-900 to-stone-800 px-6 py-8">
               <div className="flex items-center gap-6">
                 <div className="w-24 h-24 bg-white rounded-full flex items-center justify-center overflow-hidden shadow-lg">
                   {displayPicture ? (
@@ -196,16 +147,16 @@ export default function ProfilePage() {
                       className="w-24 h-24 rounded-full object-cover"
                     />
                   ) : (
-                    <span className="text-4xl font-bold text-indigo-600">
+                    <span className="text-4xl font-bold text-amber-600">
                       {displayEmail.charAt(0).toUpperCase()}
                     </span>
                   )}
                 </div>
                 <div className="text-white">
                   <h2 className="text-2xl font-bold">{displayName}</h2>
-                  <p className="text-indigo-100">{displayEmail}</p>
-                  <span className="inline-block mt-2 px-3 py-1 bg-white/20 rounded-full text-sm">
-                    {dbUser?.subscription_tier || "FREE"} Plan
+                  <p className="text-stone-300">{displayEmail}</p>
+                  <span className="inline-block mt-2 px-3 py-1 bg-amber-600/20 text-amber-400 rounded-full uppercase tracking-wider text-xs font-medium">
+                    {dbUser?.subscription_tier || "FREE"} {t("profile.plan")}
                   </span>
                 </div>
               </div>
@@ -214,13 +165,13 @@ export default function ProfilePage() {
             {/* Profile Form */}
             <div className="p-6">
               {successMessage && (
-                <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg text-green-600 text-sm">
+                <div className="mb-4 p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg text-green-600 text-sm">
                   {successMessage}
                 </div>
               )}
 
               {error && (
-                <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-600 text-sm">
+                <div className="mb-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg text-red-600 text-sm">
                   {error}
                 </div>
               )}
@@ -228,19 +179,19 @@ export default function ProfilePage() {
               <div className="space-y-6">
                 {/* Name */}
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">
-                    Name
+                  <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1">
+                    {t("profile.name")}
                   </label>
                   {isEditing ? (
                     <input
                       type="text"
                       value={name}
                       onChange={(e) => setName(e.target.value)}
-                      className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-colors"
-                      placeholder="Your name"
+                      className="w-full px-4 py-3 border border-stone-300 dark:border-stone-600 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none transition-colors dark:bg-stone-800/50 dark:text-white"
+                      placeholder={t("profile.namePlaceholder")}
                     />
                   ) : (
-                    <p className="px-4 py-3 bg-slate-50 rounded-lg text-slate-900">
+                    <p className="px-4 py-3 bg-stone-50 dark:bg-stone-800/30 rounded-lg text-stone-900 dark:text-white">
                       {displayName}
                     </p>
                   )}
@@ -248,26 +199,26 @@ export default function ProfilePage() {
 
                 {/* Email (read-only) */}
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">
-                    Email
+                  <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1">
+                    {t("profile.emailLabel")}
                   </label>
-                  <p className="px-4 py-3 bg-slate-50 rounded-lg text-slate-900">
+                  <p className="px-4 py-3 bg-stone-50 dark:bg-stone-800/30 rounded-lg text-stone-900 dark:text-white">
                     {displayEmail}
                   </p>
-                  <p className="mt-1 text-xs text-slate-500">
-                    Email cannot be changed. Contact support if needed.
+                  <p className="mt-1 text-xs text-stone-500 dark:text-stone-400">
+                    {t("profile.emailCannotChange")}
                   </p>
                 </div>
 
                 {/* Profile Picture */}
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">
-                    Profile Picture
+                  <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1">
+                    {t("profile.profilePicture")}
                   </label>
                   {isEditing ? (
                     <div className="space-y-4">
                       <div className="flex items-center gap-4">
-                        <div className="w-20 h-20 bg-slate-100 rounded-full flex items-center justify-center overflow-hidden">
+                        <div className="w-20 h-20 bg-stone-100 dark:bg-stone-800/50 rounded-full flex items-center justify-center overflow-hidden">
                           {previewUrl ? (
                             <img
                               src={previewUrl}
@@ -281,17 +232,17 @@ export default function ProfilePage() {
                               className="w-20 h-20 rounded-full object-cover"
                             />
                           ) : (
-                            <span className="text-2xl font-bold text-slate-400">
+                            <span className="text-2xl font-bold text-stone-400">
                               {displayEmail.charAt(0).toUpperCase()}
                             </span>
                           )}
                         </div>
                         <div>
-                          <label className="cursor-pointer inline-flex items-center gap-2 px-4 py-2 bg-slate-100 hover:bg-slate-200 rounded-lg text-slate-700 font-medium transition-colors">
+                          <label className="cursor-pointer inline-flex items-center gap-2 px-4 py-2 bg-stone-100 dark:bg-stone-800 hover:bg-stone-200 dark:hover:bg-stone-700 rounded-lg text-stone-700 dark:text-stone-300 font-medium transition-colors">
                             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                             </svg>
-                            Choose Photo
+                            {t("profile.chooseFile")}
                             <input
                               type="file"
                               accept="image/jpeg,image/png,image/gif,image/webp"
@@ -306,13 +257,13 @@ export default function ProfilePage() {
                           )}
                         </div>
                       </div>
-                      <p className="text-xs text-slate-500">
-                        Accepted formats: JPEG, PNG, GIF, WebP. Max size: 5MB.
+                      <p className="text-xs text-stone-500 dark:text-stone-400">
+                        {t("profile.maxFileSize")}
                       </p>
                     </div>
                   ) : (
                     <div className="flex items-center gap-4">
-                      <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center overflow-hidden">
+                      <div className="w-16 h-16 bg-stone-100 dark:bg-stone-800/50 rounded-full flex items-center justify-center overflow-hidden">
                         {displayPicture ? (
                           <img
                             src={displayPicture}
@@ -320,12 +271,12 @@ export default function ProfilePage() {
                             className="w-16 h-16 rounded-full object-cover"
                           />
                         ) : (
-                          <span className="text-2xl font-bold text-slate-400">
+                          <span className="text-2xl font-bold text-stone-400">
                             {displayEmail.charAt(0).toUpperCase()}
                           </span>
                         )}
                       </div>
-                      <span className="text-slate-600">
+                      <span className="text-stone-600 dark:text-stone-400">
                         {displayPicture ? "Picture set" : "No picture set"}
                       </span>
                     </div>
@@ -334,10 +285,10 @@ export default function ProfilePage() {
 
                 {/* Member Since */}
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">
-                    Member Since
+                  <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1">
+                    {t("profile.memberSince")}
                   </label>
-                  <p className="px-4 py-3 bg-slate-50 rounded-lg text-slate-900">
+                  <p className="px-4 py-3 bg-stone-50 dark:bg-stone-800/30 rounded-lg text-stone-900 dark:text-white">
                     {dbUser?.created_at
                       ? new Date(dbUser.created_at).toLocaleDateString("en-US", {
                           year: "numeric",
@@ -355,24 +306,24 @@ export default function ProfilePage() {
                   <>
                     <button
                       onClick={handleCancel}
-                      className="px-6 py-2.5 border border-slate-300 rounded-lg font-medium hover:bg-slate-50 transition-colors"
+                      className="px-6 py-2.5 border border-stone-300 dark:border-stone-600 rounded-lg font-medium hover:bg-stone-50 dark:hover:bg-stone-800 transition-colors text-stone-900 dark:text-white"
                     >
-                      Cancel
+                      {t("profile.cancel")}
                     </button>
                     <button
                       onClick={handleSave}
                       disabled={isSaving || !name.trim()}
-                      className="px-6 py-2.5 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="px-6 py-2.5 bg-amber-600 text-white rounded-lg font-medium hover:bg-amber-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      {isUploading ? "Uploading..." : isSaving ? "Saving..." : "Save Changes"}
+                      {isUploading ? "Uploading..." : isSaving ? t("profile.saving") : t("profile.save")}
                     </button>
                   </>
                 ) : (
                   <button
                     onClick={() => setIsEditing(true)}
-                    className="px-6 py-2.5 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700 transition-colors"
+                    className="px-6 py-2.5 bg-amber-600 text-white rounded-lg font-medium hover:bg-amber-700 transition-colors"
                   >
-                    Edit Profile
+                    {t("profile.editProfile")}
                   </button>
                 )}
               </div>
