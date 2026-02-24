@@ -1,4 +1,4 @@
-from sqlalchemy import Column, String, Enum, TIMESTAMP, text, Boolean, ForeignKey, Numeric, JSON, Text  # ⭐ add JSON, Text
+from sqlalchemy import Column, String, Enum, TIMESTAMP, text, Boolean, ForeignKey, Numeric, JSON, Text
 from sqlalchemy.dialects.mysql import CHAR
 from sqlalchemy.orm import relationship
 

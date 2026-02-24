@@ -50,7 +50,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   useEffect(() => {
+    // Set a timeout to stop loading after 3 seconds even if Firebase doesn't respond
+    const timeout = setTimeout(() => {
+      console.warn("Firebase auth taking too long, stopping loading state");
+      setLoading(false);
+    }, 3000);
+
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+      clearTimeout(timeout); // Clear timeout since we got a response
       setUser(firebaseUser);
 
       // Sync user to backend when they log in
@@ -73,7 +80,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setLoading(false);
     });
 
-    return () => unsubscribe();
+    return () => {
+      clearTimeout(timeout);
+      unsubscribe();
+    };
   }, []);
 
   const signOut = async () => {

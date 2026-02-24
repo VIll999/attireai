@@ -1,10 +1,35 @@
+/* Fonts: Cabinet Grotesk (Headings) & Satoshi (Body) */
+@import url('https://api.fontshare.com/v2/css?f[]=cabinet-grotesk@900,800,700,500,400&f[]=satoshi@900,700,500,400&display=swap');
+
 @import "tailwindcss";
 
 @variant dark (&:where(.dark, .dark *));
 
 :root {
-  --background: #fafaf9;
+  --background: #FAFAFC;
   --foreground: #1c1917;
+
+  /* Brand Colors - Deep Teal */
+  --brand: #0B5563;
+  --brand-50: #F0F7F8;
+  --brand-100: #DBECF0;
+  --brand-200: #ADD3DA;
+  --brand-300: #7AB7C2;
+  --brand-400: #4B9BA8;
+  --brand-500: #0B5563;
+  --brand-600: #09444F;
+  --brand-700: #07333B;
+  --brand-800: #052228;
+  --brand-900: #021114;
+
+  /* Accent Colors - Rich Gold */
+  --accent: #D4AF37;
+  --accent-500: #D4AF37;
+  --accent-600: #B8962A;
+
+  /* Surface */
+  --surface: #F9FAFB;
+  --surface-glass: rgba(255, 255, 255, 0.65);
 }
 
 .dark {
@@ -17,6 +42,37 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+  --font-cabinet: 'Cabinet Grotesk', var(--font-geist-sans), sans-serif;
+  --font-satoshi: 'Satoshi', var(--font-geist-sans), sans-serif;
+
+  /* Brand color palette */
+  --color-brand-*: initial;
+  --color-brand: var(--brand);
+  --color-brand-50: var(--brand-50);
+  --color-brand-100: var(--brand-100);
+  --color-brand-200: var(--brand-200);
+  --color-brand-300: var(--brand-300);
+  --color-brand-400: var(--brand-400);
+  --color-brand-500: var(--brand-500);
+  --color-brand-600: var(--brand-600);
+  --color-brand-700: var(--brand-700);
+  --color-brand-800: var(--brand-800);
+  --color-brand-900: var(--brand-900);
+
+  /* Accent color palette */
+  --color-accent-*: initial;
+  --color-accent: var(--accent);
+  --color-accent-500: var(--accent-500);
+  --color-accent-600: var(--accent-600);
+
+  /* Surface colors */
+  --color-surface: var(--surface);
+  --color-surface-glass: var(--surface-glass);
+
+  /* Custom shadows */
+  --shadow-soft: 0 20px 40px -15px rgba(0,0,0,0.05);
+  --shadow-glow: 0 8px 30px rgba(11, 85, 99, 0.3);
+  --shadow-glass: 0 8px 32px 0 rgba(31, 38, 135, 0.07);
 }
 
 body {
@@ -36,4 +92,76 @@ body {
 /* Gradient transitions need special handling */
 [class*="bg-gradient"] {
   transition: none;
+}
+
+/* Glass Panel Effect (Glassmorphism) */
+.glass-panel {
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.8);
+}
+
+.dark .glass-panel {
+  background: rgba(28, 25, 23, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Background Gradients */
+.bg-gradient-radial {
+  background: radial-gradient(circle at top right, rgba(11, 85, 99, 0.15) 0%, rgba(255, 255, 255, 0) 60%);
+}
+
+.bg-gradient-blob {
+  background: linear-gradient(135deg, rgba(11, 85, 99, 0.2) 0%, rgba(212, 175, 55, 0.15) 100%);
+  filter: blur(80px);
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--surface);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--brand-300);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--brand-400);
+}
+
+/* Custom Animations for Hero Mockup */
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+
+@keyframes float-reverse {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(10px); }
+}
+
+@keyframes scan {
+  0% { top: 0; opacity: 0; }
+  10% { opacity: 1; }
+  90% { opacity: 1; }
+  100% { top: 66%; opacity: 0; }
+}
+
+.animate-float {
+  animation: float 4s ease-in-out infinite;
+}
+
+.animate-float-reverse {
+  animation: float-reverse 5s ease-in-out infinite;
+}
+
+.animate-scan {
+  animation: scan 3s ease-in-out infinite;
 }
