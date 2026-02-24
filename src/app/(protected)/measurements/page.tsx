@@ -2,12 +2,15 @@
 
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { useLocale } from "@/context/LocaleContext";
+import Notification from "@/components/Notification";
 import {
   getMeasurements,
   createMeasurement,
   updateMeasurement,
+  getCurrentUser,
   MeasurementResponse,
 } from "@/lib/api";
 
@@ -106,6 +109,7 @@ function isValueInRange(value: string, field: FieldKey, unit: Unit): boolean {
 export default function MeasurementsPage() {
   const { user } = useAuth();
   const { t } = useLocale();
+  const router = useRouter();
   const [measurements, setMeasurements] = useState<MeasurementResponse[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -120,6 +124,9 @@ export default function MeasurementsPage() {
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
+  const [userTier, setUserTier] = useState<"FREE" | "VIP">("FREE");
+  const [showNewProfileInput, setShowNewProfileInput] = useState(false);
+  const [newProfileName, setNewProfileName] = useState("");
 
   const fieldLabels: Record<string, string> = {
     height: t("measurements.height"),
@@ -135,25 +142,20 @@ export default function MeasurementsPage() {
   const fetchMeasurements = useCallback(async () => {
     if (!user) return;
     try {
-      const data = await getMeasurements(user.uid);
+      // Fetch user data and measurements in parallel
+      const [userData, data] = await Promise.all([
+        getCurrentUser(user.uid),
+        getMeasurements(user.uid)
+      ]);
+
+      setUserTier(userData.subscription_tier as "FREE" | "VIP");
       setMeasurements(data);
 
       // Auto-populate form if user has saved measurements
       if (data.length > 0 && !editingId) {
         const primary = data.find(m => m.is_primary) || data[0];
         setEditingId(primary.id);
-        setForm({
-          name: primary.name,
-          height: convertForDisplay(primary.height, "height", unit),
-          weight: convertForDisplay(primary.weight, "weight", unit),
-          chest: convertForDisplay(primary.chest, "chest", unit),
-          waist: convertForDisplay(primary.waist, "waist", unit),
-          hip: convertForDisplay(primary.hip, "hip", unit),
-          inseam: convertForDisplay(primary.inseam, "inseam", unit),
-          shoulder_width: convertForDisplay(primary.shoulder_width, "shoulder_width", unit),
-          arm_length: convertForDisplay(primary.arm_length, "arm_length", unit),
-          is_primary: primary.is_primary,
-        });
+        loadProfileData(primary);
       }
     } catch (err) {
       console.error("Failed to fetch measurements:", err);
@@ -161,6 +163,64 @@ export default function MeasurementsPage() {
       setIsLoading(false);
     }
   }, [user, editingId, unit]);
+
+  const loadProfileData = (profile: MeasurementResponse) => {
+    setForm({
+      name: profile.name,
+      height: convertForDisplay(profile.height, "height", unit),
+      weight: convertForDisplay(profile.weight, "weight", unit),
+      chest: convertForDisplay(profile.chest, "chest", unit),
+      waist: convertForDisplay(profile.waist, "waist", unit),
+      hip: convertForDisplay(profile.hip, "hip", unit),
+      inseam: convertForDisplay(profile.inseam, "inseam", unit),
+      shoulder_width: convertForDisplay(profile.shoulder_width, "shoulder_width", unit),
+      arm_length: convertForDisplay(profile.arm_length, "arm_length", unit),
+      is_primary: profile.is_primary,
+    });
+  };
+
+  const handleProfileChange = (profileId: string) => {
+    const selected = measurements.find(m => m.id === profileId);
+    if (selected) {
+      setEditingId(profileId);
+      loadProfileData(selected);
+    }
+  };
+
+  const handleCreateNewProfile = async () => {
+    if (!newProfileName.trim()) {
+      setError("Please enter a profile name");
+      return;
+    }
+
+    setIsSaving(true);
+    setError("");
+
+    try {
+      const newProfile = await createMeasurement(user!.uid, {
+        name: newProfileName.trim(),
+        is_primary: false,
+      });
+
+      await fetchMeasurements();
+      setEditingId(newProfile.id);
+      loadProfileData(newProfile);
+      setShowNewProfileInput(false);
+      setNewProfileName("");
+      setSuccessMessage("New profile created successfully!");
+    } catch (err: any) {
+      console.error("Failed to create profile:", err);
+      if (err.message?.includes("Free users")) {
+        setError("Free users can only store up to 3 profiles. Upgrade to VIP for unlimited profiles.");
+      } else {
+        setError("Failed to create new profile");
+      }
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const canCreateNewProfile = userTier === "VIP" || measurements.length < 3;
 
   useEffect(() => {
     fetchMeasurements();
@@ -188,16 +248,16 @@ export default function MeasurementsPage() {
         arm_length: convertForStorage(form.arm_length, "arm_length", unit),
       };
 
+      let savedMeasurementId = editingId;
       if (editingId) {
         await updateMeasurement(user.uid, editingId, { ...payload, is_primary: form.is_primary });
-        setSuccessMessage(t("measurements.measurementsUpdated"));
       } else {
-        await createMeasurement(user.uid, { ...payload, is_primary: form.is_primary });
-        setSuccessMessage(t("measurements.measurementsSaved"));
+        const created = await createMeasurement(user.uid, { ...payload, is_primary: form.is_primary });
+        savedMeasurementId = created.id;
       }
 
-      await fetchMeasurements();
-      setTimeout(() => setSuccessMessage(""), 3000);
+      // Redirect to color analysis page with measurement_id parameter
+      router.push(`/color-analysis?measurement_id=${savedMeasurementId}`);
     } catch (err) {
       console.error("Failed to save measurements:", err);
       setError(t("measurements.failedSave"));
@@ -260,20 +320,49 @@ export default function MeasurementsPage() {
           </div>
 
           {/* Progress Stepper */}
-          <div className="flex items-center gap-3 sm:gap-6 text-sm font-medium">
-            <div className="flex items-center gap-2 text-brand dark:text-brand-400">
-              <span className="w-6 h-6 rounded-full bg-brand dark:bg-brand-400 text-white dark:text-gray-900 flex items-center justify-center text-xs font-bold">1</span>
-              <span className="hidden sm:inline font-bold">Measure</span>
+          <div className="flex items-center justify-between relative w-full max-w-3xl mx-auto gap-4 sm:gap-8 lg:gap-12">
+            <div className="absolute left-12 right-12 top-1/2 -translate-y-1/2 h-1 bg-gray-200 dark:bg-gray-700 -z-10 rounded-full"></div>
+
+            {/* Step 1: Body Size - Active */}
+            <div className="flex flex-col items-center gap-2">
+              <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-white dark:bg-stone-900 border-4 border-brand dark:border-brand-400 text-brand dark:text-brand-400 flex items-center justify-center shadow-glow relative bg-white dark:bg-stone-900">
+                <span className="absolute inset-0 rounded-full border border-brand dark:border-brand-400 animate-ping opacity-30"></span>
+                <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                </svg>
+              </div>
+              <span className="text-[10px] font-black text-brand dark:text-brand-400 uppercase tracking-widest hidden sm:block">Body Size</span>
             </div>
-            <div className="w-8 h-px bg-gray-300 dark:bg-gray-700"></div>
-            <div className="flex items-center gap-2 text-gray-400 dark:text-gray-600">
-              <span className="w-6 h-6 rounded-full border border-gray-300 dark:border-gray-700 flex items-center justify-center text-xs">2</span>
-              <span className="hidden sm:inline">Color</span>
+
+            {/* Step 2: Color Capture - Pending */}
+            <div className="flex flex-col items-center gap-2">
+              <div className="w-10 h-10 rounded-full bg-gray-100 dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700 text-gray-400 dark:text-gray-600 flex items-center justify-center">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+              </div>
+              <span className="text-[10px] font-black text-gray-400 dark:text-gray-600 uppercase tracking-widest hidden sm:block">Color</span>
             </div>
-            <div className="w-8 h-px bg-gray-300 dark:bg-gray-700"></div>
-            <div className="flex items-center gap-2 text-gray-400 dark:text-gray-600">
-              <span className="w-6 h-6 rounded-full border border-gray-300 dark:border-gray-700 flex items-center justify-center text-xs">3</span>
-              <span className="hidden sm:inline">Try-On</span>
+
+            {/* Step 3: Analysis - Pending */}
+            <div className="flex flex-col items-center gap-2">
+              <div className="w-10 h-10 rounded-full bg-gray-100 dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700 text-gray-400 dark:text-gray-600 flex items-center justify-center">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01" />
+                </svg>
+              </div>
+              <span className="text-[10px] font-black text-gray-400 dark:text-gray-600 uppercase tracking-widest hidden sm:block">Analysis</span>
+            </div>
+
+            {/* Step 4: Try-On - Pending */}
+            <div className="flex flex-col items-center gap-2">
+              <div className="w-10 h-10 rounded-full bg-gray-100 dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700 text-gray-400 dark:text-gray-600 flex items-center justify-center">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 10.5V6a3.75 3.75 0 10-7.5 0v4.5m11.356-1.993l1.263 12c.07.665-.45 1.243-1.119 1.243H4.25a1.125 1.125 0 01-1.12-1.243l1.264-12A1.125 1.125 0 015.513 7.5h12.974c.576 0 1.059.435 1.119 1.007zM8.625 10.5a.375.375 0 11-.75 0 .375.375 0 01.75 0zm7.5 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" />
+                </svg>
+              </div>
+              <span className="text-[10px] font-black text-gray-400 dark:text-gray-600 uppercase tracking-widest hidden sm:block">Try-On</span>
             </div>
           </div>
 
@@ -291,17 +380,27 @@ export default function MeasurementsPage() {
       <main className="flex-1 flex flex-col relative z-10 w-full max-w-[1440px] mx-auto px-6 lg:px-12 py-8 lg:py-10">
         {/* Messages */}
         {successMessage && (
-          <div className="mb-6 glass-panel p-4 rounded-xl border border-green-200 dark:border-green-800 text-green-600 dark:text-green-400 text-sm font-medium">
-            {successMessage}
+          <div className="mb-6">
+            <Notification
+              type="success"
+              variant="inline"
+              message={successMessage}
+              onClose={() => setSuccessMessage("")}
+              dismissible
+              autoClose={3000}
+            />
           </div>
         )}
 
         {error && (
-          <div className="mb-6 glass-panel p-4 rounded-xl border border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 text-sm font-medium flex items-center gap-2">
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            {error}
+          <div className="mb-6">
+            <Notification
+              type="error"
+              variant="inline"
+              message={error}
+              onClose={() => setError("")}
+              dismissible
+            />
           </div>
         )}
 
@@ -356,19 +455,57 @@ export default function MeasurementsPage() {
                       <h3 className="font-cabinet font-bold text-xl text-gray-900 dark:text-white">Basic</h3>
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                      {/* Profile Name */}
+                      {/* Profile Name Selector / Input */}
                       <div className="sm:col-span-2">
                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
                           {t("measurements.profileName")} <span className="text-red-500">*</span>
                         </label>
-                        <input
-                          type="text"
-                          value={form.name}
-                          onChange={(e) => setForm({ ...form, name: e.target.value })}
-                          className="w-full bg-white/90 dark:bg-stone-800/50 border border-gray-200 dark:border-stone-700 text-gray-900 dark:text-white rounded-xl px-4 py-3.5 focus:outline-none focus:ring-2 focus:ring-brand dark:focus:ring-brand-400 transition-shadow shadow-sm"
-                          placeholder={t("measurements.profileNamePlaceholder")}
-                          required
-                        />
+                        <div className="flex items-center gap-2">
+                          {measurements.length > 1 ? (
+                            /* Show dropdown if multiple profiles exist */
+                            <select
+                              value={editingId || ""}
+                              onChange={(e) => handleProfileChange(e.target.value)}
+                              className="flex-1 bg-white/90 dark:bg-stone-800/50 border border-gray-200 dark:border-stone-700 text-gray-900 dark:text-white rounded-xl px-4 pr-10 py-3.5 focus:outline-none focus:ring-2 focus:ring-brand dark:focus:ring-brand-400 transition-shadow shadow-sm appearance-none bg-[length:1.5rem] bg-[right_0.75rem_center] bg-no-repeat"
+                              style={{
+                                backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e")`
+                              }}
+                            >
+                              {measurements.map((m) => (
+                                <option key={m.id} value={m.id}>
+                                  {m.name} {m.is_primary && "(Primary)"}
+                                </option>
+                              ))}
+                            </select>
+                          ) : (
+                            /* Show input if single or no profile */
+                            <input
+                              type="text"
+                              value={form.name}
+                              onChange={(e) => setForm({ ...form, name: e.target.value })}
+                              className="flex-1 bg-white/90 dark:bg-stone-800/50 border border-gray-200 dark:border-stone-700 text-gray-900 dark:text-white rounded-xl px-4 py-3.5 focus:outline-none focus:ring-2 focus:ring-brand dark:focus:ring-brand-400 transition-shadow shadow-sm"
+                              placeholder={t("measurements.profileNamePlaceholder")}
+                              required
+                            />
+                          )}
+
+                          {/* Add New Profile Button */}
+                          <button
+                            type="button"
+                            onClick={() => setShowNewProfileInput(true)}
+                            disabled={!canCreateNewProfile}
+                            className={`w-12 h-12 rounded-full flex items-center justify-center transition-all shadow-sm ${
+                              canCreateNewProfile
+                                ? "bg-brand dark:bg-brand-400 text-white dark:text-gray-900 hover:bg-brand-600 dark:hover:bg-brand-500 hover:scale-110 active:scale-95"
+                                : "bg-gray-200 dark:bg-gray-700 text-gray-400 dark:text-gray-500 cursor-not-allowed"
+                            }`}
+                            title={canCreateNewProfile ? "Create new profile" : "Free users can only store up to 3 profiles"}
+                          >
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+                            </svg>
+                          </button>
+                        </div>
                       </div>
 
                       {/* Height & Weight */}
@@ -574,6 +711,89 @@ export default function MeasurementsPage() {
           </div>
         </div>
       </main>
+
+      {/* New Profile Creation Modal */}
+      {showNewProfileInput && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-[fadeInUp_0.3s_ease-out_forwards]">
+          {/* Backdrop */}
+          <div
+            className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+            onClick={() => {
+              setShowNewProfileInput(false);
+              setNewProfileName("");
+            }}
+          ></div>
+
+          {/* Modal */}
+          <div className="relative glass-panel rounded-[2.5rem] p-8 shadow-2xl max-w-md w-full border-white/90 dark:border-stone-700/50 animate-[fadeInUp_0.4s_ease-out_forwards]">
+            <div className="flex flex-col gap-6">
+              {/* Header */}
+              <div className="flex items-center justify-between">
+                <h3 className="font-cabinet font-extrabold text-2xl text-gray-900 dark:text-white">
+                  Create New Profile
+                </h3>
+                <button
+                  onClick={() => {
+                    setShowNewProfileInput(false);
+                    setNewProfileName("");
+                  }}
+                  className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition-colors text-gray-400 hover:text-gray-900 dark:hover:text-white"
+                >
+                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+
+              {/* Input */}
+              <div className="flex flex-col gap-3">
+                <label className="text-sm font-bold text-gray-700 dark:text-gray-300">
+                  Profile Name <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={newProfileName}
+                  onChange={(e) => setNewProfileName(e.target.value)}
+                  onKeyPress={(e) => {
+                    if (e.key === "Enter" && newProfileName.trim()) {
+                      handleCreateNewProfile();
+                    }
+                  }}
+                  className="w-full bg-white/90 dark:bg-stone-800/50 border border-gray-200 dark:border-stone-700 text-gray-900 dark:text-white rounded-xl px-4 py-3.5 focus:outline-none focus:ring-2 focus:ring-brand dark:focus:ring-brand-400 transition-shadow shadow-sm"
+                  placeholder="e.g., Formal Wear, Casual, Winter"
+                  autoFocus
+                />
+                <p className="text-xs text-gray-500 dark:text-gray-400">
+                  {userTier === "FREE"
+                    ? `Free users can store up to 3 profiles. You have ${3 - measurements.length} slot(s) remaining.`
+                    : "VIP users have unlimited profiles."}
+                </p>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex gap-3 pt-2">
+                <button
+                  onClick={() => {
+                    setShowNewProfileInput(false);
+                    setNewProfileName("");
+                  }}
+                  className="flex-1 px-6 py-3 text-gray-700 dark:text-gray-300 font-bold text-sm hover:bg-gray-100 dark:hover:bg-stone-800 rounded-2xl transition-all"
+                  disabled={isSaving}
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleCreateNewProfile}
+                  disabled={isSaving || !newProfileName.trim()}
+                  className="flex-1 px-6 py-3 bg-brand dark:bg-brand-400 text-white dark:text-gray-900 rounded-2xl font-bold text-sm hover:bg-brand-600 dark:hover:bg-brand-500 transition-all shadow-glow active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isSaving ? "Creating..." : "Create Profile"}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

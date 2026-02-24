@@ -1,9 +1,9 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Header
 from sqlalchemy.orm import Session
-from typing import Optional
+from typing import Optional, List
 
 from app.db.database import get_db
-from app.db.models import User, ColorProfile
+from app.db.models import User, ColorProfile, MeasurementProfile
 from app.models.color_profile import ColorProfileCreate, ColorProfileUpdate, ColorProfileResponse
 
 router = APIRouter()
@@ -25,15 +25,32 @@ def get_user_by_uid(firebase_uid: str, db: Session) -> User:
     return user
 
 
-@router.get("", response_model=ColorProfileResponse)
-async def get_color_profile(
+@router.get("", response_model=List[ColorProfileResponse])
+async def get_color_profiles(
     x_firebase_uid: Optional[str] = Header(None),
     db: Session = Depends(get_db),
 ):
-    """Get the color profile for the current user."""
+    """Get all color profiles for the current user."""
     user = get_user_by_uid(x_firebase_uid, db)
 
-    color_profile = db.query(ColorProfile).filter(ColorProfile.user_id == user.id).first()
+    color_profiles = db.query(ColorProfile).filter(ColorProfile.user_id == user.id).all()
+
+    return color_profiles
+
+
+@router.get("/{profile_id}", response_model=ColorProfileResponse)
+async def get_color_profile(
+    profile_id: str,
+    x_firebase_uid: Optional[str] = Header(None),
+    db: Session = Depends(get_db),
+):
+    """Get a specific color profile by ID."""
+    user = get_user_by_uid(x_firebase_uid, db)
+
+    color_profile = db.query(ColorProfile).filter(
+        ColorProfile.id == profile_id,
+        ColorProfile.user_id == user.id
+    ).first()
 
     if not color_profile:
         raise HTTPException(
@@ -50,20 +67,24 @@ async def create_color_profile(
     x_firebase_uid: Optional[str] = Header(None),
     db: Session = Depends(get_db),
 ):
-    """Create a new color profile. Only one profile per user."""
+    """Create a new color profile."""
     user = get_user_by_uid(x_firebase_uid, db)
 
-    # Check if profile already exists
-    existing = db.query(ColorProfile).filter(ColorProfile.user_id == user.id).first()
-    if existing:
+    # Validate measurement_id belongs to user (required)
+    measurement = db.query(MeasurementProfile).filter(
+        MeasurementProfile.id == data.measurement_id,
+        MeasurementProfile.user_id == user.id
+    ).first()
+    if not measurement:
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Color profile already exists. Use PUT to update.",
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Measurement profile not found",
         )
 
     # Create new color profile
     color_profile = ColorProfile(
         user_id=user.id,
+        measurement_id=data.measurement_id,
         skin_tone=data.skin_tone,
         skin_tone_hex=data.skin_tone_hex,
         hair_color=data.hair_color,
@@ -79,22 +100,38 @@ async def create_color_profile(
     return color_profile
 
 
-@router.put("", response_model=ColorProfileResponse)
+@router.put("/{profile_id}", response_model=ColorProfileResponse)
 async def update_color_profile(
+    profile_id: str,
     data: ColorProfileUpdate,
     x_firebase_uid: Optional[str] = Header(None),
     db: Session = Depends(get_db),
 ):
-    """Update the color profile for the current user."""
+    """Update a specific color profile."""
     user = get_user_by_uid(x_firebase_uid, db)
 
-    color_profile = db.query(ColorProfile).filter(ColorProfile.user_id == user.id).first()
+    color_profile = db.query(ColorProfile).filter(
+        ColorProfile.id == profile_id,
+        ColorProfile.user_id == user.id
+    ).first()
 
     if not color_profile:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Color profile not found. Use POST to create.",
+            detail="Color profile not found",
         )
+
+    # Validate measurement_id belongs to user if provided
+    if data.measurement_id:
+        measurement = db.query(MeasurementProfile).filter(
+            MeasurementProfile.id == data.measurement_id,
+            MeasurementProfile.user_id == user.id
+        ).first()
+        if not measurement:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Measurement profile not found",
+            )
 
     # Update only provided fields
     update_data = data.model_dump(exclude_unset=True)
@@ -107,15 +144,19 @@ async def update_color_profile(
     return color_profile
 
 
-@router.delete("", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete("/{profile_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_color_profile(
+    profile_id: str,
     x_firebase_uid: Optional[str] = Header(None),
     db: Session = Depends(get_db),
 ):
-    """Delete the color profile for the current user."""
+    """Delete a specific color profile."""
     user = get_user_by_uid(x_firebase_uid, db)
 
-    color_profile = db.query(ColorProfile).filter(ColorProfile.user_id == user.id).first()
+    color_profile = db.query(ColorProfile).filter(
+        ColorProfile.id == profile_id,
+        ColorProfile.user_id == user.id
+    ).first()
 
     if not color_profile:
         raise HTTPException(

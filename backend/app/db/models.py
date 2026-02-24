@@ -57,7 +57,8 @@ class ColorProfile(Base):
     __tablename__ = "color_profiles"
 
     id = Column(CHAR(36), primary_key=True, default=generate_uuid)
-    user_id = Column(CHAR(36), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, unique=True)
+    user_id = Column(CHAR(36), ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    measurement_id = Column(CHAR(36), ForeignKey("measurement_profiles.id", ondelete="CASCADE"), nullable=False)
     skin_tone = Column(String(50), nullable=True)
     skin_tone_hex = Column(String(7), nullable=True)
     hair_color = Column(String(50), nullable=True)
@@ -71,3 +72,4 @@ class ColorProfile(Base):
     )
 
     user = relationship("User", back_populates="color_profile")
+    measurement_profile = relationship("MeasurementProfile")

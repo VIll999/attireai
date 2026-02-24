@@ -5,6 +5,7 @@ from datetime import datetime
 
 class ColorProfileCreate(BaseModel):
     """Create or update a color profile."""
+    measurement_id: str
     skin_tone: Optional[str] = None
     skin_tone_hex: Optional[str] = None
     hair_color: Optional[str] = None
@@ -15,6 +16,7 @@ class ColorProfileCreate(BaseModel):
 
 class ColorProfileUpdate(BaseModel):
     """Update a color profile."""
+    measurement_id: Optional[str] = None
     skin_tone: Optional[str] = None
     skin_tone_hex: Optional[str] = None
     hair_color: Optional[str] = None
@@ -26,6 +28,7 @@ class ColorProfileUpdate(BaseModel):
 class ColorProfileResponse(BaseModel):
     id: str
     user_id: str
+    measurement_id: str
     skin_tone: Optional[str] = None
     skin_tone_hex: Optional[str] = None
     hair_color: Optional[str] = None
