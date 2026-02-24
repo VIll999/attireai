@@ -28,12 +28,18 @@ def get_user_by_uid(firebase_uid: str, db: Session) -> User:
 @router.get("", response_model=List[ColorProfileResponse])
 async def get_color_profiles(
     x_firebase_uid: Optional[str] = Header(None),
+    measurement_id: Optional[str] = None,
     db: Session = Depends(get_db),
 ):
-    """Get all color profiles for the current user."""
+    """Get all color profiles for the current user, optionally filtered by measurement_id."""
     user = get_user_by_uid(x_firebase_uid, db)
 
-    color_profiles = db.query(ColorProfile).filter(ColorProfile.user_id == user.id).all()
+    query = db.query(ColorProfile).filter(ColorProfile.user_id == user.id)
+
+    if measurement_id:
+        query = query.filter(ColorProfile.measurement_id == measurement_id)
+
+    color_profiles = query.all()
 
     return color_profiles
 
