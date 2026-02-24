@@ -50,12 +50,21 @@ async def create_measurement(
     """Create a new measurement profile. First profile is auto-set as primary."""
     user = get_user_by_uid(x_firebase_uid, db)
 
-    # First profile is auto-primary, or respect explicit is_primary
+    # Count existing profiles
     existing_count = (
         db.query(MeasurementProfile)
         .filter(MeasurementProfile.user_id == user.id)
         .count()
     )
+
+    # Check VIP limit: non-VIP users can only have 3 profiles
+    if user.subscription_tier != "VIP" and existing_count >= 3:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Free users can only store up to 3 profiles. Upgrade to VIP for unlimited profiles.",
+        )
+
+    # First profile is auto-primary, or respect explicit is_primary
     set_primary = data.is_primary if data.is_primary is not None else (existing_count == 0)
 
     # If setting as primary, unset all others

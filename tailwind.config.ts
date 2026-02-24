@@ -38,6 +38,32 @@ const config: Config = {
         soft: "0 20px 40px -15px rgba(0,0,0,0.05)",
         glass: "0 8px 32px 0 rgba(31, 38, 135, 0.07)",
       },
+      animation: {
+        scan: "scan 3s ease-in-out infinite",
+        float: "float 5s ease-in-out infinite",
+        "slide-in-right": "slideInRight 0.5s ease-out forwards",
+        "fade-in-up": "fadeInUp 0.4s ease-out forwards",
+      },
+      keyframes: {
+        scan: {
+          "0%": { top: "0%", opacity: "0" },
+          "15%": { opacity: "1" },
+          "85%": { opacity: "1" },
+          "100%": { top: "100%", opacity: "0" },
+        },
+        float: {
+          "0%, 100%": { transform: "translateY(0)" },
+          "50%": { transform: "translateY(-15px)" },
+        },
+        slideInRight: {
+          "0%": { transform: "translateX(100%)", opacity: "0" },
+          "100%": { transform: "translateX(0)", opacity: "1" },
+        },
+        fadeInUp: {
+          "0%": { transform: "translateY(20px)", opacity: "0" },
+          "100%": { transform: "translateY(0)", opacity: "1" },
+        },
+      },
     },
   },
   plugins: [],

@@ -206,7 +206,7 @@ export default function DashboardPage() {
                       <div className="flex-1">
                         <h4 className="font-bold text-gray-900 dark:text-white font-cabinet">{t("dashboard.colorAnalysis")}</h4>
                         <p className="text-sm text-green-600 dark:text-green-400 mt-1 font-medium">{t("dashboard.completed")}</p>
-                        <Link href="/colors" className="mt-4 inline-flex items-center gap-2 text-xs font-bold text-brand dark:text-brand-400 hover:underline">
+                        <Link href="/color-analysis" className="mt-4 inline-flex items-center gap-2 text-xs font-bold text-brand dark:text-brand-400 hover:underline">
                           <span>View Results</span>
                         </Link>
                       </div>
@@ -214,7 +214,7 @@ export default function DashboardPage() {
                   </div>
                 </div>
               ) : hasMeasurements ? (
-                <Link href="/colors" className="block group">
+                <Link href="/color-analysis" className="block group">
                   <div className="glass-panel p-6 rounded-[2.5rem] transition-all hover:translate-y-[-4px] hover:shadow-xl border border-stone-200/50 dark:border-stone-700/50">
                     <div className="flex items-start gap-4">
                       <div className="w-12 h-12 rounded-2xl bg-brand dark:bg-brand-400 flex items-center justify-center text-white dark:text-gray-900 shadow-lg shadow-brand/20">
