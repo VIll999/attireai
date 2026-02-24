@@ -30,12 +30,22 @@ echo ""
 echo "[2/4] Setting up Python virtual environment..."
 cd "$PROJECT_ROOT/backend"
 if [ ! -d "venv" ]; then
-    python3 -m venv venv
+    # Use `python` for better Windows compatibility (Git Bash / PowerShell)
+    python -m venv venv
 fi
 
 echo ""
 echo "[3/4] Installing backend dependencies..."
-source venv/bin/activate
+
+# Activate venv (Windows Git Bash / Linux/macOS compatible)
+if [ -f "venv/Scripts/activate" ]; then
+    # Windows venv layout
+    source venv/Scripts/activate
+else
+    # Linux/macOS venv layout
+    source venv/bin/activate
+fi
+
 pip install -r requirements.txt -q
 
 # Create .env files if they don't exist

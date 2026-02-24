@@ -1,6 +1,7 @@
-from sqlalchemy import Column, String, Enum, TIMESTAMP, text, Boolean, ForeignKey, Numeric
+from sqlalchemy import Column, String, Enum, TIMESTAMP, text, Boolean, ForeignKey, Numeric, JSON, Text  # ⭐ add JSON, Text
 from sqlalchemy.dialects.mysql import CHAR
 from sqlalchemy.orm import relationship
+
 from app.db.database import Base
 import uuid
 
@@ -24,7 +25,44 @@ class User(Base):
         server_default=text("CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP"),
     )
 
-    measurements = relationship("MeasurementProfile", back_populates="user", cascade="all, delete-orphan")
+    measurements = relationship(
+        "MeasurementProfile",
+        back_populates="user",
+        cascade="all, delete-orphan"
+    )
+    color_profile = relationship(
+        "ColorProfile",
+        back_populates="user",
+        uselist=False,
+        cascade="all, delete-orphan",
+    )
+    style_preference = relationship(
+        "StylePreference",
+        back_populates="user",
+        uselist=False,
+        cascade="all, delete-orphan",
+    )
+    outfit_recommendations = relationship(
+        "OutfitRecommendation",
+        back_populates="user",
+        cascade="all, delete-orphan",
+    )
+    saved_outfits = relationship(
+        "SavedOutfit",
+        back_populates="user",
+        cascade="all, delete-orphan",
+    )
+    virtual_try_ons = relationship(
+        "VirtualTryOn",
+        back_populates="user",
+        cascade="all, delete-orphan",
+    )
+    subscription = relationship(
+        "Subscription",
+        back_populates="user",
+        uselist=False,
+        cascade="all, delete-orphan",
+    )
 
 
 class MeasurementProfile(Base):
@@ -50,3 +88,146 @@ class MeasurementProfile(Base):
     )
 
     user = relationship("User", back_populates="measurements")
+
+
+class ColorProfile(Base):
+    __tablename__ = "color_profiles"
+
+    id = Column(CHAR(36), primary_key=True, default=generate_uuid)
+    user_id = Column(CHAR(36), ForeignKey("users.id", ondelete="CASCADE"), unique=True, nullable=False)
+    skin_tone = Column(String(50), nullable=True)
+    skin_tone_hex = Column(String(7), nullable=True)
+    hair_color = Column(String(50), nullable=True)
+    hair_color_hex = Column(String(7), nullable=True)
+    recommended_palette = Column(JSON, nullable=True)
+    photo_url = Column(String(500), nullable=True)
+    created_at = Column(TIMESTAMP, server_default=text("CURRENT_TIMESTAMP"))
+    updated_at = Column(
+        TIMESTAMP,
+        server_default=text("CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP"),
+    )
+
+    user = relationship("User", back_populates="color_profile")
+
+
+class StylePreference(Base):
+    __tablename__ = "style_preferences"
+
+    id = Column(CHAR(36), primary_key=True, default=generate_uuid)
+    user_id = Column(CHAR(36), ForeignKey("users.id", ondelete="CASCADE"), unique=True, nullable=False)
+    preferred_styles = Column(JSON, nullable=True)
+    avoided_styles = Column(JSON, nullable=True)
+    price_range = Column(Enum("BUDGET", "MID_RANGE", "LUXURY"), default="MID_RANGE")
+    preferred_brands = Column(JSON, nullable=True)
+    excluded_brands = Column(JSON, nullable=True)
+    updated_at = Column(
+        TIMESTAMP,
+        server_default=text("CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP"),
+    )
+
+    user = relationship("User", back_populates="style_preference")
+
+
+class OutfitRecommendation(Base):
+    __tablename__ = "outfit_recommendations"
+
+    id = Column(CHAR(36), primary_key=True, default=generate_uuid)
+    user_id = Column(CHAR(36), ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    occasion = Column(String(100), nullable=True)
+    weather = Column(String(50), nullable=True)
+    dress_code = Column(String(50), nullable=True)
+    total_price = Column(Numeric(10, 2), nullable=True)
+    reasoning = Column(Text, nullable=True)
+    user_rating = Column(Enum("LIKE", "DISLIKE", "NONE"), default="NONE")
+    created_at = Column(TIMESTAMP, server_default=text("CURRENT_TIMESTAMP"))
+
+    user = relationship("User", back_populates="outfit_recommendations")
+    items = relationship(
+        "RecommendationItem",
+        back_populates="recommendation",
+        cascade="all, delete-orphan",
+    )
+    saved_by = relationship(
+        "SavedOutfit",
+        back_populates="recommendation",
+        cascade="all, delete-orphan",
+    )
+    try_ons = relationship(
+        "VirtualTryOn",
+        back_populates="outfit",
+        cascade="all, delete-orphan",
+    )
+
+
+class RecommendationItem(Base):
+    __tablename__ = "recommendation_items"
+
+    id = Column(CHAR(36), primary_key=True, default=generate_uuid)
+    recommendation_id = Column(
+        CHAR(36),
+        ForeignKey("outfit_recommendations.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    external_product_id = Column(String(100), nullable=True)
+    name = Column(String(255), nullable=False)
+    brand = Column(String(100), nullable=True)
+    category = Column(Enum("TOP", "BOTTOM", "SHOES", "ACCESSORY", "OUTERWEAR"), nullable=True)
+    price = Column(Numeric(10, 2), nullable=True)
+    currency = Column(String(3), default="USD")
+    image_url = Column(String(500), nullable=True)
+    purchase_url = Column(String(500), nullable=True)
+    recommended_size = Column(String(20), nullable=True)
+    colors = Column(JSON, nullable=True)
+    material = Column(String(100), nullable=True)
+
+    recommendation = relationship("OutfitRecommendation", back_populates="items")
+
+
+class SavedOutfit(Base):
+    __tablename__ = "saved_outfits"
+
+    id = Column(CHAR(36), primary_key=True, default=generate_uuid)
+    user_id = Column(CHAR(36), ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    recommendation_id = Column(
+        CHAR(36),
+        ForeignKey("outfit_recommendations.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    collection_name = Column(String(50), default="Favorites")
+    is_purchased = Column(Boolean, default=False)
+    try_on_image_url = Column(String(500), nullable=True)
+    created_at = Column(TIMESTAMP, server_default=text("CURRENT_TIMESTAMP"))
+
+    user = relationship("User", back_populates="saved_outfits")
+    recommendation = relationship("OutfitRecommendation", back_populates="saved_by")
+
+
+class VirtualTryOn(Base):
+    __tablename__ = "virtual_try_ons"
+
+    id = Column(CHAR(36), primary_key=True, default=generate_uuid)
+    user_id = Column(CHAR(36), ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    user_photo_url = Column(String(500), nullable=False)
+    outfit_id = Column(CHAR(36), ForeignKey("outfit_recommendations.id", ondelete="CASCADE"), nullable=False)
+    result_image_url = Column(String(500), nullable=True)
+    status = Column(Enum("PENDING", "PROCESSING", "COMPLETED", "FAILED"), default="PENDING")
+    created_at = Column(TIMESTAMP, server_default=text("CURRENT_TIMESTAMP"))
+    completed_at = Column(TIMESTAMP, nullable=True)
+
+    user = relationship("User", back_populates="virtual_try_ons")
+    outfit = relationship("OutfitRecommendation", back_populates="try_ons")
+
+
+class Subscription(Base):
+    __tablename__ = "subscriptions"
+
+    id = Column(CHAR(36), primary_key=True, default=generate_uuid)
+    user_id = Column(CHAR(36), ForeignKey("users.id", ondelete="CASCADE"), unique=True, nullable=False)
+    stripe_customer_id = Column(String(100), nullable=True)
+    stripe_subscription_id = Column(String(100), nullable=True)
+    status = Column(Enum("ACTIVE", "CANCELLED", "PAST_DUE", "TRIALING"), default="TRIALING")
+    current_period_start = Column(TIMESTAMP, nullable=True)
+    current_period_end = Column(TIMESTAMP, nullable=True)
+    created_at = Column(TIMESTAMP, server_default=text("CURRENT_TIMESTAMP"))
+
+    user = relationship("User", back_populates="subscription")
