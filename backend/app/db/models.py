@@ -1,4 +1,4 @@
-from sqlalchemy import Column, String, Enum, TIMESTAMP, text, Boolean, ForeignKey, Numeric
+from sqlalchemy import Column, String, Enum, TIMESTAMP, text, Boolean, ForeignKey, Numeric, JSON
 from sqlalchemy.dialects.mysql import CHAR
 from sqlalchemy.orm import relationship
 from app.db.database import Base
@@ -25,6 +25,7 @@ class User(Base):
     )
 
     measurements = relationship("MeasurementProfile", back_populates="user", cascade="all, delete-orphan")
+    color_profile = relationship("ColorProfile", back_populates="user", uselist=False, cascade="all, delete-orphan")
 
 
 class MeasurementProfile(Base):
@@ -50,3 +51,23 @@ class MeasurementProfile(Base):
     )
 
     user = relationship("User", back_populates="measurements")
+
+
+class ColorProfile(Base):
+    __tablename__ = "color_profiles"
+
+    id = Column(CHAR(36), primary_key=True, default=generate_uuid)
+    user_id = Column(CHAR(36), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, unique=True)
+    skin_tone = Column(String(50), nullable=True)
+    skin_tone_hex = Column(String(7), nullable=True)
+    hair_color = Column(String(50), nullable=True)
+    hair_color_hex = Column(String(7), nullable=True)
+    recommended_palette = Column(JSON, nullable=True)
+    photo_url = Column(String(500), nullable=True)
+    created_at = Column(TIMESTAMP, server_default=text("CURRENT_TIMESTAMP"))
+    updated_at = Column(
+        TIMESTAMP,
+        server_default=text("CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP"),
+    )
+
+    user = relationship("User", back_populates="color_profile")
