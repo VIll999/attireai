@@ -29,12 +29,13 @@ class ColorProfileResponse(BaseModel):
     id: str
     user_id: str
     measurement_id: str
+    measurement_name: Optional[str] = None
     skin_tone: Optional[str] = None
     skin_tone_hex: Optional[str] = None
     hair_color: Optional[str] = None
     hair_color_hex: Optional[str] = None
     recommended_palette: Optional[Dict[str, Any]] = None
-    photo_nurl: Optional[str] = None
+    photo_url: Optional[str] = None
     created_at: datetime
     updated_at: datetime
 

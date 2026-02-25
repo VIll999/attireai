@@ -247,3 +247,166 @@ export async function uploadProfilePicture(
 
   return response.json();
 }
+
+/**
+ * Upload color analysis photo to S3
+ */
+export async function uploadColorAnalysisPhoto(
+  firebaseUid: string,
+  file: File
+): Promise<{ url: string }> {
+  const formData = new FormData();
+  formData.append("file", file);
+
+  const response = await fetch(`${API_URL}/upload/color-analysis-photo`, {
+    method: "POST",
+    headers: {
+      "X-Firebase-UID": firebaseUid,
+    },
+    body: formData,
+  });
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({ detail: "Upload failed" }));
+    throw new Error(error.detail || "Failed to upload color analysis photo");
+  }
+
+  return response.json();
+}
+
+// --- Color Profiles API ---
+
+interface ColorProfileResponse {
+  id: string;
+  user_id: string;
+  measurement_id: string;
+  measurement_name: string | null;
+  skin_tone: string | null;
+  skin_tone_hex: string | null;
+  hair_color: string | null;
+  hair_color_hex: string | null;
+  recommended_palette: any;
+  photo_url: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+/**
+ * Get all color profiles for current user
+ */
+export async function getColorProfiles(
+  firebaseUid: string,
+  measurementId?: string
+): Promise<ColorProfileResponse[]> {
+  const params = new URLSearchParams();
+  if (measurementId) {
+    params.append("measurement_id", measurementId);
+  }
+
+  const url = `${API_URL}/color-profiles${params.toString() ? `?${params.toString()}` : ""}`;
+
+  const response = await fetch(url, {
+    headers: {
+      "X-Firebase-UID": firebaseUid,
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error("Failed to get color profiles");
+  }
+
+  return response.json();
+}
+
+// --- Outfit Recommendations API ---
+
+interface OutfitRecommendationCreate {
+  measurement_id?: string;
+  occasion: string;
+  weather: string;
+  dress_code: string;
+}
+
+interface OutfitRecommendationResponse {
+  id: string;
+  user_id: string;
+  measurement_id: string | null;
+  occasion: string;
+  weather: string;
+  dress_code: string;
+  total_price: number | null;
+  reasoning: string | null;
+  user_rating: string | null;
+  created_at: string;
+}
+
+/**
+ * Create outfit recommendation
+ */
+export async function createOutfitRecommendation(
+  firebaseUid: string,
+  data: OutfitRecommendationCreate
+): Promise<OutfitRecommendationResponse> {
+  const response = await fetch(`${API_URL}/outfit-recommendations`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "X-Firebase-UID": firebaseUid,
+    },
+    body: JSON.stringify(data),
+  });
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({ detail: "Failed to create outfit recommendation" }));
+    throw new Error(error.detail || "Failed to create outfit recommendation");
+  }
+
+  return response.json();
+}
+
+/**
+ * Get all outfit recommendations for current user
+ */
+export async function getOutfitRecommendations(
+  firebaseUid: string,
+  measurementId?: string
+): Promise<OutfitRecommendationResponse[]> {
+  const params = new URLSearchParams();
+  if (measurementId) {
+    params.append("measurement_id", measurementId);
+  }
+
+  const url = `${API_URL}/outfit-recommendations${params.toString() ? `?${params.toString()}` : ""}`;
+
+  const response = await fetch(url, {
+    headers: {
+      "X-Firebase-UID": firebaseUid,
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error("Failed to get outfit recommendations");
+  }
+
+  return response.json();
+}
+
+/**
+ * Get specific outfit recommendation
+ */
+export async function getOutfitRecommendation(
+  firebaseUid: string,
+  recommendationId: string
+): Promise<OutfitRecommendationResponse> {
+  const response = await fetch(`${API_URL}/outfit-recommendations/${recommendationId}`, {
+    headers: {
+      "X-Firebase-UID": firebaseUid,
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error("Failed to get outfit recommendation");
+  }
+
+  return response.json();
+}

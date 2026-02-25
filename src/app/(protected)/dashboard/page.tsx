@@ -6,7 +6,7 @@ import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
 import { useLocale } from "@/context/LocaleContext";
 import { auth, deleteUser } from "@/lib/firebase";
-import { deleteUserFromBackend, getMeasurements } from "@/lib/api";
+import { deleteUserFromBackend, getMeasurements, getColorProfiles, getOutfitRecommendations } from "@/lib/api";
 import AppNav from "@/components/AppNav";
 
 export default function DashboardPage() {
@@ -19,6 +19,7 @@ export default function DashboardPage() {
   const [hasMeasurements, setHasMeasurements] = useState(false);
   const [hasColorAnalysis, setHasColorAnalysis] = useState(false);
   const [hasStylePreferences, setHasStylePreferences] = useState(false);
+  const [primaryMeasurementId, setPrimaryMeasurementId] = useState<string | null>(null);
 
   // Calculate profile completion: 3 parts, each worth 33%
   const calculateProfileCompletion = useCallback(() => {
@@ -38,13 +39,19 @@ export default function DashboardPage() {
       const measurements = await getMeasurements(user.uid);
       setHasMeasurements(measurements.length > 0);
 
-      // TODO: Check color analysis when endpoint is available
-      // const colorProfile = await getColorProfile(user.uid);
-      // setHasColorAnalysis(!!colorProfile);
+      // Get primary measurement ID (first measurement or the one marked as primary)
+      if (measurements.length > 0) {
+        const primaryMeasurement = measurements.find(m => m.is_primary) || measurements[0];
+        setPrimaryMeasurementId(primaryMeasurement.id);
+      }
 
-      // TODO: Check style preferences when endpoint is available
-      // const stylePrefs = await getStylePreferences(user.uid);
-      // setHasStylePreferences(!!stylePrefs);
+      // Check color analysis
+      const colorProfiles = await getColorProfiles(user.uid);
+      setHasColorAnalysis(colorProfiles.length > 0);
+
+      // Check style preferences (outfit recommendations)
+      const outfitRecommendations = await getOutfitRecommendations(user.uid);
+      setHasStylePreferences(outfitRecommendations.length > 0);
     } catch (err) {
       console.error("Failed to fetch profile data:", err);
     }
@@ -206,7 +213,7 @@ export default function DashboardPage() {
                       <div className="flex-1">
                         <h4 className="font-bold text-gray-900 dark:text-white font-cabinet">{t("dashboard.colorAnalysis")}</h4>
                         <p className="text-sm text-green-600 dark:text-green-400 mt-1 font-medium">{t("dashboard.completed")}</p>
-                        <Link href="/color-analysis" className="mt-4 inline-flex items-center gap-2 text-xs font-bold text-brand dark:text-brand-400 hover:underline">
+                        <Link href="/color-results" className="mt-4 inline-flex items-center gap-2 text-xs font-bold text-brand dark:text-brand-400 hover:underline">
                           <span>View Results</span>
                         </Link>
                       </div>
@@ -214,7 +221,7 @@ export default function DashboardPage() {
                   </div>
                 </div>
               ) : hasMeasurements ? (
-                <Link href="/color-analysis" className="block group">
+                <Link href={primaryMeasurementId ? `/color-analysis?measurement_id=${primaryMeasurementId}` : "/color-analysis"} className="block group">
                   <div className="glass-panel p-6 rounded-[2.5rem] transition-all hover:translate-y-[-4px] hover:shadow-xl border border-stone-200/50 dark:border-stone-700/50">
                     <div className="flex items-start gap-4">
                       <div className="w-12 h-12 rounded-2xl bg-brand dark:bg-brand-400 flex items-center justify-center text-white dark:text-gray-900 shadow-lg shadow-brand/20">

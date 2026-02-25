@@ -5,6 +5,7 @@ from typing import Optional, List
 from app.db.database import get_db
 from app.db.models import User, ColorProfile, MeasurementProfile
 from app.models.color_profile import ColorProfileCreate, ColorProfileUpdate, ColorProfileResponse
+from app.utils.color_analysis import generate_color_recommendations
 
 router = APIRouter()
 
@@ -41,7 +42,35 @@ async def get_color_profiles(
 
     color_profiles = query.all()
 
-    return color_profiles
+    # Enrich with measurement names
+    result = []
+    for profile in color_profiles:
+        profile_dict = {
+            "id": profile.id,
+            "user_id": profile.user_id,
+            "measurement_id": profile.measurement_id,
+            "skin_tone": profile.skin_tone,
+            "skin_tone_hex": profile.skin_tone_hex,
+            "hair_color": profile.hair_color,
+            "hair_color_hex": profile.hair_color_hex,
+            "recommended_palette": profile.recommended_palette,
+            "photo_url": profile.photo_url,
+            "created_at": profile.created_at,
+            "updated_at": profile.updated_at,
+            "measurement_name": None
+        }
+
+        # Get measurement name
+        if profile.measurement_id:
+            measurement = db.query(MeasurementProfile).filter(
+                MeasurementProfile.id == profile.measurement_id
+            ).first()
+            if measurement:
+                profile_dict["measurement_name"] = measurement.name
+
+        result.append(profile_dict)
+
+    return result
 
 
 @router.get("/{profile_id}", response_model=ColorProfileResponse)
@@ -64,7 +93,31 @@ async def get_color_profile(
             detail="Color profile not found",
         )
 
-    return color_profile
+    # Enrich with measurement name
+    profile_dict = {
+        "id": color_profile.id,
+        "user_id": color_profile.user_id,
+        "measurement_id": color_profile.measurement_id,
+        "skin_tone": color_profile.skin_tone,
+        "skin_tone_hex": color_profile.skin_tone_hex,
+        "hair_color": color_profile.hair_color,
+        "hair_color_hex": color_profile.hair_color_hex,
+        "recommended_palette": color_profile.recommended_palette,
+        "photo_url": color_profile.photo_url,
+        "created_at": color_profile.created_at,
+        "updated_at": color_profile.updated_at,
+        "measurement_name": None
+    }
+
+    # Get measurement name
+    if color_profile.measurement_id:
+        measurement = db.query(MeasurementProfile).filter(
+            MeasurementProfile.id == color_profile.measurement_id
+        ).first()
+        if measurement:
+            profile_dict["measurement_name"] = measurement.name
+
+    return profile_dict
 
 
 @router.post("", response_model=ColorProfileResponse, status_code=status.HTTP_201_CREATED)
@@ -87,6 +140,19 @@ async def create_color_profile(
             detail="Measurement profile not found",
         )
 
+    # Auto-generate recommended palette if both skin_tone_hex and hair_color_hex are provided
+    recommended_palette = data.recommended_palette
+    if data.skin_tone_hex and data.hair_color_hex and not recommended_palette:
+        try:
+            recommended_palette = generate_color_recommendations(
+                data.skin_tone_hex,
+                data.hair_color_hex
+            )
+        except Exception as e:
+            print(f"Error generating color recommendations: {e}")
+            # Continue without recommendations if generation fails
+            recommended_palette = None
+
     # Create new color profile
     color_profile = ColorProfile(
         user_id=user.id,
@@ -95,7 +161,7 @@ async def create_color_profile(
         skin_tone_hex=data.skin_tone_hex,
         hair_color=data.hair_color,
         hair_color_hex=data.hair_color_hex,
-        recommended_palette=data.recommended_palette,
+        recommended_palette=recommended_palette,
         photo_url=data.photo_url,
     )
 
@@ -143,6 +209,20 @@ async def update_color_profile(
     update_data = data.model_dump(exclude_unset=True)
     for field, value in update_data.items():
         setattr(color_profile, field, value)
+
+    # Regenerate recommended palette if skin_tone_hex or hair_color_hex changed
+    # and both are now available
+    if (('skin_tone_hex' in update_data or 'hair_color_hex' in update_data) and
+        color_profile.skin_tone_hex and color_profile.hair_color_hex):
+        try:
+            recommended_palette = generate_color_recommendations(
+                color_profile.skin_tone_hex,
+                color_profile.hair_color_hex
+            )
+            color_profile.recommended_palette = recommended_palette
+        except Exception as e:
+            print(f"Error generating color recommendations: {e}")
+            # Continue without updating recommendations if generation fails
 
     db.commit()
     db.refresh(color_profile)

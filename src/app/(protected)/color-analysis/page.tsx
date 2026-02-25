@@ -6,7 +6,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { useLocale } from "@/context/LocaleContext";
 import Notification from "@/components/Notification";
-import { getMeasurements, MeasurementResponse } from "@/lib/api";
+import { getMeasurements, MeasurementResponse, uploadColorAnalysisPhoto } from "@/lib/api";
 
 // Skin tone options with hex colors (updated to match design)
 const SKIN_TONES = [
@@ -51,6 +51,7 @@ export default function ColorAnalysisPage() {
   const [showColorPicker, setShowColorPicker] = useState(false);
   const [uploadedPhoto, setUploadedPhoto] = useState<File | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+  const [existingPhotoUrl, setExistingPhotoUrl] = useState<string | null>(null); // Track existing photo URL
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
@@ -72,6 +73,7 @@ export default function ColorAnalysisPage() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   const [existingProfileId, setExistingProfileId] = useState<string | null>(null);
+  const [showTransitionAnimation, setShowTransitionAnimation] = useState(false);
 
   // Fetch existing color profile data for a measurement
   const fetchColorProfile = useCallback(async (measurementId: string) => {
@@ -96,8 +98,18 @@ export default function ColorAnalysisPage() {
           setSelectedSkinToneHex(profile.skin_tone_hex);
           setSelectedHairColor(profile.hair_color);
           setSelectedHairColorHex(profile.hair_color_hex);
+
+          // Restore custom colors if "Custom" or "Other" was selected
+          if (profile.skin_tone === "Custom" && profile.skin_tone_hex) {
+            setCustomSkinTone(profile.skin_tone_hex);
+          }
+          if (profile.hair_color === "Other" && profile.hair_color_hex) {
+            setCustomHairColor(profile.hair_color_hex);
+          }
+
           if (profile.photo_url) {
             setPhotoPreview(profile.photo_url);
+            setExistingPhotoUrl(profile.photo_url); // Save existing photo URL
           }
         } else {
           setExistingProfileId(null);
@@ -184,6 +196,94 @@ export default function ColorAnalysisPage() {
       });
     }
   }, [isCameraActive, stream]);
+
+  // Start animation sequence when modal shows
+  useEffect(() => {
+    if (!showTransitionAnimation) return;
+
+    console.log('Animation starting - Spring → Summer → Autumn → Winter (1.5s each)...');
+
+    const steps = [
+      { id: 1, keyword: 'anim-keyword-1', bg: 'anim-bg-spring', dot: 'anim-dot-1', progress: 25 },
+      { id: 2, keyword: 'anim-keyword-2', bg: 'anim-bg-summer', dot: 'anim-dot-2', progress: 50 },
+      { id: 3, keyword: 'anim-keyword-3', bg: 'anim-bg-autumn', dot: 'anim-dot-3', progress: 75 },
+      { id: 4, keyword: 'anim-keyword-4', bg: 'anim-bg-winter', dot: 'anim-dot-4', progress: 100 }
+    ];
+
+    // Initialize: show first step
+    setTimeout(() => {
+      steps.forEach((step, index) => {
+        const keyword = document.getElementById(step.keyword);
+        if (keyword) {
+          keyword.classList.remove('active', 'hidden');
+          if (index === 0) {
+            keyword.classList.add('active');
+          } else {
+            keyword.classList.add('hidden');
+          }
+        }
+      });
+
+      // Activate first keyword
+      const firstKeyword = document.getElementById('anim-keyword-1');
+      if (firstKeyword) firstKeyword.classList.add('active');
+    }, 10);
+
+    let currentStepIdx = 0;
+
+    function advanceStep() {
+      // After winter (step 3, index 3), we're done - navigation happens via Promise.all timeout
+      if (currentStepIdx >= steps.length - 1) {
+        console.log('Reached winter, will navigate after this step completes');
+        return;
+      }
+
+      const current = steps[currentStepIdx];
+      const nextIdx = currentStepIdx + 1;
+      const next = steps[nextIdx];
+
+      // Hide current keyword
+      const currentText = document.getElementById(current.keyword);
+      if (currentText) {
+        currentText.classList.remove('active');
+        currentText.classList.add('hidden');
+      }
+
+      // Show next keyword
+      const nextText = document.getElementById(next.keyword);
+      if (nextText) {
+        nextText.classList.remove('hidden');
+        nextText.classList.add('active');
+      }
+
+      // Switch backgrounds
+      const currentBg = document.getElementById(current.bg);
+      const nextBg = document.getElementById(next.bg);
+      if (currentBg) currentBg.classList.remove('active');
+      if (nextBg) nextBg.classList.add('active');
+
+      // Update progress
+      const progressBar = document.getElementById('anim-main-progress');
+      if (progressBar) progressBar.style.width = next.progress + '%';
+
+      // Mark dot as completed
+      const nextDot = document.getElementById(next.dot);
+      if (nextDot) {
+        nextDot.classList.add('completed');
+        nextDot.classList.remove('bg-white/20');
+      }
+
+      console.log(`Step ${currentStepIdx} → ${nextIdx}: ${current.keyword} → ${next.keyword}`);
+      currentStepIdx = nextIdx;
+    }
+
+    // Advance every 1.5 seconds
+    const stepInterval = setInterval(advanceStep, 1500);
+
+    return () => {
+      clearInterval(stepInterval);
+    };
+  }, [showTransitionAnimation]);
 
   // Reset image transform
   const resetImageTransform = () => {
@@ -376,75 +476,94 @@ export default function ColorAnalysisPage() {
       return;
     }
 
-    setIsSaving(true);
     setError("");
     setSuccessMessage("");
 
+    // Show transition animation immediately
+    setShowTransitionAnimation(true);
+
     try {
-      // TODO: Upload photo to S3 if exists
-      let photoUrl = null;
-      if (uploadedPhoto) {
-        // Upload logic will go here
-        console.log("Photo upload not implemented yet");
-        // photoUrl = await uploadToS3(uploadedPhoto);
-      }
+      // Parallel execution: animation + data processing
+      const [, savedProfile] = await Promise.all([
+        // Animation: Spring → Summer → Autumn → Winter (1.5s each = 6s total)
+        new Promise(resolve => setTimeout(resolve, 6000)),
 
-      // Get Firebase token
-      if (!user?.uid) {
-        throw new Error("Not authenticated");
-      }
+        // Backend data processing
+        (async () => {
+          if (!user?.uid) {
+            throw new Error("Not authenticated");
+          }
 
-      // Save color profile to backend
-      const profileData = {
-        measurement_id: selectedMeasurementId,
-        skin_tone: selectedSkinTone,
-        skin_tone_hex: selectedSkinToneHex,
-        hair_color: selectedHairColor,
-        hair_color_hex: selectedHairColorHex,
-        photo_url: photoUrl,
-      };
+          // Determine photo URL logic:
+          // - If user uploaded new photo -> upload to S3 and use new URL
+          // - If no new photo but existing photo exists -> keep existing URL
+          // - If no photo at all -> null
+          let photoUrl: string | null = null;
 
-      let response;
-      if (existingProfileId) {
-        // Update existing profile
-        response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/color-profiles/${existingProfileId}`, {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-            "X-Firebase-UID": user.uid,
-          },
-          body: JSON.stringify(profileData),
-        });
-      } else {
-        // Create new profile
-        response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/color-profiles`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "X-Firebase-UID": user.uid,
-          },
-          body: JSON.stringify(profileData),
-        });
-      }
+          if (uploadedPhoto) {
+            // User uploaded a new photo
+            try {
+              const uploadResult = await uploadColorAnalysisPhoto(user.uid, uploadedPhoto);
+              photoUrl = uploadResult.url;
+              console.log("New photo uploaded successfully:", photoUrl);
+            } catch (uploadErr) {
+              console.error("Failed to upload photo:", uploadErr);
+              throw new Error("Failed to upload photo to S3");
+            }
+          } else if (existingPhotoUrl) {
+            // No new upload, but existing photo exists - keep it
+            photoUrl = existingPhotoUrl;
+            console.log("Keeping existing photo URL:", photoUrl);
+          }
+          // else: photoUrl remains null (no photo)
 
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.detail || "Failed to save color profile");
-      }
+          // Save color profile to backend
+          const profileData = {
+            measurement_id: selectedMeasurementId,
+            skin_tone: selectedSkinTone,
+            skin_tone_hex: selectedSkinToneHex,
+            hair_color: selectedHairColor,
+            hair_color_hex: selectedHairColorHex,
+            photo_url: photoUrl,
+          };
 
-      // Show success message
-      setSuccessMessage("Color profile saved successfully!");
+          let response;
+          if (existingProfileId) {
+            response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/color-profiles/${existingProfileId}`, {
+              method: "PUT",
+              headers: {
+                "Content-Type": "application/json",
+                "X-Firebase-UID": user.uid,
+              },
+              body: JSON.stringify(profileData),
+            });
+          } else {
+            response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/color-profiles`, {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                "X-Firebase-UID": user.uid,
+              },
+              body: JSON.stringify(profileData),
+            });
+          }
 
-      // Redirect to dashboard after successful save
-      setTimeout(() => {
-        router.push("/dashboard");
-      }, 1000);
+          if (!response.ok) {
+            const data = await response.json();
+            throw new Error(data.detail || "Failed to save color profile");
+          }
+
+          return await response.json();
+        })()
+      ]);
+
+      // Animation complete and data saved, redirect to results
+      router.push(`/color-results?measurement_id=${selectedMeasurementId}`);
 
     } catch (err: any) {
       console.error("Error saving color profile:", err);
       setError(err.message || "Failed to save color profile");
-    } finally {
-      setIsSaving(false);
+      setShowTransitionAnimation(false);
     }
   };
 
@@ -691,6 +810,7 @@ export default function ColorAnalysisPage() {
                       onClick={() => {
                         setUploadedPhoto(null);
                         setPhotoPreview(null);
+                        setExistingPhotoUrl(null); // Clear existing photo URL
                         if (fileInputRef.current) {
                           fileInputRef.current.value = "";
                         }
@@ -1524,6 +1644,154 @@ export default function ColorAnalysisPage() {
               </div>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Transition Animation Modal */}
+      {showTransitionAnimation && (
+        <div className="fixed inset-0 z-[100] bg-black overflow-hidden">
+          <style dangerouslySetInnerHTML={{ __html: `
+            @keyframes anim-vortex {
+              0% { transform: translate(var(--start-x), var(--start-y)) rotate(0deg) scale(1); opacity: 0; }
+              20% { opacity: 1; }
+              80% { opacity: 1; }
+              100% { transform: translate(-50%, -50%) rotate(720deg) scale(0); opacity: 0; }
+            }
+            .anim-particle {
+              position: absolute;
+              pointer-events: none;
+              animation: anim-vortex 2s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+            }
+            .anim-season-bg {
+              position: absolute;
+              inset: 0;
+              background-size: cover;
+              background-position: center;
+              opacity: 0;
+              transition: opacity 1.2s cubic-bezier(0.4, 0, 0.2, 1);
+            }
+            .anim-season-bg.active {
+              opacity: 1;
+            }
+            .anim-keyword-slide {
+              position: absolute;
+              width: 100%;
+              opacity: 0;
+              transform: translateX(100px);
+              transition: opacity 0.8s cubic-bezier(0.23, 1, 0.32, 1), transform 0.8s cubic-bezier(0.23, 1, 0.32, 1);
+              pointer-events: none;
+              z-index: 1;
+            }
+            .anim-keyword-slide.active {
+              opacity: 1 !important;
+              transform: translateX(0) !important;
+              pointer-events: auto;
+              z-index: 10;
+            }
+            .anim-keyword-slide.hidden {
+              opacity: 0 !important;
+              transform: translateX(0) !important;
+              transition: opacity 0.3s ease-out !important;
+              pointer-events: none;
+              z-index: 1;
+            }
+            .completed {
+              background-color: #D4AF37 !important;
+              box-shadow: 0 0 12px #D4AF37 !important;
+            }
+            #anim-bg-final {
+              opacity: 0;
+              transition: opacity 1.5s ease-in-out;
+            }
+            #anim-bg-final.active {
+              opacity: 1 !important;
+            }
+          ` }}></style>
+
+          {/* Background Layers */}
+          <div id="anim-bg-spring" className="anim-season-bg active" style={{ backgroundImage: "url('https://images.unsplash.com/photo-1522383225653-ed111181a951?auto=format&fit=crop&q=80&w=2000')" }}>
+            <div className="absolute inset-0 bg-gradient-to-br from-pink-300/30 to-green-300/40 mix-blend-multiply"></div>
+            <div className="absolute inset-0 bg-black/40"></div>
+          </div>
+          <div id="anim-bg-summer" className="anim-season-bg" style={{ backgroundImage: "url('https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&q=80&w=2000')" }}>
+            <div className="absolute inset-0 bg-gradient-to-br from-blue-400/30 to-yellow-400/40 mix-blend-multiply"></div>
+            <div className="absolute inset-0 bg-black/30"></div>
+          </div>
+          <div id="anim-bg-autumn" className="anim-season-bg" style={{ backgroundImage: "url('https://npr.brightspotcdn.com/legacy/sites/vpr/files/201909/iStock-FallFoliage_0.jpg')" }}>
+            <div className="absolute inset-0 bg-gradient-to-br from-orange-900/50 to-amber-950/60 mix-blend-multiply"></div>
+            <div className="absolute inset-0 bg-black/30"></div>
+          </div>
+          <div id="anim-bg-winter" className="anim-season-bg" style={{ backgroundImage: "url('https://samantha-brown.com/wp-content/uploads/2022/11/cozy-winter-lodges.jpg')" }}>
+            <div className="absolute inset-0 bg-gradient-to-br from-slate-200/40 to-blue-200/40 mix-blend-overlay"></div>
+            <div className="absolute inset-0 bg-black/50"></div>
+          </div>
+
+          {/* Final Gradient Background */}
+          <div id="anim-bg-final" className="absolute inset-0 z-0" style={{ background: "linear-gradient(135deg, #0B5563 0%, #1a7b8e 50%, #D4AF37 100%)" }}></div>
+
+          {/* Convergence Container */}
+          <div id="anim-convergence-container" className="absolute inset-0 z-20 pointer-events-none overflow-hidden"></div>
+
+          {/* Main UI Overlay */}
+          <div className="relative z-30 w-full h-full flex flex-col items-center justify-center px-8 text-center">
+            {/* Header */}
+            <div className="mb-4 overflow-hidden">
+              <p id="anim-header-text" className="text-white/70 font-satoshi text-lg md:text-xl uppercase tracking-[0.3em] font-medium transition-all duration-700">
+                Analyzing You Are...
+              </p>
+            </div>
+
+            {/* Animated Keyword Slider */}
+            <div className="relative min-h-[200px] flex items-center justify-center mb-12 md:mb-16 w-full">
+              <h1 id="anim-keyword-1" className="anim-keyword-slide text-5xl md:text-8xl font-cabinet font-black text-white tracking-tight leading-none">
+                Blooming Spring
+              </h1>
+              <h1 id="anim-keyword-2" className="anim-keyword-slide text-5xl md:text-8xl font-cabinet font-black text-white tracking-tight leading-none">
+                Sunny Summer
+              </h1>
+              <h1 id="anim-keyword-3" className="anim-keyword-slide text-5xl md:text-8xl font-cabinet font-black text-white tracking-tight leading-none">
+                Deep Autumn
+              </h1>
+              <h1 id="anim-keyword-4" className="anim-keyword-slide text-5xl md:text-8xl font-cabinet font-black text-white tracking-tight leading-none">
+                Snowy Winter
+              </h1>
+            </div>
+
+            {/* Progress Bar Section */}
+            <div className="max-w-xl mx-auto w-full space-y-8">
+              <div className="relative h-1 w-full bg-white/10 rounded-full overflow-hidden">
+                <div id="anim-main-progress" className="absolute top-0 left-0 h-full bg-[#D4AF37] transition-all duration-1000 ease-out" style={{ width: "25%" }}></div>
+              </div>
+
+              <div className="flex justify-between items-start">
+                <div className="flex flex-col items-center">
+                  <div id="anim-dot-1" className="w-3 h-3 rounded-full mb-3 transition-all duration-500 bg-[#D4AF37] shadow-[0_0_12px_#D4AF37]"></div>
+                  <span className="text-[10px] font-cabinet font-bold text-white/40 uppercase tracking-widest">Analysis</span>
+                </div>
+                <div className="flex flex-col items-center">
+                  <div id="anim-dot-2" className="w-3 h-3 rounded-full bg-white/20 mb-3 transition-all duration-500"></div>
+                  <span className="text-[10px] font-cabinet font-bold text-white/40 uppercase tracking-widest">Extract</span>
+                </div>
+                <div className="flex flex-col items-center">
+                  <div id="anim-dot-3" className="w-3 h-3 rounded-full bg-white/20 mb-3 transition-all duration-500"></div>
+                  <span className="text-[10px] font-cabinet font-bold text-white/40 uppercase tracking-widest">Calculate</span>
+                </div>
+                <div className="flex flex-col items-center">
+                  <div id="anim-dot-4" className="w-3 h-3 rounded-full bg-white/20 mb-3 transition-all duration-500"></div>
+                  <span className="text-[10px] font-cabinet font-bold text-white/40 uppercase tracking-widest">Match</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Branding */}
+          <div className="fixed bottom-8 left-8 z-50 flex items-center gap-3">
+            <svg className="w-6 h-6 text-[#D4AF37]" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9.75 3.104v5.714a2.25 2.25 0 01-.659 1.591L5 14.5M9.75 3.104c-.251.023-.501.05-.75.082m.75-.082a24.301 24.301 0 014.5 0m0 0v5.714c0 .597.237 1.17.659 1.591L19.8 15.3M14.25 3.104c.251.023.501.05.75.082M19.8 15.3l-1.57.393A9.065 9.065 0 0112 15a9.065 9.065 0 00-6.23-.693L5 14.5m14.8.8l1.402 1.402c1.232 1.232.65 3.318-1.067 3.611A48.309 48.309 0 0112 21c-2.773 0-5.491-.235-8.135-.687-1.718-.293-2.3-2.379-1.067-3.61L5 14.5" />
+            </svg>
+            <span className="font-cabinet font-bold text-white text-sm tracking-widest uppercase">Neural Engine Active</span>
+          </div>
+
         </div>
       )}
     </div>
