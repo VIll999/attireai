@@ -4,32 +4,24 @@ import { useState, useEffect } from "react";
 import AppNav from "@/components/AppNav";
 import { useAuth } from "@/context/AuthContext";
 import { getStylePreferences, saveStylePreferences, PriceRange } from "@/lib/api";
+import { useLocale } from "@/context/LocaleContext";
 
 const STYLES = [
-  { value: "minimalist", label: "Minimalist", defaultChecked: true },
-  { value: "streetwear", label: "Streetwear", defaultChecked: false },
-  { value: "classic", label: "Classic", defaultChecked: true },
-  { value: "bohemian", label: "Bohemian", defaultChecked: false },
-  { value: "preppy", label: "Preppy", defaultChecked: false },
-  { value: "athleisure", label: "Athleisure", defaultChecked: false },
-  { value: "vintage", label: "Vintage", defaultChecked: false },
-  { value: "elegant", label: "Elegant", defaultChecked: true },
-  { value: "casual", label: "Casual", defaultChecked: false },
+  { value: "minimalist", defaultChecked: true },
+  { value: "streetwear", defaultChecked: false },
+  { value: "classic", defaultChecked: true },
+  { value: "bohemian", defaultChecked: false },
+  { value: "preppy", defaultChecked: false },
+  { value: "athleisure", defaultChecked: false },
+  { value: "vintage", defaultChecked: false },
+  { value: "elegant", defaultChecked: true },
+  { value: "casual", defaultChecked: false },
 ];
 
 const PREVIEW_IMAGES = [
-  {
-    src: "/assets/minimalist.png",
-    label: "Minimalist",
-  },
-  {
-    src: "https://images.unsplash.com/photo-1492707892479-7bc8d5a4ee93?auto=format&fit=crop&q=80&w=400",
-    label: "Elegant",
-  },
-  {
-    src: "/assets/classic.png",
-    label: "Classic",
-  },
+  { src: "/assets/minimalist.png", styleValue: "minimalist" },
+  { src: "https://images.unsplash.com/photo-1492707892479-7bc8d5a4ee93?auto=format&fit=crop&q=80&w=400", styleValue: "elegant" },
+  { src: "/assets/classic.png", styleValue: "classic" },
 ];
 
 const INITIAL_BRANDS = ["Zara", "COS", "Ralph Lauren"];
@@ -37,6 +29,7 @@ const INITIAL_EXCLUSIONS = ["Bohemian", "Streetwear"];
 
 export default function StylePreferences() {
   const { user } = useAuth();
+  const { t } = useLocale();
   const [selectedStyles, setSelectedStyles] = useState<string[]>(
     STYLES.filter((s) => s.defaultChecked).map((s) => s.value)
   );
@@ -109,9 +102,9 @@ export default function StylePreferences() {
         preferred_brands: brands,
         excluded_brands: [],
         });
-        setSaveMessage("Saved!");
+        setSaveMessage(t("common.saved"));
     } catch {
-        setSaveMessage("Failed to save, please try again.");
+        setSaveMessage(t("common.failedSave"));
     } finally {
         setIsSaving(false);
     }
@@ -127,12 +120,13 @@ export default function StylePreferences() {
             <div className="w-10 h-10 border-4 border-[#0B5563] border-t-transparent rounded-full animate-spin" />
           </div>
         ) : (
+          <>
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-16">
             {/* Left: Style List */}
             <div className="lg:col-span-4">
               <div className="space-y-1 mb-8">
                 <h2 className="text-xs font-black uppercase tracking-[0.2em] text-gray-400 mb-6">
-                  Select Preferred Styles
+                  {t("preferences.selectStyles")}
                 </h2>
                 <div className="border rounded-2xl overflow-hidden divide-y divide-gray-100">
                   {STYLES.map((style) => {
@@ -144,7 +138,7 @@ export default function StylePreferences() {
                           isChecked ? "bg-[#F0F7F8] border-l-4 border-[#0B5563]" : ""
                         }`}
                       >
-                        <span className="font-bold text-gray-700">{style.label}</span>
+                        <span className="font-bold text-gray-700">{t(`styles.${style.value}`)}</span>
                         <input
                           type="checkbox"
                           checked={isChecked}
@@ -156,19 +150,20 @@ export default function StylePreferences() {
                   })}
                 </div>
               </div>
-
-              <button
-                onClick={handleSave}
-                disabled={isSaving}
-                className="w-full bg-[#0B5563] text-white py-4 rounded-xl font-bold hover:bg-[#09444F] transition-all flex items-center justify-center gap-2"
-              >
-                {isSaving ? "Saving..." : "Update Preferences →"}
-              </button>
-              {saveMessage && (
-              <p className={`text-center text-sm mt-2 font-medium ${saveMessage === "Saved!" ? "text-green-600" : "text-red-500"}`}>
-                  {saveMessage}
-              </p>
-              )}
+              <div className="hidden sm:block">
+                <button
+                  onClick={handleSave}
+                  disabled={isSaving}
+                  className="w-full bg-[#0B5563] text-white py-4 rounded-xl font-bold hover:bg-[#09444F] transition-all flex items-center justify-center gap-2"
+                >
+                  {isSaving ? t("common.saving") : t("preferences.updatePreferences")}
+                </button>
+                {saveMessage && (
+                <p className={`text-center text-sm mt-2 font-medium ${saveMessage === t("common.saved") ? "text-green-600" : "text-red-500"}`}>
+                    {saveMessage}
+                </p>
+                )}
+              </div>
             </div>
 
             {/* Right: Preview & Settings */}
@@ -176,21 +171,21 @@ export default function StylePreferences() {
               {/* Preview */}
               <section>
                 <h2 className="text-xs font-black uppercase tracking-[0.2em] text-gray-400 mb-6">
-                  Aesthetic Preview
+                  {t("preferences.aestheticPreview")}
                 </h2>
                 <div className="grid grid-cols-3 gap-4">
                   {PREVIEW_IMAGES.map((img) => (
                     <div
-                      key={img.label}
+                      key={img.styleValue}
                       className="aspect-[3/4] rounded-2xl overflow-hidden bg-gray-100 group relative"
                     >
                       <img
                         src={img.src}
-                        alt={`${img.label} Preview`}
+                        alt={`${img.styleValue} Preview`}
                         className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
                       />
                       <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex items-end p-4">
-                        <span className="text-white text-sm font-bold">{img.label}</span>
+                        <span className="text-white text-sm font-bold">{img.styleValue}</span>
                       </div>
                     </div>
                   ))}
@@ -202,10 +197,10 @@ export default function StylePreferences() {
                 <div className="space-y-6">
                   <div className="flex justify-between items-center">
                     <h2 className="text-xs font-black uppercase tracking-[0.2em] text-gray-400">
-                      Budget Alignment
+                      {t("preferences.budgetAlignment")}
                     </h2>
                     <span className="text-sm font-bold text-[#0B5563]">
-                      {budget === "BUDGET" ? "Budget" : budget === "LUXURY" ? "Luxury" : "Mid Range"}
+                      {budget === "BUDGET" ? t("preferences.budget") : budget === "LUXURY" ? t("preferences.luxury") : t("preferences.midRange")}
                     </span>
                   </div>
                   <div className="px-2">
@@ -231,9 +226,9 @@ export default function StylePreferences() {
                       }}
                     />
                     <div className="flex justify-between mt-3">
-                      <span className="text-[10px] font-bold text-gray-400">BUDGET</span>
-                      <span className="text-[10px] font-bold text-gray-400">MID RANGE</span>
-                      <span className="text-[10px] font-bold text-gray-400">LUXURY</span>
+                      <span className="text-[10px] font-bold text-gray-400">{t("preferences.sliderBudget")}</span>
+                      <span className="text-[10px] font-bold text-gray-400">{t("preferences.sliderMidRange")}</span>
+                      <span className="text-[10px] font-bold text-gray-400">{t("preferences.sliderLuxury")}</span>
                     </div>
                   </div>
                 </div>
@@ -241,7 +236,7 @@ export default function StylePreferences() {
                 {/* Brand Affinities */}
                 <div className="space-y-6">
                   <h2 className="text-xs font-black uppercase tracking-[0.2em] text-gray-400">
-                    Brand Affinities
+                    {t("preferences.brandAffinities")}
                   </h2>
                   <div className="flex flex-wrap gap-2">
                     {brands.map((brand) => (
@@ -265,14 +260,14 @@ export default function StylePreferences() {
                           value={newBrand}
                           onChange={(e) => setNewBrand(e.target.value)}
                           onKeyDown={(e) => e.key === "Enter" && addBrand()}
-                          placeholder="Brand name"
+                          placeholder={t("preferences.brandPlaceholder")}
                           className="px-3 py-1.5 text-xs border border-[#0B5563]/30 rounded-full outline-none focus:border-[#0B5563]"
                         />
                         <button onClick={addBrand} className="text-xs font-bold text-[#0B5563] hover:underline">
-                          Add
+                          {t("common.add")}
                         </button>
                         <button onClick={() => setShowBrandInput(false)} className="text-xs text-gray-400 hover:text-gray-600">
-                          Cancel
+                          {t("common.cancel")}
                         </button>
                       </div>
                     ) : (
@@ -280,7 +275,7 @@ export default function StylePreferences() {
                         onClick={() => setShowBrandInput(true)}
                         className="inline-flex items-center gap-2 px-4 py-2 bg-white rounded-full text-xs font-bold text-[#0B5563] border border-[#0B5563]/20 hover:bg-[#0B5563]/5"
                       >
-                        + Add Brand
+                        {t("preferences.addBrand")}
                       </button>
                     )}
                   </div>
@@ -290,7 +285,7 @@ export default function StylePreferences() {
               {/* Exclusions */}
               <section className="pt-8">
                 <h2 className="text-xs font-black uppercase tracking-[0.2em] text-gray-400 mb-6">
-                  Styles to Avoid
+                  {t("preferences.stylesToAvoid")}
                 </h2>
                 <div className="flex flex-col gap-3 max-w-md">
                   {exclusions.map((exclusion) => (
@@ -314,14 +309,14 @@ export default function StylePreferences() {
                         value={newExclusion}
                         onChange={(e) => setNewExclusion(e.target.value)}
                         onKeyDown={(e) => e.key === "Enter" && addExclusion()}
-                        placeholder="Style to avoid"
+                        placeholder={t("preferences.exclusionPlaceholder")}
                         className="flex-1 px-3 py-2 text-sm border border-[#0B5563]/30 rounded-xl outline-none focus:border-[#0B5563]"
                       />
                       <button onClick={addExclusion} className="text-sm font-bold text-[#0B5563] hover:underline">
-                        Add
+                        {t("common.add")}
                       </button>
                       <button onClick={() => setShowExclusionInput(false)} className="text-sm text-gray-400 hover:text-gray-600">
-                        Cancel
+                        {t("common.cancel")}
                       </button>
                     </div>
                   ) : (
@@ -329,13 +324,32 @@ export default function StylePreferences() {
                       onClick={() => setShowExclusionInput(true)}
                       className="text-xs font-bold text-[#0B5563] hover:underline text-left mt-2 flex items-center gap-2"
                     >
-                      ⊕ Add another exclusion
+                      {t("preferences.addExclusion")}
                     </button>
                   )}
                 </div>
               </section>
             </div>
           </div>
+        
+          {/* Bottom Save Bar */}
+          <div className="sm:hidden mt-12 pt-8 border-t border-gray-100">
+            {saveMessage ? (
+              <p className={`text-center text-sm mb-3 font-medium ${saveMessage === t("common.saved") ? "text-green-600" : "text-red-500"}`}>
+                {saveMessage}
+              </p>
+            ) : (
+              <div /> // Placeholder, keep button right-aligned
+            )}
+            <button
+              onClick={handleSave}
+              disabled={isSaving}
+              className="w-full bg-[#0B5563] text-white py-4 rounded-xl font-bold hover:bg-[#09444F] transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+            >
+              {isSaving ? t("common.saving") : t("preferences.updatePreferences")}
+            </button>
+          </div>
+          </>
         )}
       </main>
 

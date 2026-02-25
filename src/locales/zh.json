@@ -248,8 +248,42 @@
     "noProfile": "选择一个身体数据档案以查看尺码推荐",
     "usingProfile": "使用档案"
   },
+  "preferences": {
+    "selectStyles": "选择偏好风格",
+    "aestheticPreview": "风格预览",
+    "budgetAlignment": "预算范围",
+    "budget": "经济",
+    "midRange": "中等",
+    "luxury": "奢华",
+    "brandAffinities": "偏好品牌",
+    "brandPlaceholder": "品牌名称",
+    "addBrand": "+ 添加品牌",
+    "stylesToAvoid": "不喜欢的风格",
+    "exclusionPlaceholder": "要排除的风格",
+    "addExclusion": "⊕ 添加排除项",
+    "updatePreferences": "保存偏好设置",
+    "sliderBudget": "经济",
+    "sliderMidRange": "中等",
+    "sliderLuxury": "奢华"
+  },
+  "styles": {
+    "minimalist": "极简主义",
+    "streetwear": "街头风",
+    "classic": "经典",
+    "bohemian": "波西米亚",
+    "preppy": "学院风",
+    "athleisure": "运动休闲",
+    "vintage": "复古",
+    "elegant": "优雅",
+    "casual": "休闲"
+  },
   "common": {
     "loading": "加载中...",
-    "error": "发生错误"
+    "error": "发生错误",
+    "add": "添加",
+    "cancel": "取消",
+    "saving": "保存中...",
+    "saved": "已保存！",
+    "failedSave": "保存失败，请重试。"    
   }
 }

@@ -248,8 +248,43 @@
     "noProfile": "Selecciona un perfil de medidas para ver recomendaciones de talla",
     "usingProfile": "Usando perfil"
   },
+  "preferences": {
+    "selectStyles": "Seleccionar Estilos Preferidos",
+    "aestheticPreview": "Vista Previa Estética",
+    "budgetAlignment": "Alineación de Presupuesto",
+    "budget": "Económico",
+    "midRange": "Rango Medio",
+    "luxury": "Lujo",
+    "brandAffinities": "Marcas Preferidas",
+    "brandPlaceholder": "Nombre de marca",
+    "addBrand": "+ Agregar Marca",
+    "stylesToAvoid": "Estilos a Evitar",
+    "exclusionPlaceholder": "Estilo a evitar",
+    "addExclusion": "⊕ Agregar otra exclusión",
+    "updatePreferences": "Actualizar Preferencias",
+    "sliderBudget": "ECONÓMICO",
+    "sliderMidRange": "MEDIO",
+    "sliderLuxury": "LUJO"
+  },
+  "styles": {
+    "minimalist": "Minimalista",
+    "streetwear": "Streetwear",
+    "classic": "Clásico",
+    "bohemian": "Bohemio",
+    "preppy": "Preppy",
+    "athleisure": "Athleisure",
+    "vintage": "Vintage",
+    "elegant": "Elegante",
+    "casual": "Casual"
+  },
+
   "common": {
     "loading": "Cargando...",
-    "error": "Ocurrió un error"
+    "error": "Ocurrió un error",
+    "add": "Agregar",
+    "cancel": "Cancelar",
+    "saving": "Guardando...",
+    "saved": "¡Guardado!",
+    "failedSave": "Error al guardar, intenta de nuevo."
   }
 }
