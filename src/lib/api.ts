@@ -423,9 +423,11 @@ export interface StylePreferencesData {
   excluded_brands: string[];
 }
 
-export async function getStylePreferences(userId: string): Promise<StylePreferencesData | null> {
+export async function getStylePreferences(firebaseUid: string): Promise<StylePreferencesData | null> {
   try {
-    const res = await fetch(`/api/style-preferences/${userId}`);
+    const res = await fetch(`${API_URL}/style-preferences`, {
+      headers: { "X-Firebase-UID": firebaseUid },
+    });
     if (res.status === 404) return null;
     if (!res.ok) throw new Error("Failed to fetch style preferences");
     return res.json();
@@ -435,12 +437,12 @@ export async function getStylePreferences(userId: string): Promise<StylePreferen
 }
 
 export async function saveStylePreferences(
-  userId: string,
+  firebaseUid: string,
   data: StylePreferencesData
 ): Promise<StylePreferencesData> {
-  const res = await fetch(`/api/style-preferences/${userId}`, {
+  const res = await fetch(`${API_URL}/style-preferences`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", "X-Firebase-UID": firebaseUid },
     body: JSON.stringify(data),
   });
   if (!res.ok) throw new Error("Failed to save style preferences");

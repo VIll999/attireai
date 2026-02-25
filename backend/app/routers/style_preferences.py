@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, Depends
+from fastapi import APIRouter, HTTPException, Depends, Header, status
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
 from typing import Optional
@@ -27,30 +27,37 @@ class StylePreferencesSchema(BaseModel):
         from_attributes = True
 
 
-@router.get("/{firebase_uid}", response_model=StylePreferencesSchema)
-def get_style_preferences(firebase_uid: str, db: Session = Depends(get_db)):
+def get_user_by_uid(firebase_uid: str, db: Session) -> User:
+    if not firebase_uid:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Missing Firebase UID header",
+        )
     user = db.query(User).filter(User.firebase_uid == firebase_uid).first()
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
-    
+    return user
+
+
+@router.get("", response_model=StylePreferencesSchema)
+def get_style_preferences(
+    x_firebase_uid: str = Header(...),
+    db: Session = Depends(get_db),
+):
+    user = get_user_by_uid(x_firebase_uid, db)
     prefs = db.query(StylePreferences).filter(StylePreferences.user_id == user.id).first()
     if not prefs:
         raise HTTPException(status_code=404, detail="Style preferences not found")
     return prefs
 
 
-@router.post("/{firebase_uid}", response_model=StylePreferencesSchema)
+@router.post("", response_model=StylePreferencesSchema)
 def upsert_style_preferences(
-    firebase_uid: str,
     data: StylePreferencesSchema,
-    db: Session = Depends(get_db)
+    x_firebase_uid: str = Header(...),
+    db: Session = Depends(get_db),
 ):
-    # Use firebase_uid to find user in database
-    user = db.query(User).filter(User.firebase_uid == firebase_uid).first()
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
-    
-    # use user.id to save preferences
+    user = get_user_by_uid(x_firebase_uid, db)
     prefs = db.query(StylePreferences).filter(StylePreferences.user_id == user.id).first()
     if prefs:
         prefs.preferred_styles = data.preferred_styles
@@ -61,7 +68,7 @@ def upsert_style_preferences(
     else:
         prefs = StylePreferences(user_id=user.id, **data.dict())
         db.add(prefs)
-    
+
     db.commit()
     db.refresh(prefs)
     return prefs
