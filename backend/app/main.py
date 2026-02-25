@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import get_settings
-from app.routers import health, users, upload, measurements, sizing, color_profiles, outfit_recommendations
+from app.routers import health, users, upload, measurements, sizing, color_profiles, outfit_recommendations, style_preferences
 
 settings = get_settings()
 
@@ -41,6 +41,7 @@ app.include_router(measurements.router, prefix="/measurements", tags=["Measureme
 app.include_router(sizing.router, prefix="/sizing", tags=["Sizing"])
 app.include_router(color_profiles.router, prefix="/color-profiles", tags=["Color Profiles"])
 app.include_router(outfit_recommendations.router, prefix="/outfit-recommendations", tags=["Outfit Recommendations"])
+app.include_router(style_preferences.router, prefix="/style-preferences", tags=["Style Preferences"])
 
 @app.get("/")
 async def root():
