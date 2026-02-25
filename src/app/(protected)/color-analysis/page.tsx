@@ -38,7 +38,8 @@ export default function ColorAnalysisPage() {
 
   const [measurements, setMeasurements] = useState<MeasurementResponse[]>([]);
   const [selectedMeasurementId, setSelectedMeasurementId] = useState<string | null>(null);
-  const [fromMeasurementPage, setFromMeasurementPage] = useState(false);
+  const [fromMeasurementPage, setFromMeasurementPage] = useState(!!measurementIdFromUrl);
+  const [isLoadingProfiles, setIsLoadingProfiles] = useState(true);
   const [selectedSkinTone, setSelectedSkinTone] = useState<string | null>(null);
   const [selectedSkinToneHex, setSelectedSkinToneHex] = useState<string | null>(null);
   const [selectedHairColor, setSelectedHairColor] = useState<string | null>(null);
@@ -55,6 +56,16 @@ export default function ColorAnalysisPage() {
   const [successMessage, setSuccessMessage] = useState("");
   const [isCameraActive, setIsCameraActive] = useState(false);
   const [stream, setStream] = useState<MediaStream | null>(null);
+  const [showAlignmentGuide, setShowAlignmentGuide] = useState(false);
+  const [alignmentMode, setAlignmentMode] = useState<"camera" | "upload" | null>(null);
+  const [tempPhotoPreview, setTempPhotoPreview] = useState<string | null>(null);
+  const [cameraError, setCameraError] = useState<string | null>(null);
+
+  // Image transform states
+  const [imageScale, setImageScale] = useState(1);
+  const [imagePosition, setImagePosition] = useState({ x: 0, y: 0 });
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -67,7 +78,7 @@ export default function ColorAnalysisPage() {
     if (!user) return;
     try {
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_BACKEND_URL}/color-profiles`,
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/color-profiles?measurement_id=${measurementId}`,
         {
           headers: {
             "X-Firebase-UID": user.uid,
@@ -77,7 +88,7 @@ export default function ColorAnalysisPage() {
 
       if (response.ok) {
         const profiles = await response.json();
-        const profile = profiles.find((p: any) => p.measurement_id === measurementId);
+        const profile = profiles[0]; // Should only return one profile per measurement
         if (profile) {
           // Load existing data
           setExistingProfileId(profile.id);
@@ -97,30 +108,43 @@ export default function ColorAnalysisPage() {
     }
   }, [user]);
 
-  // Fetch measurement profiles on mount
+  // Initialize measurement ID from URL immediately (no API wait)
+  useEffect(() => {
+    if (measurementIdFromUrl) {
+      // Immediately set the ID and mark as ready
+      setSelectedMeasurementId(measurementIdFromUrl);
+      setIsLoadingProfiles(false);
+
+      // Load color profile data in background (non-blocking)
+      if (user) {
+        fetchColorProfile(measurementIdFromUrl);
+      }
+    }
+  }, [measurementIdFromUrl, user, fetchColorProfile]);
+
+  // Fetch measurement profiles only if NOT from measurement page
   const fetchMeasurements = useCallback(async () => {
     if (!user) return;
+
+    // Skip API call if coming from measurement page with URL parameter
+    if (measurementIdFromUrl) return;
+
+    setIsLoadingProfiles(true);
     try {
       const data = await getMeasurements(user.uid);
       setMeasurements(data);
 
-      // Check if coming from measurement page with URL parameter
-      if (measurementIdFromUrl) {
-        setFromMeasurementPage(true);
-        setSelectedMeasurementId(measurementIdFromUrl);
-        // Load existing color data for this measurement
-        await fetchColorProfile(measurementIdFromUrl);
-      } else {
-        // Auto-select primary or first measurement
-        const primary = data.find(m => m.is_primary) || data[0];
-        if (primary) {
-          setSelectedMeasurementId(primary.id);
-          await fetchColorProfile(primary.id);
-        }
+      // Auto-select primary or first measurement
+      const primary = data.find(m => m.is_primary) || data[0];
+      if (primary) {
+        setSelectedMeasurementId(primary.id);
+        await fetchColorProfile(primary.id);
       }
     } catch (err) {
       console.error("Failed to fetch measurements:", err);
       setError("Failed to load measurement profiles. Please create one first.");
+    } finally {
+      setIsLoadingProfiles(false);
     }
   }, [user, measurementIdFromUrl, fetchColorProfile]);
 
@@ -151,35 +175,91 @@ export default function ColorAnalysisPage() {
     };
   }, [stream]);
 
+  // Set video stream when camera activates in modal
+  useEffect(() => {
+    if (isCameraActive && stream && videoRef.current) {
+      videoRef.current.srcObject = stream;
+      videoRef.current.play().catch(err => {
+        console.error("Error playing video:", err);
+      });
+    }
+  }, [isCameraActive, stream]);
+
+  // Reset image transform
+  const resetImageTransform = () => {
+    setImageScale(1);
+    setImagePosition({ x: 0, y: 0 });
+  };
+
   // Handle photo upload
   const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      setUploadedPhoto(file);
-
-      // Create preview
+      // Create preview and show alignment guide
       const reader = new FileReader();
       reader.onloadend = () => {
-        setPhotoPreview(reader.result as string);
+        const result = reader.result as string;
+        setTempPhotoPreview(result);
+        setUploadedPhoto(file);
+        setAlignmentMode("upload");
+        setShowAlignmentGuide(true);
+        resetImageTransform();
+      };
+      reader.onerror = (error) => {
+        console.error('FileReader error:', error);
       };
       reader.readAsDataURL(file);
     }
   };
 
+  // Handle zoom
+  const handleZoomIn = () => {
+    setImageScale(prev => Math.min(prev + 0.1, 3));
+  };
+
+  const handleZoomOut = () => {
+    setImageScale(prev => Math.max(prev - 0.1, 0.5));
+  };
+
+  // Handle mouse drag
+  const handleMouseDown = (e: React.MouseEvent) => {
+    if (tempPhotoPreview || isCameraActive) {
+      setIsDragging(true);
+      setDragStart({ x: e.clientX - imagePosition.x, y: e.clientY - imagePosition.y });
+    }
+  };
+
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (isDragging) {
+      setImagePosition({
+        x: e.clientX - dragStart.x,
+        y: e.clientY - dragStart.y
+      });
+    }
+  };
+
+  const handleMouseUp = () => {
+    setIsDragging(false);
+  };
+
   // Open camera
   const openCamera = async () => {
+    setCameraError(null);
+    resetImageTransform();
     try {
       const mediaStream = await navigator.mediaDevices.getUserMedia({
         video: { facingMode: "user" },
       });
       setStream(mediaStream);
       setIsCameraActive(true);
-
-      if (videoRef.current) {
-        videoRef.current.srcObject = mediaStream;
+    } catch (err: any) {
+      let errorMessage = "Failed to access camera. Please allow camera permissions in your browser settings.";
+      if (err.name === "NotAllowedError" || err.name === "PermissionDeniedError") {
+        errorMessage = "Camera access denied. Please allow camera permissions in your browser settings and try again.";
+      } else if (err.name === "NotFoundError") {
+        errorMessage = "No camera found. Please connect a camera and try again.";
       }
-    } catch (err) {
-      setError("Failed to access camera. Please check permissions.");
+      setCameraError(errorMessage);
       console.error("Camera error:", err);
     }
   };
@@ -518,14 +598,16 @@ export default function ColorAnalysisPage() {
 
               {/* Camera View Section */}
               <div className="relative w-full aspect-[4/5] rounded-[2rem] overflow-hidden bg-gray-900 mb-6">
-                {isCameraActive ? (
-                  /* Camera Active */
+                {isCameraActive && !showAlignmentGuide ? (
+                  /* Camera Active (only when modal not open) */
                   <div className="relative w-full h-full">
                     <video
                       ref={videoRef}
                       autoPlay
                       playsInline
+                      muted
                       className="w-full h-full object-cover"
+                      style={{ transform: 'scaleX(-1)' }}
                     />
                     {/* Camera HUD */}
                     <div className="absolute inset-0 flex flex-col justify-between p-6">
@@ -621,7 +703,13 @@ export default function ColorAnalysisPage() {
                 ) : (
                   <>
                     <button
-                      onClick={openCamera}
+                      onClick={async () => {
+                        // Start camera first, then show modal
+                        setAlignmentMode("camera");
+                        await openCamera();
+                        // Only show modal after camera is ready
+                        setShowAlignmentGuide(true);
+                      }}
                       className="w-full bg-brand dark:bg-brand-400 text-white dark:text-gray-900 py-4 rounded-2xl font-bold flex items-center justify-center gap-2 hover:bg-brand-600 dark:hover:bg-brand-500 transition-all shadow-glow active:scale-[0.98]"
                     >
                       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
@@ -630,19 +718,22 @@ export default function ColorAnalysisPage() {
                       </svg>
                       Open Live Camera
                     </button>
-                    <label className="w-full bg-white dark:bg-stone-800 text-brand dark:text-brand-400 border-2 border-brand/20 dark:border-brand/30 py-4 rounded-2xl font-bold flex items-center justify-center gap-2 hover:bg-brand/5 dark:hover:bg-stone-700 transition-all cursor-pointer">
+                    <button
+                      onClick={() => fileInputRef.current?.click()}
+                      className="w-full bg-white dark:bg-stone-800 text-brand dark:text-brand-400 border-2 border-brand/20 dark:border-brand/30 py-4 rounded-2xl font-bold flex items-center justify-center gap-2 hover:bg-brand/5 dark:hover:bg-stone-700 transition-all cursor-pointer"
+                    >
                       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
                         <path strokeLinecap="round" strokeLinejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                       </svg>
                       Upload Photo
-                      <input
-                        ref={fileInputRef}
-                        type="file"
-                        className="hidden"
-                        accept="image/*"
-                        onChange={handlePhotoChange}
-                      />
-                    </label>
+                    </button>
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      className="hidden"
+                      accept="image/*"
+                      onChange={handlePhotoChange}
+                    />
                   </>
                 )}
               </div>
@@ -664,8 +755,8 @@ export default function ColorAnalysisPage() {
 
           {/* Right Column: Manual Selection */}
           <div className="lg:col-span-7 flex flex-col gap-10">
-            {/* Measurement Profile Selector - Only show if NOT from measurement page */}
-            {!fromMeasurementPage && measurements.length > 0 ? (
+            {/* Measurement Profile Selector - Only show if NOT from measurement page and not loading */}
+            {!isLoadingProfiles && !fromMeasurementPage && measurements.length > 0 ? (
               <div className="glass-panel rounded-3xl p-6 border-brand/10 dark:border-stone-700/50">
                 <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-3">
                   Select Measurement Profile <span className="text-red-500">*</span>
@@ -688,7 +779,7 @@ export default function ColorAnalysisPage() {
                   Color analysis will be linked to this measurement profile
                 </p>
               </div>
-            ) : !fromMeasurementPage && measurements.length === 0 ? (
+            ) : !isLoadingProfiles && !fromMeasurementPage && measurements.length === 0 ? (
               <div className="glass-panel rounded-3xl p-6 border-amber-200 dark:border-amber-800/50 bg-amber-50/50 dark:bg-amber-900/10">
                 <div className="flex items-center gap-4">
                   <div className="w-10 h-10 rounded-full bg-amber-100 dark:bg-amber-800 flex items-center justify-center flex-shrink-0">
@@ -1038,6 +1129,398 @@ export default function ColorAnalysisPage() {
                 >
                   Apply Color
                 </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Photo Alignment Guide Modal */}
+      {showAlignmentGuide && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-md z-50 flex items-center justify-center p-4 md:p-8">
+          <div className="bg-white/90 dark:bg-stone-900/90 backdrop-blur-2xl w-full max-w-5xl rounded-[2.5rem] shadow-2xl overflow-hidden border border-white/90 dark:border-stone-700/50">
+            {/* Header */}
+            <div className="p-6 md:p-8 border-b border-gray-100 dark:border-stone-800 flex items-center justify-between">
+              <div>
+                <h2 className="text-2xl font-cabinet font-extrabold text-gray-900 dark:text-white flex items-center gap-3">
+                  <svg className="w-7 h-7 text-brand dark:text-brand-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
+                  </svg>
+                  Photo Alignment & Calibration
+                </h2>
+                <p className="text-sm text-gray-500 dark:text-gray-400 font-medium mt-1">
+                  For the most accurate color analysis, please align your face with the visual guides below.
+                </p>
+              </div>
+              <button
+                onClick={() => {
+                  setShowAlignmentGuide(false);
+                  setTempPhotoPreview(null);
+                  setUploadedPhoto(null);
+                  setCameraError(null);
+                  if (fileInputRef.current) {
+                    fileInputRef.current.value = "";
+                  }
+                  if (isCameraActive) {
+                    closeCamera();
+                  }
+                }}
+                className="w-12 h-12 rounded-full flex items-center justify-center hover:bg-gray-100 dark:hover:bg-stone-800 transition-colors text-gray-400 hover:text-gray-900 dark:hover:text-white"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            <div className="flex flex-col lg:flex-row">
+              {/* Left: Interactive Crop Area */}
+              <div className="lg:w-3/5 p-6 md:p-10 bg-gray-50 dark:bg-stone-800/50 flex items-center justify-center">
+                <div
+                  className="relative w-full max-w-[400px] aspect-[4/5] rounded-3xl overflow-hidden bg-gray-900 shadow-2xl select-none"
+                  onMouseDown={handleMouseDown}
+                  onMouseMove={handleMouseMove}
+                  onMouseUp={handleMouseUp}
+                  onMouseLeave={handleMouseUp}
+                  style={{ cursor: (tempPhotoPreview || isCameraActive) ? (isDragging ? 'grabbing' : 'grab') : 'default' }}
+                >
+                  {/* Zoom Controls - Only show when photo/camera active */}
+                  {(tempPhotoPreview || isCameraActive) && (
+                    <div className="absolute top-4 right-4 z-50 flex flex-col gap-2">
+                      <button
+                        onClick={handleZoomIn}
+                        className="w-10 h-10 rounded-full bg-black/70 hover:bg-black/90 text-white flex items-center justify-center transition-all shadow-lg"
+                        title="Zoom In"
+                      >
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+                        </svg>
+                      </button>
+                      <button
+                        onClick={handleZoomOut}
+                        className="w-10 h-10 rounded-full bg-black/70 hover:bg-black/90 text-white flex items-center justify-center transition-all shadow-lg"
+                        title="Zoom Out"
+                      >
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M20 12H4" />
+                        </svg>
+                      </button>
+                      <button
+                        onClick={resetImageTransform}
+                        className="w-10 h-10 rounded-full bg-black/70 hover:bg-black/90 text-white flex items-center justify-center transition-all shadow-lg"
+                        title="Reset"
+                      >
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99" />
+                        </svg>
+                      </button>
+                    </div>
+                  )}
+
+                  {/* Camera Preview, Uploaded Photo, or Placeholder */}
+                  {isCameraActive && stream ? (
+                    <video
+                      ref={(el) => {
+                        videoRef.current = el;
+                        if (el && stream) {
+                          el.srcObject = stream;
+                        }
+                      }}
+                      autoPlay
+                      playsInline
+                      muted
+                      className="absolute inset-0 w-full h-full object-cover pointer-events-none"
+                      style={{
+                        transform: `translate(${imagePosition.x}px, ${imagePosition.y}px) scale(${imageScale}) scaleX(-1)`,
+                        transformOrigin: 'center',
+                        zIndex: 1
+                      }}
+                    />
+                  ) : tempPhotoPreview ? (
+                    <img
+                      src={tempPhotoPreview}
+                      alt=""
+                      className="absolute inset-0 w-full h-full object-cover pointer-events-none"
+                      style={{
+                        transform: `translate(${imagePosition.x}px, ${imagePosition.y}px) scale(${imageScale})`,
+                        transformOrigin: 'center',
+                        zIndex: 1
+                      }}
+                    />
+                  ) : cameraError ? (
+                    <div className="absolute inset-0 flex flex-col items-center justify-center bg-red-950/30 p-8 gap-6 z-[1]">
+                      <svg className="w-20 h-20 text-red-400 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
+                      </svg>
+                      <div className="text-center space-y-3">
+                        <h4 className="text-white font-bold text-lg">Camera Access Denied</h4>
+                        <p className="text-red-300 text-sm max-w-xs leading-relaxed">
+                          {cameraError}
+                        </p>
+                      </div>
+                      <button
+                        onClick={openCamera}
+                        className="mt-4 px-6 py-3 bg-brand hover:bg-brand-600 text-white rounded-xl font-bold text-sm transition-all shadow-lg"
+                      >
+                        Try Again
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="absolute inset-0 flex items-center justify-center bg-brand/5 z-[1]">
+                      {/* Human Silhouette SVG */}
+                      <svg viewBox="0 0 200 250" className="w-4/5 h-4/5 text-brand/20 fill-none stroke-current stroke-[2]" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M100,45 c-35,0 -55,30 -55,70 c0,45 20,80 55,80 s55,-35 55,-80 c0,-40 -20,-70 -55,-70 Z" />
+                        <path d="M20,230 c0,-40 30,-60 80,-60 s80,20 80,60" />
+                      </svg>
+                    </div>
+                  )}
+
+                  {/* Positioning Guides Overlay - Professional Design */}
+                  <div className="absolute inset-0 pointer-events-none z-10">
+                    {/* Gradient Overlay - Only show when no photo/camera to create depth */}
+                    {!tempPhotoPreview && !isCameraActive && (
+                      <div className="absolute inset-0" style={{ background: "radial-gradient(ellipse at center, transparent 60%, rgba(0, 0, 0, 0.3) 100%)" }}></div>
+                    )}
+
+                    {/* Head Guide Oval - Refined */}
+                    <div className="absolute top-[12%] left-[50%] -translate-x-1/2 w-[65%] h-[50%]">
+                      <div className={`w-full h-full rounded-[100%] border-[2px] border-dashed relative ${
+                        (tempPhotoPreview || isCameraActive)
+                          ? "border-white/90"
+                          : "border-brand/70 dark:border-brand-400/70"
+                      }`} style={{
+                        filter: 'drop-shadow(0 0 12px rgba(255, 255, 255, 0.4))',
+                        animation: 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite'
+                      }}>
+                        {/* Center horizontal line inside oval */}
+                        <div className={`absolute top-1/2 left-4 right-4 h-[1px] ${
+                          (tempPhotoPreview || isCameraActive) ? "bg-white/30" : "bg-brand/20"
+                        }`}></div>
+                      </div>
+                    </div>
+
+                    {/* Eye Level Guide - Precise */}
+                    <div className="absolute top-[35%] left-[12%] right-[12%]">
+                      <div className={`relative h-[2px] ${
+                        (tempPhotoPreview || isCameraActive)
+                          ? "bg-gradient-to-r from-transparent via-white to-transparent"
+                          : "bg-gradient-to-r from-transparent via-brand to-transparent"
+                      }`} style={{
+                        filter: (tempPhotoPreview || isCameraActive)
+                          ? 'drop-shadow(0 0 8px rgba(255, 255, 255, 0.8))'
+                          : 'drop-shadow(0 0 8px rgba(11, 85, 99, 0.6))'
+                      }}>
+                        {/* Left Eye Marker */}
+                        <div className={`absolute left-[28%] top-1/2 -translate-y-1/2 -translate-x-1/2 w-3 h-3 rounded-full ${
+                          (tempPhotoPreview || isCameraActive)
+                            ? "bg-white border-2 border-white/50"
+                            : "bg-brand border-2 border-brand/50"
+                        }`} style={{
+                          boxShadow: (tempPhotoPreview || isCameraActive)
+                            ? '0 0 12px rgba(255, 255, 255, 0.8), inset 0 0 4px rgba(255, 255, 255, 0.5)'
+                            : '0 0 12px rgba(11, 85, 99, 0.8), inset 0 0 4px rgba(11, 85, 99, 0.5)'
+                        }}></div>
+                        {/* Right Eye Marker */}
+                        <div className={`absolute right-[28%] top-1/2 -translate-y-1/2 translate-x-1/2 w-3 h-3 rounded-full ${
+                          (tempPhotoPreview || isCameraActive)
+                            ? "bg-white border-2 border-white/50"
+                            : "bg-brand border-2 border-brand/50"
+                        }`} style={{
+                          boxShadow: (tempPhotoPreview || isCameraActive)
+                            ? '0 0 12px rgba(255, 255, 255, 0.8), inset 0 0 4px rgba(255, 255, 255, 0.5)'
+                            : '0 0 12px rgba(11, 85, 99, 0.8), inset 0 0 4px rgba(11, 85, 99, 0.5)'
+                        }}></div>
+                      </div>
+                    </div>
+
+                    {/* Shoulder Guide - Elegant Arc */}
+                    <div className="absolute bottom-0 left-[50%] -translate-x-1/2 w-[85%] h-[18%]">
+                      <div className={`w-full h-full border-t-[2px] border-dashed rounded-t-[100%] ${
+                        (tempPhotoPreview || isCameraActive)
+                          ? "border-white/80"
+                          : "border-brand/60 dark:border-brand-400/60"
+                      }`} style={{
+                        filter: (tempPhotoPreview || isCameraActive)
+                          ? 'drop-shadow(0 0 10px rgba(255, 255, 255, 0.4))'
+                          : 'drop-shadow(0 0 10px rgba(11, 85, 99, 0.3))'
+                      }}></div>
+                    </div>
+
+                    {/* Scanning Line - Sleek */}
+                    <div className={`absolute left-0 w-full h-[2px] animate-[scan_3s_ease-in-out_infinite] ${
+                      (tempPhotoPreview || isCameraActive)
+                        ? "bg-gradient-to-r from-transparent via-white to-transparent"
+                        : "bg-gradient-to-r from-transparent via-brand to-transparent"
+                    }`} style={{
+                      filter: (tempPhotoPreview || isCameraActive)
+                        ? 'drop-shadow(0 0 16px rgba(255, 255, 255, 0.9)) drop-shadow(0 0 8px rgba(255, 255, 255, 0.6))'
+                        : 'drop-shadow(0 0 16px rgba(11, 85, 99, 0.9)) drop-shadow(0 0 8px rgba(11, 85, 99, 0.6))'
+                    }}></div>
+
+                    {/* Corner Brackets - Modern & Clean */}
+                    <div className="absolute top-4 left-4 w-12 h-12">
+                      <div className={`absolute top-0 left-0 w-full h-[3px] rounded-r-sm ${
+                        (tempPhotoPreview || isCameraActive) ? "bg-white/90" : "bg-brand/70"
+                      }`} style={{ width: '60%', filter: 'drop-shadow(0 0 6px rgba(255, 255, 255, 0.6))' }}></div>
+                      <div className={`absolute top-0 left-0 h-full w-[3px] rounded-b-sm ${
+                        (tempPhotoPreview || isCameraActive) ? "bg-white/90" : "bg-brand/70"
+                      }`} style={{ height: '60%', filter: 'drop-shadow(0 0 6px rgba(255, 255, 255, 0.6))' }}></div>
+                    </div>
+                    <div className="absolute top-4 right-4 w-12 h-12">
+                      <div className={`absolute top-0 right-0 w-full h-[3px] rounded-l-sm ${
+                        (tempPhotoPreview || isCameraActive) ? "bg-white/90" : "bg-brand/70"
+                      }`} style={{ width: '60%', filter: 'drop-shadow(0 0 6px rgba(255, 255, 255, 0.6))' }}></div>
+                      <div className={`absolute top-0 right-0 h-full w-[3px] rounded-b-sm ${
+                        (tempPhotoPreview || isCameraActive) ? "bg-white/90" : "bg-brand/70"
+                      }`} style={{ height: '60%', filter: 'drop-shadow(0 0 6px rgba(255, 255, 255, 0.6))' }}></div>
+                    </div>
+                    <div className="absolute bottom-4 left-4 w-12 h-12">
+                      <div className={`absolute bottom-0 left-0 w-full h-[3px] rounded-r-sm ${
+                        (tempPhotoPreview || isCameraActive) ? "bg-white/90" : "bg-brand/70"
+                      }`} style={{ width: '60%', filter: 'drop-shadow(0 0 6px rgba(255, 255, 255, 0.6))' }}></div>
+                      <div className={`absolute bottom-0 left-0 h-full w-[3px] rounded-t-sm ${
+                        (tempPhotoPreview || isCameraActive) ? "bg-white/90" : "bg-brand/70"
+                      }`} style={{ height: '60%', filter: 'drop-shadow(0 0 6px rgba(255, 255, 255, 0.6))' }}></div>
+                    </div>
+                    <div className="absolute bottom-4 right-4 w-12 h-12">
+                      <div className={`absolute bottom-0 right-0 w-full h-[3px] rounded-l-sm ${
+                        (tempPhotoPreview || isCameraActive) ? "bg-white/90" : "bg-brand/70"
+                      }`} style={{ width: '60%', filter: 'drop-shadow(0 0 6px rgba(255, 255, 255, 0.6))' }}></div>
+                      <div className={`absolute bottom-0 right-0 h-full w-[3px] rounded-t-sm ${
+                        (tempPhotoPreview || isCameraActive) ? "bg-white/90" : "bg-brand/70"
+                      }`} style={{ height: '60%', filter: 'drop-shadow(0 0 6px rgba(255, 255, 255, 0.6))' }}></div>
+                    </div>
+                  </div>
+
+                  {/* Center Focus Text - Only show when no photo and no camera */}
+                  {!tempPhotoPreview && !isCameraActive && (
+                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-20">
+                      <div className="bg-black/50 backdrop-blur-md px-5 py-2.5 rounded-full border border-white/20">
+                        <span className="text-[11px] font-black text-white uppercase tracking-[0.2em]">Face Alignment Zone</span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Right: Instructions Panel */}
+              <div className="lg:w-2/5 p-8 md:p-10 flex flex-col justify-between">
+                <div className="space-y-10">
+                  <div>
+                    <h3 className="text-xs font-black text-brand dark:text-brand-400 uppercase tracking-widest mb-6">
+                      {(tempPhotoPreview || isCameraActive) ? "Check Your Alignment" : "Alignment Instructions"}
+                    </h3>
+                    <div className="space-y-6">
+                      {/* Step 1 */}
+                      <div className="flex gap-5 items-start">
+                        <div className="w-8 h-8 rounded-full bg-brand dark:bg-brand-400 text-white dark:text-gray-900 flex items-center justify-center flex-shrink-0 font-bold text-xs shadow-lg">
+                          1
+                        </div>
+                        <div>
+                          <h4 className="font-bold text-gray-900 dark:text-white">Head Alignment</h4>
+                          <p className="text-sm text-gray-500 dark:text-gray-400 leading-relaxed">
+                            {(tempPhotoPreview || isCameraActive)
+                              ? "Verify your face is centered within the dashed oval with space above your head."
+                              : "Ensure your face is centered within the dashed oval, leaving a small space above the crown."
+                            }
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Step 2 */}
+                      <div className="flex gap-5 items-start">
+                        <div className="w-8 h-8 rounded-full bg-brand/10 dark:bg-brand/20 text-brand dark:text-brand-400 flex items-center justify-center flex-shrink-0 font-bold text-xs">
+                          2
+                        </div>
+                        <div>
+                          <h4 className="font-bold text-gray-900 dark:text-white">Eye Level</h4>
+                          <p className="text-sm text-gray-500 dark:text-gray-400 leading-relaxed">
+                            {(tempPhotoPreview || isCameraActive)
+                              ? "Check that your eyes align with the horizontal line and circular markers."
+                              : "Keep your eyes level and aligned with the horizontal guide and circular indicators."
+                            }
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Step 3 */}
+                      <div className="flex gap-5 items-start">
+                        <div className="w-8 h-8 rounded-full bg-brand/10 dark:bg-brand/20 text-brand dark:text-brand-400 flex items-center justify-center flex-shrink-0 font-bold text-xs">
+                          3
+                        </div>
+                        <div>
+                          <h4 className="font-bold text-gray-900 dark:text-white">Shoulder Frame</h4>
+                          <p className="text-sm text-gray-500 dark:text-gray-400 leading-relaxed">
+                            {(tempPhotoPreview || isCameraActive)
+                              ? "Confirm your shoulders are visible at the bottom of the frame."
+                              : "Include your shoulder line at the bottom to help the AI determine accurate body proportions."
+                            }
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Quality Warning */}
+                  <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-100 dark:border-amber-800/50 rounded-2xl p-4 flex gap-4">
+                    <svg className="w-5 h-5 text-amber-600 dark:text-amber-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <p className="text-xs text-amber-800 dark:text-amber-200 leading-relaxed font-medium">
+                      Tip: Use natural lighting and avoid dark shadows to ensure the most accurate color analysis.
+                    </p>
+                  </div>
+                </div>
+
+                {/* Footer Actions */}
+                <div className="mt-12 flex gap-4">
+                  <button
+                    onClick={() => {
+                      if (tempPhotoPreview && alignmentMode === "upload") {
+                        // Retake photo - clear and trigger file input again
+                        setTempPhotoPreview(null);
+                        setUploadedPhoto(null);
+                        if (fileInputRef.current) {
+                          fileInputRef.current.value = "";
+                          fileInputRef.current.click();
+                        }
+                      } else {
+                        // Cancel completely
+                        setShowAlignmentGuide(false);
+                        setTempPhotoPreview(null);
+                        setUploadedPhoto(null);
+                        setCameraError(null);
+                        if (fileInputRef.current) {
+                          fileInputRef.current.value = "";
+                        }
+                        // Close camera if active
+                        if (isCameraActive) {
+                          closeCamera();
+                        }
+                      }
+                    }}
+                    className="flex-1 py-4 border-2 border-gray-100 dark:border-stone-700 rounded-2xl font-bold text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-stone-800 transition-all"
+                  >
+                    {tempPhotoPreview && alignmentMode === "upload" ? "Retake Photo" : "Cancel"}
+                  </button>
+                  <button
+                    onClick={() => {
+                      if (alignmentMode === "camera" && isCameraActive) {
+                        // Take photo from camera
+                        takePhoto();
+                        setShowAlignmentGuide(false);
+                      } else if (alignmentMode === "upload" && tempPhotoPreview) {
+                        // Confirm the uploaded photo
+                        setPhotoPreview(tempPhotoPreview);
+                        setTempPhotoPreview(null);
+                        setShowAlignmentGuide(false);
+                      }
+                    }}
+                    className="flex-1 py-4 bg-brand dark:bg-brand-400 text-white dark:text-gray-900 rounded-2xl font-bold shadow-glow hover:bg-brand-600 dark:hover:bg-brand-500 transition-all"
+                  >
+                    {alignmentMode === "camera" && isCameraActive ? "Take Photo" : "Confirm"}
+                  </button>
+                </div>
               </div>
             </div>
           </div>
