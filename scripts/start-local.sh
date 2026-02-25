@@ -2,14 +2,14 @@
 
 # Start both backend and frontend for local development
 # Usage: ./start-local.sh [backend_port]
-# Default backend port: 8000, frontend always runs on 3000
+# Default backend port: 8001, frontend always runs on 3000
 
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
 
-BACKEND_PORT="${1:-8000}"
+BACKEND_PORT="${1:-8001}"
 
 echo "============================================"
 echo "  AttireAI Local Development Environment"
@@ -42,7 +42,7 @@ sleep 2
 
 # Start frontend in background
 cd "$PROJECT_ROOT"
-BACKEND_URL="http://localhost:$BACKEND_PORT" npm run dev &
+BACKEND_URL="http://localhost:$BACKEND_PORT" NEXT_PUBLIC_BACKEND_URL="http://localhost:$BACKEND_PORT" npm run dev &
 FRONTEND_PID=$!
 
 # Wait for both processes

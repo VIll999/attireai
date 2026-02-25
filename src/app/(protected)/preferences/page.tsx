@@ -119,7 +119,7 @@ export default function StylePreferences() {
 
   return (
     <div className="min-h-screen bg-white flex flex-col">
-      <AppNav activePage="style" />
+      <AppNav activePage="preferences" />
 
       <main className="flex-1 max-w-7xl mx-auto w-full px-8 py-12">    
         {isLoading ? (
