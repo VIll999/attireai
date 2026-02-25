@@ -9,6 +9,7 @@ interface ColorProfile {
   id: string;
   user_id: string;
   measurement_id: string;
+  measurement_name: string | null;
   skin_tone: string | null;
   skin_tone_hex: string | null;
   hair_color: string | null;
@@ -108,6 +109,13 @@ export default function ColorResultsPage() {
     if (selectedProfile) {
       setSelectedProfileId(profileId);
       setProfile(selectedProfile);
+
+      // Update URL with measurement_id without reloading page
+      if (selectedProfile.measurement_id) {
+        const newUrl = `/color-results?measurement_id=${selectedProfile.measurement_id}`;
+        window.history.replaceState({ ...window.history.state, as: newUrl, url: newUrl }, '', newUrl);
+      }
+
       setShowEmojiRain(true);
       emojiRainRef.current = setTimeout(() => {
         setShowEmojiRain(false);
@@ -145,7 +153,7 @@ export default function ColorResultsPage() {
           </p>
 
           <div className="space-y-4">
-            {allProfiles.map((p, index) => (
+            {allProfiles.map((p) => (
               <button
                 key={p.id}
                 onClick={() => handleProfileSelection(p.id)}
@@ -154,7 +162,7 @@ export default function ColorResultsPage() {
                 <div className="flex items-center justify-between">
                   <div className="flex-1">
                     <h3 className="font-bold text-lg text-gray-900 dark:text-white mb-2">
-                      Profile #{index + 1}
+                      {p.measurement_name || "Unnamed Profile"}
                     </h3>
                     <div className="flex gap-4 text-sm text-gray-600 dark:text-gray-400">
                       {p.skin_tone && (
@@ -278,9 +286,9 @@ export default function ColorResultsPage() {
                 onChange={(e) => handleProfileSelection(e.target.value)}
                 className="appearance-none bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-xl px-4 py-2 pr-10 font-medium text-sm text-gray-900 dark:text-white hover:border-brand dark:hover:border-brand-400 transition-colors cursor-pointer focus:outline-none focus:ring-2 focus:ring-brand/20"
               >
-                {allProfiles.map((p, index) => (
+                {allProfiles.map((p) => (
                   <option key={p.id} value={p.id}>
-                    Profile #{index + 1} {p.recommended_palette?.seasonName ? `- ${p.recommended_palette.seasonName}` : ''}
+                    {p.measurement_name || 'Unnamed Profile'} {p.recommended_palette?.seasonName ? `- ${p.recommended_palette.seasonName}` : ''}
                   </option>
                 ))}
               </select>

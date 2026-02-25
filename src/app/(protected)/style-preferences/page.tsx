@@ -48,9 +48,9 @@ export default function StylePreferencesPage() {
   useEffect(() => {
     const isComplete = selectedOccasion && selectedWeather && selectedDressCode;
     if (isComplete) {
-      setValidationMessage("Perfect! Your style goal is set.");
+      setValidationMessage("Perfect! Ready to save your preferences.");
     } else {
-      setValidationMessage("Pick one from each section to start the AI matching.");
+      setValidationMessage("Pick one from each section to save your preferences.");
     }
   }, [selectedOccasion, selectedWeather, selectedDressCode]);
 
@@ -76,14 +76,11 @@ export default function StylePreferencesPage() {
         dress_code: selectedDressCode,
       });
 
-      // Navigate to outfit results page (to be implemented)
-      // For now, redirect to dashboard
-      setTimeout(() => {
-        router.push("/dashboard");
-      }, 1000);
+      // Navigate to outfit matching page
+      router.push(`/outfit-matching?recommendation_id=${recommendation.id}`);
     } catch (error) {
-      console.error("Failed to create outfit recommendation:", error);
-      alert("Failed to create outfit recommendation. Please try again.");
+      console.error("Failed to save style preferences:", error);
+      alert("Failed to save your preferences. Please try again.");
       setIsSubmitting(false);
     }
   };
@@ -268,11 +265,11 @@ export default function StylePreferencesPage() {
                 className="w-full py-6 rounded-2xl bg-brand text-white font-black text-xl flex items-center justify-center space-x-4 transition-all active:scale-[0.98] disabled:opacity-20 disabled:cursor-not-allowed group relative overflow-hidden shadow-[0_10px_25px_-5px_rgba(11,85,99,0.3)]"
               >
                 <span className="relative z-10 font-cabinet tracking-tight">
-                  {isSubmitting ? "Matching..." : "Discover Outfits"}
+                  {isSubmitting ? "Saving..." : "Save Preferences"}
                 </span>
                 {!isSubmitting && (
                   <svg className="w-6 h-6 text-accent group-hover:translate-x-1 transition-transform relative z-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                   </svg>
                 )}
                 {isSubmitting && (

@@ -42,7 +42,35 @@ async def get_color_profiles(
 
     color_profiles = query.all()
 
-    return color_profiles
+    # Enrich with measurement names
+    result = []
+    for profile in color_profiles:
+        profile_dict = {
+            "id": profile.id,
+            "user_id": profile.user_id,
+            "measurement_id": profile.measurement_id,
+            "skin_tone": profile.skin_tone,
+            "skin_tone_hex": profile.skin_tone_hex,
+            "hair_color": profile.hair_color,
+            "hair_color_hex": profile.hair_color_hex,
+            "recommended_palette": profile.recommended_palette,
+            "photo_url": profile.photo_url,
+            "created_at": profile.created_at,
+            "updated_at": profile.updated_at,
+            "measurement_name": None
+        }
+
+        # Get measurement name
+        if profile.measurement_id:
+            measurement = db.query(MeasurementProfile).filter(
+                MeasurementProfile.id == profile.measurement_id
+            ).first()
+            if measurement:
+                profile_dict["measurement_name"] = measurement.name
+
+        result.append(profile_dict)
+
+    return result
 
 
 @router.get("/{profile_id}", response_model=ColorProfileResponse)
@@ -65,7 +93,31 @@ async def get_color_profile(
             detail="Color profile not found",
         )
 
-    return color_profile
+    # Enrich with measurement name
+    profile_dict = {
+        "id": color_profile.id,
+        "user_id": color_profile.user_id,
+        "measurement_id": color_profile.measurement_id,
+        "skin_tone": color_profile.skin_tone,
+        "skin_tone_hex": color_profile.skin_tone_hex,
+        "hair_color": color_profile.hair_color,
+        "hair_color_hex": color_profile.hair_color_hex,
+        "recommended_palette": color_profile.recommended_palette,
+        "photo_url": color_profile.photo_url,
+        "created_at": color_profile.created_at,
+        "updated_at": color_profile.updated_at,
+        "measurement_name": None
+    }
+
+    # Get measurement name
+    if color_profile.measurement_id:
+        measurement = db.query(MeasurementProfile).filter(
+            MeasurementProfile.id == color_profile.measurement_id
+        ).first()
+        if measurement:
+            profile_dict["measurement_name"] = measurement.name
+
+    return profile_dict
 
 
 @router.post("", response_model=ColorProfileResponse, status_code=status.HTTP_201_CREATED)

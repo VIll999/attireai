@@ -29,6 +29,7 @@ class ColorProfileResponse(BaseModel):
     id: str
     user_id: str
     measurement_id: str
+    measurement_name: Optional[str] = None
     skin_tone: Optional[str] = None
     skin_tone_hex: Optional[str] = None
     hair_color: Optional[str] = None

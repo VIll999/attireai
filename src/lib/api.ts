@@ -280,6 +280,7 @@ interface ColorProfileResponse {
   id: string;
   user_id: string;
   measurement_id: string;
+  measurement_name: string | null;
   skin_tone: string | null;
   skin_tone_hex: string | null;
   hair_color: string | null;

@@ -213,11 +213,9 @@ export default function DashboardPage() {
                       <div className="flex-1">
                         <h4 className="font-bold text-gray-900 dark:text-white font-cabinet">{t("dashboard.colorAnalysis")}</h4>
                         <p className="text-sm text-green-600 dark:text-green-400 mt-1 font-medium">{t("dashboard.completed")}</p>
-                        {primaryMeasurementId && (
-                          <Link href={`/color-results?measurement_id=${primaryMeasurementId}`} className="mt-4 inline-flex items-center gap-2 text-xs font-bold text-brand dark:text-brand-400 hover:underline">
-                            <span>View Results</span>
-                          </Link>
-                        )}
+                        <Link href="/color-results" className="mt-4 inline-flex items-center gap-2 text-xs font-bold text-brand dark:text-brand-400 hover:underline">
+                          <span>View Results</span>
+                        </Link>
                       </div>
                     </div>
                   </div>
