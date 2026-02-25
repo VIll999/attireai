@@ -210,6 +210,7 @@
     "delete": "Delete",
     "primary": "Primary",
     "profileNameRequired": "Profile name is required.",
+    "nameTooLong": "Profile name must be 50 characters or less.",
     "measurementsUpdated": "Measurements updated!",
     "measurementsSaved": "Measurements saved!",
     "failedSave": "Failed to save measurements. Please try again.",

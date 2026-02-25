@@ -448,3 +448,59 @@ export async function saveStylePreferences(
   if (!res.ok) throw new Error("Failed to save style preferences");
   return res.json();
 }
+
+// --- AI Recommendations API ---
+
+export interface AIRecommendationRequest {
+  occasion?: string;
+  budget?: number;
+  currency?: string;
+  styles?: string[];
+  gender?: string;
+  location?: string;
+  weather?: string;
+  measurement_profile_id?: string;
+  k?: number;
+  save_to_db?: boolean;
+}
+
+export interface AIRecommendationItem {
+  name: string;
+  category?: string | null;
+  brand?: string | null;
+  price?: number | null;
+  currency?: string | null;
+  image_url?: string | null;
+  purchase_url?: string | null;
+  reasoning?: string;
+  recommended_color?: string | null;
+  recommended_size?: string | null;
+  source_urls?: string[];
+}
+
+export interface AIRecommendationResponse {
+  items: AIRecommendationItem[];
+  recommendation_id?: string | null;
+  debug?: Record<string, unknown>;
+}
+
+export async function getAIRecommendations(
+  firebaseUid: string,
+  data: AIRecommendationRequest
+): Promise<AIRecommendationResponse> {
+  const response = await fetch(`${API_URL}/recommendations/ai-products`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "X-Firebase-UID": firebaseUid,
+    },
+    body: JSON.stringify(data),
+  });
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({ detail: "Failed to get recommendations" }));
+    throw new Error(error.detail || "Failed to get AI recommendations");
+  }
+
+  return response.json();
+}

@@ -83,16 +83,16 @@ function convertForStorage(displayValue: string, field: FieldKey, unit: Unit): n
   return toCm(num);
 }
 
-// Reasonable ranges in CM/kg (metric)
+// Realistic human body ranges in CM/kg (metric)
 const MEASUREMENT_RANGES: Record<FieldKey, { min: number; max: number }> = {
-  height: { min: 140, max: 220 },
-  weight: { min: 15, max: 350 },
-  chest: { min: 40, max: 200 },
-  waist: { min: 30, max: 200 },
-  hip: { min: 40, max: 200 },
-  inseam: { min: 25, max: 120 },
-  shoulder_width: { min: 20, max: 80 },
-  arm_length: { min: 30, max: 110 },
+  height: { min: 40, max: 300 },
+  weight: { min: 2, max: 350 },
+  chest: { min: 30, max: 180 },
+  waist: { min: 20, max: 170 },
+  hip: { min: 30, max: 180 },
+  inseam: { min: 20, max: 110 },
+  shoulder_width: { min: 15, max: 70 },
+  arm_length: { min: 20, max: 100 },
 };
 
 function getDisplayRange(field: FieldKey, unit: Unit): { min: number; max: number } {
@@ -108,6 +108,16 @@ function isValueInRange(value: string, field: FieldKey, unit: Unit): boolean {
   if (isNaN(num)) return true;
   const { min, max } = getDisplayRange(field, unit);
   return num >= min && num <= max;
+}
+
+function clampValue(value: string, field: FieldKey, unit: Unit): string {
+  if (value === "") return "";
+  const num = parseFloat(value);
+  if (isNaN(num)) return "";
+  const { min, max } = getDisplayRange(field, unit);
+  if (num < min) return String(min);
+  if (num > max) return String(max);
+  return value;
 }
 
 export default function MeasurementsPage() {
@@ -295,6 +305,21 @@ export default function MeasurementsPage() {
     if (!user || !form.name.trim()) {
       setError(t("measurements.profileNameRequired"));
       return;
+    }
+
+    if (form.name.trim().length > 50) {
+      setError(t("measurements.nameTooLong"));
+      return;
+    }
+
+    // Check all fields are within valid ranges before saving
+    for (const field of MEASUREMENT_FIELDS) {
+      if (form[field.key] !== "" && !isValueInRange(form[field.key], field.key, unit)) {
+        const range = getDisplayRange(field.key, unit);
+        const unitLabel = unit === "CM" ? field.cmUnit : field.inUnit;
+        setError(`${fieldLabels[field.key]} must be between ${range.min}${unitLabel} and ${range.max}${unitLabel}`);
+        return;
+      }
     }
 
     setIsSaving(true);
@@ -551,6 +576,7 @@ export default function MeasurementsPage() {
                               type="text"
                               value={form.name}
                               onChange={(e) => setForm({ ...form, name: e.target.value })}
+                              maxLength={50}
                               className="flex-1 bg-white/90 dark:bg-stone-800/50 border border-gray-200 dark:border-stone-700 text-gray-900 dark:text-white rounded-xl px-4 py-3.5 focus:outline-none focus:ring-2 focus:ring-brand dark:focus:ring-brand-400 transition-shadow shadow-sm"
                               placeholder={t("measurements.profileNamePlaceholder")}
                               required
@@ -590,8 +616,11 @@ export default function MeasurementsPage() {
                               <input
                                 type="number"
                                 step="0.1"
+                                min={getDisplayRange(field.key, unit).min}
+                                max={getDisplayRange(field.key, unit).max}
                                 value={form[field.key]}
                                 onChange={(e) => setForm({ ...form, [field.key]: e.target.value })}
+                                onBlur={() => setForm((prev) => ({ ...prev, [field.key]: clampValue(prev[field.key], field.key, unit) }))}
                                 className={`w-full border rounded-xl px-4 py-3.5 focus:outline-none focus:ring-2 transition-shadow shadow-sm ${
                                   showError
                                     ? "bg-red-50/50 dark:bg-red-900/10 border-red-300 dark:border-red-700 text-red-900 dark:text-red-100 focus:ring-red-500"
@@ -639,8 +668,11 @@ export default function MeasurementsPage() {
                               <input
                                 type="number"
                                 step="0.1"
+                                min={getDisplayRange(field.key, unit).min}
+                                max={getDisplayRange(field.key, unit).max}
                                 value={form[field.key]}
                                 onChange={(e) => setForm({ ...form, [field.key]: e.target.value })}
+                                onBlur={() => setForm((prev) => ({ ...prev, [field.key]: clampValue(prev[field.key], field.key, unit) }))}
                                 className="w-full bg-white/90 dark:bg-stone-800/50 border border-gray-200 dark:border-stone-700 text-gray-900 dark:text-white rounded-xl px-4 py-3.5 focus:outline-none focus:ring-2 focus:ring-brand dark:focus:ring-brand-400 transition-shadow shadow-sm"
                                 placeholder={`${Math.round((range.min + range.max) / 2)}`}
                               />
@@ -676,8 +708,11 @@ export default function MeasurementsPage() {
                               <input
                                 type="number"
                                 step="0.1"
+                                min={getDisplayRange(field.key, unit).min}
+                                max={getDisplayRange(field.key, unit).max}
                                 value={form[field.key]}
                                 onChange={(e) => setForm({ ...form, [field.key]: e.target.value })}
+                                onBlur={() => setForm((prev) => ({ ...prev, [field.key]: clampValue(prev[field.key], field.key, unit) }))}
                                 className="w-full bg-white/90 dark:bg-stone-800/50 border border-gray-200 dark:border-stone-700 text-gray-900 dark:text-white rounded-xl px-4 py-3.5 focus:outline-none focus:ring-2 focus:ring-brand dark:focus:ring-brand-400 transition-shadow shadow-sm"
                                 placeholder={`${Math.round((range.min + range.max) / 2)}`}
                               />
@@ -689,6 +724,21 @@ export default function MeasurementsPage() {
                         );
                       })}
                     </div>
+                  </div>
+
+                  {/* Primary Toggle */}
+                  <div className="flex items-center justify-between px-1 py-3 border-t border-gray-200 dark:border-gray-700">
+                    <div>
+                      <p className="text-sm font-medium text-gray-900 dark:text-white">{t("measurements.primary")} Profile</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">Used as default for sizing and recommendations</p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setForm({ ...form, is_primary: !form.is_primary })}
+                      className={`relative w-11 h-6 rounded-full transition-colors ${form.is_primary ? "bg-brand dark:bg-brand-400" : "bg-gray-300 dark:bg-gray-600"}`}
+                    >
+                      <span className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${form.is_primary ? "translate-x-5" : ""}`} />
+                    </button>
                   </div>
 
                   {/* Actions */}

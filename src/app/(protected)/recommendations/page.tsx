@@ -4,31 +4,7 @@ import { useMemo, useState } from "react";
 import AppNav from "@/components/AppNav";
 import { useAuth } from "@/context/AuthContext";
 import { useLocale } from "@/context/LocaleContext";
-
-type RecommendationItem = {
-  name: string;
-  category?: string | null;
-  brand?: string | null;
-  price?: number | null;
-  currency?: string | null;
-  image_url?: string | null;
-  purchase_url?: string | null;
-  reasoning?: string | null;
-  recommended_color?: string | null;
-  recommended_size?: string | null;
-  source_urls?: string[] | null;
-  query_terms?: string[] | null;
-  product_url?: string | null;
-  reason?: string | null;
-  color?: string | null;
-  size?: string | null;
-};
-
-type AIProductsResponse = {
-  items: RecommendationItem[];
-  recommendation_id?: string | null;
-  debug?: any;
-};
+import { getAIRecommendations, AIRecommendationItem, AIRecommendationResponse } from "@/lib/api";
 
 const OCCASIONS = [
   { value: "casual", label: "Casual" },
@@ -79,8 +55,8 @@ function normalizeCategory(raw?: string | null) {
   return "Other";
 }
 
-function groupItems(items: RecommendationItem[]) {
-  const buckets: Record<string, RecommendationItem[]> = {
+function groupItems(items: AIRecommendationItem[]) {
+  const buckets: Record<string, AIRecommendationItem[]> = {
     Top: [],
     Bottom: [],
     Shoes: [],
@@ -94,28 +70,15 @@ function groupItems(items: RecommendationItem[]) {
   return buckets;
 }
 
-function pickBestUrl(it: RecommendationItem): string | null {
+function pickBestUrl(it: AIRecommendationItem): string | null {
   if (it.purchase_url) return it.purchase_url;
-  if (it.product_url) return it.product_url;
   if (it.source_urls && it.source_urls.length > 0) return it.source_urls[0];
   return null;
 }
 
-function pickReason(it: RecommendationItem): string | null {
-  return it.reasoning || it.reason || null;
-}
-
-function pickSize(it: RecommendationItem): string | null {
-  return it.recommended_size || it.size || null;
-}
-
-function pickColor(it: RecommendationItem): string | null {
-  return it.recommended_color || it.color || null;
-}
-
 export default function RecommendationsPage() {
   const { user, dbUser } = useAuth();
-  const { t } = useLocale();
+  useLocale();
 
   const [occasion, setOccasion] = useState<(typeof OCCASIONS)[number]["value"]>("casual");
   const [budget, setBudget] = useState<number>(200);
@@ -127,9 +90,7 @@ export default function RecommendationsPage() {
 
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
-  const [result, setResult] = useState<AIProductsResponse | null>(null);
-
-  const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8001";
+  const [result, setResult] = useState<AIRecommendationResponse | null>(null);
 
   const grouped = useMemo(() => {
     if (!result?.items?.length) return null;
@@ -151,31 +112,14 @@ export default function RecommendationsPage() {
     setResult(null);
 
     try {
-      const body: any = {
+      const data = await getAIRecommendations(user.uid, {
         occasion,
         gender,
         budget,
         styles: selectedStyles,
-      };
-
-      if (location.trim()) body.location = location.trim();
-      if (weather.trim()) body.weather = weather.trim();
-
-      const res = await fetch(`${backendUrl}/recommendations/ai-products`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-firebase-uid": user.uid,
-        },
-        body: JSON.stringify(body),
+        ...(location.trim() && { location: location.trim() }),
+        ...(weather.trim() && { weather: weather.trim() }),
       });
-
-      if (!res.ok) {
-        const text = await res.text().catch(() => "");
-        throw new Error(text || `Request failed (${res.status})`);
-      }
-
-      const data = (await res.json()) as AIProductsResponse;
       setResult(data);
     } catch (e: any) {
       console.error(e);
@@ -358,9 +302,9 @@ export default function RecommendationsPage() {
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                     {items.map((it, idx) => {
                       const bestUrl = pickBestUrl(it);
-                      const reason = pickReason(it);
-                      const size = pickSize(it);
-                      const color = pickColor(it);
+                      const reason = it.reasoning || null;
+                      const size = it.recommended_size || null;
+                      const color = it.recommended_color || null;
 
                       return (
                         <div

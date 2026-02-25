@@ -210,6 +210,7 @@
     "delete": "删除",
     "primary": "主要",
     "profileNameRequired": "档案名称为必填项。",
+    "nameTooLong": "档案名称不能超过50个字符。",
     "measurementsUpdated": "数据已更新！",
     "measurementsSaved": "数据已保存！",
     "failedSave": "保存失败，请重试。",
