@@ -39,6 +39,8 @@ export default function ColorResultsPage() {
 
   const [isLoading, setIsLoading] = useState(true);
   const [profile, setProfile] = useState<ColorProfile | null>(null);
+  const [allProfiles, setAllProfiles] = useState<ColorProfile[]>([]);
+  const [selectedProfileId, setSelectedProfileId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [showEmojiRain, setShowEmojiRain] = useState(false);
   const emojiRainRef = useRef<NodeJS.Timeout | null>(null);
@@ -49,42 +51,45 @@ export default function ColorResultsPage() {
       return;
     }
 
-    if (!measurementId) {
-      setError("No measurement ID provided");
-      setIsLoading(false);
-      return;
-    }
-
     fetchColorProfile();
   }, [user, measurementId]);
 
   const fetchColorProfile = async () => {
-    if (!user || !measurementId) return;
+    if (!user) return;
 
     try {
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_BACKEND_URL}/color-profiles?measurement_id=${measurementId}`,
-        {
-          headers: {
-            "X-Firebase-UID": user.uid,
-          },
-        }
-      );
+      // Build URL based on whether measurementId is provided
+      const url = measurementId
+        ? `${process.env.NEXT_PUBLIC_BACKEND_URL}/color-profiles?measurement_id=${measurementId}`
+        : `${process.env.NEXT_PUBLIC_BACKEND_URL}/color-profiles`;
+
+      const response = await fetch(url, {
+        headers: {
+          "X-Firebase-UID": user.uid,
+        },
+      });
 
       if (response.ok) {
         const profiles = await response.json();
+
         if (profiles && profiles.length > 0) {
-          console.log('Color profile loaded:', profiles[0]);
-          console.log('Photo URL:', profiles[0].photo_url);
-          setProfile(profiles[0]);
-          // Trigger emoji rain animation
-          setShowEmojiRain(true);
-          // Hide after all emojis have fallen (7s generation + 3s fall time = 10s total)
-          emojiRainRef.current = setTimeout(() => {
-            setShowEmojiRain(false);
-          }, 10000); // 10 seconds - let all emojis finish falling
+          setAllProfiles(profiles);
+
+          // If measurement_id is provided, show that profile directly
+          if (measurementId) {
+            console.log('Color profile loaded:', profiles[0]);
+            console.log('Photo URL:', profiles[0].photo_url);
+            setProfile(profiles[0]);
+            // Trigger emoji rain animation
+            setShowEmojiRain(true);
+            // Hide after all emojis have fallen (7s generation + 3s fall time = 10s total)
+            emojiRainRef.current = setTimeout(() => {
+              setShowEmojiRain(false);
+            }, 10000); // 10 seconds - let all emojis finish falling
+          }
+          // If no measurement_id, user will select from dropdown
         } else {
-          setError("No color profile found");
+          setError("No color profiles found. Please complete your color analysis first.");
         }
       } else {
         setError("Failed to load color profile");
@@ -94,6 +99,19 @@ export default function ColorResultsPage() {
       setError("Failed to load color profile");
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  // Handle profile selection
+  const handleProfileSelection = (profileId: string) => {
+    const selectedProfile = allProfiles.find(p => p.id === profileId);
+    if (selectedProfile) {
+      setSelectedProfileId(profileId);
+      setProfile(selectedProfile);
+      setShowEmojiRain(true);
+      emojiRainRef.current = setTimeout(() => {
+        setShowEmojiRain(false);
+      }, 10000);
     }
   };
 
@@ -110,6 +128,72 @@ export default function ColorResultsPage() {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[#FAFAFC] dark:bg-stone-950">
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-brand dark:border-brand-400"></div>
+      </div>
+    );
+  }
+
+  // If no measurement_id provided and we have profiles, show selector
+  if (!measurementId && allProfiles.length > 0 && !profile) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[#FAFAFC] dark:bg-stone-950 px-6">
+        <div className="glass-panel rounded-[2.5rem] p-12 text-center max-w-2xl w-full">
+          <h1 className="text-4xl font-cabinet font-extrabold text-gray-900 dark:text-white mb-4">
+            Select Your Color Profile
+          </h1>
+          <p className="text-lg text-gray-600 dark:text-gray-400 mb-8">
+            Choose which color analysis result you'd like to view
+          </p>
+
+          <div className="space-y-4">
+            {allProfiles.map((p, index) => (
+              <button
+                key={p.id}
+                onClick={() => handleProfileSelection(p.id)}
+                className="w-full glass-panel p-6 rounded-2xl hover:shadow-xl transition-all hover:scale-[1.02] border border-stone-200 dark:border-stone-700 text-left group"
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex-1">
+                    <h3 className="font-bold text-lg text-gray-900 dark:text-white mb-2">
+                      Profile #{index + 1}
+                    </h3>
+                    <div className="flex gap-4 text-sm text-gray-600 dark:text-gray-400">
+                      {p.skin_tone && (
+                        <div className="flex items-center gap-2">
+                          <div className="w-6 h-6 rounded-full border-2 border-white dark:border-stone-700 shadow-md" style={{ backgroundColor: p.skin_tone_hex || '#E8B999' }}></div>
+                          <span>{p.skin_tone} skin</span>
+                        </div>
+                      )}
+                      {p.hair_color && (
+                        <div className="flex items-center gap-2">
+                          <div className="w-6 h-6 rounded-full border-2 border-white dark:border-stone-700 shadow-md" style={{ backgroundColor: p.hair_color_hex || '#1A1A1A' }}></div>
+                          <span>{p.hair_color} hair</span>
+                        </div>
+                      )}
+                    </div>
+                    {p.recommended_palette?.seasonName && (
+                      <div className="mt-2 text-sm font-bold text-brand dark:text-brand-400">
+                        {p.recommended_palette.emoji} {p.recommended_palette.seasonName}
+                      </div>
+                    )}
+                  </div>
+                  <svg className="w-6 h-6 text-brand dark:text-brand-400 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
+                </div>
+              </button>
+            ))}
+          </div>
+
+          <Link
+            href="/dashboard"
+            className="mt-8 inline-flex items-center gap-2 text-sm font-bold text-gray-500 hover:text-brand dark:hover:text-brand-400 transition-colors"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+            </svg>
+            Back to Dashboard
+          </Link>
+        </div>
       </div>
     );
   }
@@ -185,6 +269,26 @@ export default function ColorResultsPage() {
             </div>
             <span className="font-cabinet font-extrabold text-2xl tracking-tight text-gray-900 dark:text-white">AttireAI</span>
           </Link>
+
+          {/* Profile Selector - Show if user has multiple profiles */}
+          {allProfiles.length > 1 && (
+            <div className="relative">
+              <select
+                value={profile?.id || ''}
+                onChange={(e) => handleProfileSelection(e.target.value)}
+                className="appearance-none bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-xl px-4 py-2 pr-10 font-medium text-sm text-gray-900 dark:text-white hover:border-brand dark:hover:border-brand-400 transition-colors cursor-pointer focus:outline-none focus:ring-2 focus:ring-brand/20"
+              >
+                {allProfiles.map((p, index) => (
+                  <option key={p.id} value={p.id}>
+                    Profile #{index + 1} {p.recommended_palette?.seasonName ? `- ${p.recommended_palette.seasonName}` : ''}
+                  </option>
+                ))}
+              </select>
+              <svg className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+            </div>
+          )}
         </div>
       </header>
 
@@ -464,10 +568,10 @@ export default function ColorResultsPage() {
               </Link>
               <div className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto">
                 <Link
-                  href="/dashboard"
+                  href={`/style-preferences?measurement_id=${measurementId}`}
                   className="px-12 py-4 rounded-full bg-brand text-white font-bold text-lg hover:bg-brand-600 transition-all shadow-glow hover:translate-y-[-2px] active:translate-y-0 flex items-center justify-center gap-3"
                 >
-                  Back to Dashboard
+                  Continue to Outfit Recommendations
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
                   </svg>
