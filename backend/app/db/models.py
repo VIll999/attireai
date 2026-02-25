@@ -103,6 +103,9 @@ class StylePreferences(Base):
 
     id = Column(CHAR(36), primary_key=True, default=generate_uuid)
     user_id = Column(CHAR(36), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, unique=True)
+    occasion = Column(String(50), nullable=True)
+    weather = Column(String(50), nullable=True)
+    dress_code = Column(String(50), nullable=True)
     preferred_styles = Column(JSON, nullable=True)
     avoided_styles = Column(JSON, nullable=True)
     price_range = Column(Enum("BUDGET", "MID_RANGE", "LUXURY"), default="MID_RANGE")

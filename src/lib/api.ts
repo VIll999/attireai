@@ -416,6 +416,9 @@ export async function getOutfitRecommendation(
 export type PriceRange = "BUDGET" | "MID_RANGE" | "LUXURY";
 
 export interface StylePreferencesData {
+  occasion?: string | null;
+  weather?: string | null;
+  dress_code?: string | null;
   preferred_styles: string[];
   avoided_styles: string[];
   price_range: PriceRange;

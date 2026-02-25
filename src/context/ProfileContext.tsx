@@ -2,7 +2,7 @@
 
 import { createContext, useContext, useEffect, useState, useCallback, useRef, ReactNode } from "react";
 import { useAuth } from "./AuthContext";
-import { getMeasurements, getColorProfiles, getOutfitRecommendations, MeasurementResponse } from "@/lib/api";
+import { getMeasurements, getColorProfiles, getStylePreferences, MeasurementResponse } from "@/lib/api";
 
 interface ProfileContextType {
   measurements: MeasurementResponse[];
@@ -72,10 +72,10 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
   const refreshStylePreferences = useCallback(async () => {
     if (!user) return;
     try {
-      const data = await getOutfitRecommendations(user.uid);
-      setHasStylePreferences(data.length > 0);
+      const data = await getStylePreferences(user.uid);
+      setHasStylePreferences(data !== null);
     } catch (err) {
-      console.error("Failed to fetch outfit recommendations:", err);
+      console.error("Failed to fetch style preferences:", err);
     }
   }, [user]);
 
@@ -83,14 +83,14 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
     if (!user || fetchingRef.current) return;
     fetchingRef.current = true;
     try {
-      const [measurementsData, colorData, outfitData] = await Promise.all([
+      const [measurementsData, colorData, styleData] = await Promise.all([
         getMeasurements(user.uid),
         getColorProfiles(user.uid),
-        getOutfitRecommendations(user.uid),
+        getStylePreferences(user.uid),
       ]);
       setMeasurements(measurementsData);
       setHasColorAnalysis(colorData.length > 0);
-      setHasStylePreferences(outfitData.length > 0);
+      setHasStylePreferences(styleData !== null);
     } catch (err) {
       console.error("Failed to fetch profile data:", err);
     } finally {

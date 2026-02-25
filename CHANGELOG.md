@@ -6,16 +6,61 @@ Format: Each team member should add their changes under the current date with th
 
 ---
 
-## [Unreleased]
-
-### Added
-- *Add upcoming features here*
+## [0.7.0] - 2026-02-25
 
 ### Changed
-- *Add changes here*
+
+#### Congtian Wu
+- Reworked recommendations page to use `measurement_id`-based data flow instead of redundant form inputs
+- Recommendations page now fetches and displays user's measurements, color profile, and style preferences as a summary
+- Added measurement profile dropdown selector (auto-selects from URL param or primary profile)
+- Moved `occasion`, `weather`, `dress_code` fields from `outfit_recommendations` table into `style_preferences` table
+- Style preferences page now saves occasion/weather/dress_code alongside styles/budget/brands in a single API call
+- Style preferences page now pre-populates all saved fields (occasion, weather, dress code, styles, budget, brands) on revisit
+- Style preferences redirect simplified to only pass `measurement_id` to recommendations page
+- Fixed dashboard "Edit Preferences" link to point to `/style-preferences` instead of `/style`
+
+### Added
+
+#### Congtian Wu
+- Migration `005_add_occasion_fields_to_style_preferences.sql` for new columns
+- `occasion`, `weather`, `dress_code` columns on `style_preferences` DB model and API schema
+
+---
+
+## [0.6.0] - 2026-02-25
+
+### Added
+
+#### Congtian Wu
+- Dual AI provider support (Gemini + OpenAI) with `AI_PROVIDER` env var
+- Gemini integration using `google-genai` SDK with Google Search grounding
+- Lazy AI service initialization to prevent backend crash when API keys are missing
+- Primary profile toggle on measurements page
+- Input auto-clamping on blur for measurement fields
+
+#### Yichen (merged from Yichen_branch)
+- AI recommendation engine with web search (`/recommendations/ai-products`)
+- `RecommendationItem`, `SavedOutfit`, `VirtualTryOn`, `Subscription` DB models
+- Recommendations page with product cards, category grouping, and item display
+
+### Changed
+
+#### Congtian Wu
+- Tightened measurement input ranges to realistic human values (height 40-300cm, chest 30-180cm, etc.)
+- Added pydantic Field validation on backend measurement models
+- Made `occasion`, `weather`, `dress_code` Optional in outfit recommendation response model
+- Swapped ProfileContext from `getOutfitRecommendations` to `getStylePreferences` to avoid unnecessary API calls
+- Fixed recommendations page to use Next.js proxy instead of hardcoded backend URL
 
 ### Fixed
-- *Add bug fixes here*
+
+#### Congtian Wu
+- 500 error on `GET /outfit-recommendations` caused by nullable fields failing pydantic validation
+- Measurement save allowing values exceeding DB `Numeric(5,2)` limit (999.99)
+- Style preferences API using wrong auth pattern (path param instead of `X-Firebase-UID` header)
+- Build failure from Kate's branch (`activePage="style"` type mismatch)
+- Backend crash on startup when AI API keys not configured
 
 ---
 

@@ -17,6 +17,9 @@ class PriceRange(str, Enum):
 
 
 class StylePreferencesSchema(BaseModel):
+    occasion: Optional[str] = None
+    weather: Optional[str] = None
+    dress_code: Optional[str] = None
     preferred_styles: list[str] = []
     avoided_styles: list[str] = []
     price_range: PriceRange = PriceRange.MID_RANGE
@@ -60,6 +63,9 @@ def upsert_style_preferences(
     user = get_user_by_uid(x_firebase_uid, db)
     prefs = db.query(StylePreferences).filter(StylePreferences.user_id == user.id).first()
     if prefs:
+        prefs.occasion = data.occasion
+        prefs.weather = data.weather
+        prefs.dress_code = data.dress_code
         prefs.preferred_styles = data.preferred_styles
         prefs.avoided_styles = data.avoided_styles
         prefs.price_range = data.price_range

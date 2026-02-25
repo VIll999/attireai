@@ -1,28 +1,20 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 import AppNav from "@/components/AppNav";
 import { useAuth } from "@/context/AuthContext";
 import { useLocale } from "@/context/LocaleContext";
-import { getAIRecommendations, AIRecommendationItem, AIRecommendationResponse } from "@/lib/api";
-
-const OCCASIONS = [
-  { value: "casual", label: "Casual" },
-  { value: "work", label: "Work" },
-  { value: "date", label: "Date" },
-  { value: "formal", label: "Formal" },
-  { value: "sport", label: "Sport" },
-] as const;
-
-const STYLE_TAGS = [
-  "minimal",
-  "streetwear",
-  "classic",
-  "smart-casual",
-  "athleisure",
-  "vintage",
-  "preppy",
-] as const;
+import {
+  getMeasurements,
+  getColorProfiles,
+  getStylePreferences,
+  getAIRecommendations,
+  MeasurementResponse,
+  StylePreferencesData,
+  AIRecommendationItem,
+  AIRecommendationResponse,
+} from "@/lib/api";
 
 function normalizeCategory(raw?: string | null) {
   const v = (raw || "").toLowerCase();
@@ -46,11 +38,6 @@ function normalizeCategory(raw?: string | null) {
 
   if (v.includes("access") || v.includes("bag") || v.includes("watch") || v.includes("belt") || v.includes("hat"))
     return "Accessories";
-
-  if (["top", "tops", "upper"].includes(v)) return "Top";
-  if (["bottom", "bottoms", "lower"].includes(v)) return "Bottom";
-  if (["shoes", "shoe", "footwear"].includes(v)) return "Shoes";
-  if (["accessories", "accessory"].includes(v)) return "Accessories";
 
   return "Other";
 }
@@ -76,36 +63,85 @@ function pickBestUrl(it: AIRecommendationItem): string | null {
   return null;
 }
 
+interface ColorProfileData {
+  skin_tone: string | null;
+  hair_color: string | null;
+  recommended_palette: any;
+}
+
 export default function RecommendationsPage() {
   const { user, dbUser } = useAuth();
   useLocale();
+  const searchParams = useSearchParams();
 
-  const [occasion, setOccasion] = useState<(typeof OCCASIONS)[number]["value"]>("casual");
-  const [budget, setBudget] = useState<number>(200);
-  const [gender, setGender] = useState<string>("unisex");
-  const [selectedStyles, setSelectedStyles] = useState<string[]>(["minimal"]);
+  // Profile data
+  const [profiles, setProfiles] = useState<MeasurementResponse[]>([]);
+  const [selectedProfileId, setSelectedProfileId] = useState<string | null>(null);
+  const [selectedProfile, setSelectedProfile] = useState<MeasurementResponse | null>(null);
+  const [colorProfile, setColorProfile] = useState<ColorProfileData | null>(null);
+  const [stylePrefs, setStylePrefs] = useState<StylePreferencesData | null>(null);
+  const [profilesLoading, setProfilesLoading] = useState(true);
 
-  const [location, setLocation] = useState<string>("");
-  const [weather, setWeather] = useState<string>("");
-
+  // AI results
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const [result, setResult] = useState<AIRecommendationResponse | null>(null);
+
+  const measurementIdFromUrl = searchParams.get("measurement_id");
+
+  // Fetch all measurement profiles on mount
+  useEffect(() => {
+    if (!user) return;
+    getMeasurements(user.uid)
+      .then((data) => {
+        setProfiles(data);
+        // Auto-select: URL param > primary > first
+        const targetId =
+          measurementIdFromUrl ||
+          data.find((m) => m.is_primary)?.id ||
+          data[0]?.id ||
+          null;
+        setSelectedProfileId(targetId);
+      })
+      .catch((err) => console.error("Failed to fetch profiles:", err))
+      .finally(() => setProfilesLoading(false));
+  }, [user, measurementIdFromUrl]);
+
+  // Fetch color profile + style preferences when profile is selected
+  useEffect(() => {
+    if (!user || !selectedProfileId) return;
+
+    const profile = profiles.find((p) => p.id === selectedProfileId) || null;
+    setSelectedProfile(profile);
+
+    // Fetch color profile for this measurement
+    getColorProfiles(user.uid, selectedProfileId)
+      .then((data) => {
+        if (data.length > 0) {
+          setColorProfile({
+            skin_tone: data[0].skin_tone,
+            hair_color: data[0].hair_color,
+            recommended_palette: data[0].recommended_palette,
+          });
+        } else {
+          setColorProfile(null);
+        }
+      })
+      .catch(() => setColorProfile(null));
+
+    // Fetch style preferences
+    getStylePreferences(user.uid)
+      .then((data) => setStylePrefs(data))
+      .catch(() => setStylePrefs(null));
+  }, [user, selectedProfileId, profiles]);
 
   const grouped = useMemo(() => {
     if (!result?.items?.length) return null;
     return groupItems(result.items);
   }, [result]);
 
-  const toggleStyle = (style: string) => {
-    setSelectedStyles((prev) => {
-      if (prev.includes(style)) return prev.filter((s) => s !== style);
-      return [...prev, style];
-    });
-  };
-
   const onGetRecommendations = async () => {
-    if (!user) return;
+    if (!user || !selectedProfileId) return;
 
     setIsLoading(true);
     setError("");
@@ -113,12 +149,10 @@ export default function RecommendationsPage() {
 
     try {
       const data = await getAIRecommendations(user.uid, {
-        occasion,
-        gender,
-        budget,
-        styles: selectedStyles,
-        ...(location.trim() && { location: location.trim() }),
-        ...(weather.trim() && { weather: weather.trim() }),
+        measurement_profile_id: selectedProfileId,
+        occasion: stylePrefs?.occasion || undefined,
+        weather: stylePrefs?.weather || undefined,
+        styles: stylePrefs?.preferred_styles || [],
       });
       setResult(data);
     } catch (e: any) {
@@ -131,6 +165,9 @@ export default function RecommendationsPage() {
 
   if (!user) return null;
 
+  const formatLabel = (val: string | null | undefined) =>
+    val ? val.replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()) : "—";
+
   return (
     <div className="min-h-screen bg-stone-50 dark:bg-stone-950">
       <AppNav activePage="recommendations" />
@@ -141,150 +178,128 @@ export default function RecommendationsPage() {
             Outfit Recommendations
           </h1>
           <p className="text-stone-600 dark:text-stone-400 mt-1">
-            Select an occasion and generate a complete outfit (top + bottom + shoes + accessories).
+            Generate a complete outfit based on your profile and preferences.
           </p>
         </div>
 
-        {!dbUser ? (
+        {profilesLoading || !dbUser ? (
           <div className="bg-white dark:bg-stone-900/50 rounded-xl shadow-sm border border-stone-200 dark:border-stone-800 p-6 mb-6">
             <div className="flex items-center gap-3">
               <div className="w-6 h-6 border-4 border-amber-600 border-t-transparent rounded-full animate-spin" />
-              <p className="text-stone-700 dark:text-stone-300 font-medium">Loading profile...</p>
+              <p className="text-stone-700 dark:text-stone-300 font-medium">Loading profile data...</p>
             </div>
+          </div>
+        ) : profiles.length === 0 ? (
+          <div className="bg-white dark:bg-stone-900 rounded-xl shadow-sm border border-stone-200 dark:border-stone-800 p-6 mb-6">
+            <p className="text-stone-700 dark:text-stone-300 font-medium">
+              No measurement profiles found. Please{" "}
+              <a href="/measurements" className="text-amber-600 hover:underline font-semibold">
+                create a profile
+              </a>{" "}
+              first.
+            </p>
           </div>
         ) : (
-          <div className="bg-white dark:bg-stone-900 rounded-xl shadow-sm border border-stone-200 dark:border-stone-800 p-6 mb-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Occasion */}
-              <div>
-                <label className="block text-sm font-semibold text-stone-900 dark:text-white">
-                  Occasion
-                </label>
-                <select
-                  value={occasion}
-                  onChange={(e) => setOccasion(e.target.value as any)}
-                  className="mt-2 w-full rounded-lg border border-stone-300 dark:border-stone-700 bg-white dark:bg-stone-950 px-3 py-2 text-stone-900 dark:text-white"
-                >
-                  {OCCASIONS.map((o) => (
-                    <option key={o.value} value={o.value}>
-                      {o.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
+          <>
+            {/* Profile Selector */}
+            <div className="bg-white dark:bg-stone-900 rounded-xl shadow-sm border border-stone-200 dark:border-stone-800 p-6 mb-6">
+              <label className="block text-sm font-semibold text-stone-900 dark:text-white mb-2">
+                Measurement Profile
+              </label>
+              <select
+                value={selectedProfileId || ""}
+                onChange={(e) => setSelectedProfileId(e.target.value)}
+                className="w-full md:w-auto rounded-lg border border-stone-300 dark:border-stone-700 bg-white dark:bg-stone-950 px-3 py-2 text-stone-900 dark:text-white"
+              >
+                {profiles.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.name}{p.is_primary ? " (Primary)" : ""}
+                  </option>
+                ))}
+              </select>
+            </div>
 
-              {/* Budget */}
-              <div>
-                <label className="block text-sm font-semibold text-stone-900 dark:text-white">
-                  Budget (USD)
-                </label>
-                <input
-                  type="number"
-                  min={10}
-                  step={10}
-                  value={budget}
-                  onChange={(e) => setBudget(Number(e.target.value || 0))}
-                  className="mt-2 w-full rounded-lg border border-stone-300 dark:border-stone-700 bg-white dark:bg-stone-950 px-3 py-2 text-stone-900 dark:text-white"
-                />
-                <p className="text-xs text-stone-500 dark:text-stone-400 mt-1">
-                  Used as a soft constraint; if price is unknown, AI will return price = null.
-                </p>
-              </div>
+            {/* Profile Summary */}
+            {selectedProfile && (
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                {/* Measurements */}
+                <div className="bg-white dark:bg-stone-900 rounded-xl shadow-sm border border-stone-200 dark:border-stone-800 p-5">
+                  <h3 className="text-sm font-bold text-stone-500 dark:text-stone-400 uppercase tracking-wider mb-3">
+                    Measurements
+                  </h3>
+                  <div className="space-y-1.5 text-sm text-stone-700 dark:text-stone-300">
+                    {selectedProfile.height != null && <p>Height: {selectedProfile.height} cm</p>}
+                    {selectedProfile.weight != null && <p>Weight: {selectedProfile.weight} kg</p>}
+                    {selectedProfile.chest != null && <p>Chest: {selectedProfile.chest} cm</p>}
+                    {selectedProfile.waist != null && <p>Waist: {selectedProfile.waist} cm</p>}
+                    {selectedProfile.hip != null && <p>Hip: {selectedProfile.hip} cm</p>}
+                    {selectedProfile.inseam != null && <p>Inseam: {selectedProfile.inseam} cm</p>}
+                    {selectedProfile.shoulder_width != null && <p>Shoulder: {selectedProfile.shoulder_width} cm</p>}
+                    {selectedProfile.arm_length != null && <p>Arm: {selectedProfile.arm_length} cm</p>}
+                  </div>
+                </div>
 
-              {/* Gender */}
-              <div>
-                <label className="block text-sm font-semibold text-stone-900 dark:text-white">
-                  Gender (optional)
-                </label>
-                <input
-                  value={gender}
-                  onChange={(e) => setGender(e.target.value)}
-                  placeholder="unisex / men / women ..."
-                  className="mt-2 w-full rounded-lg border border-stone-300 dark:border-stone-700 bg-white dark:bg-stone-950 px-3 py-2 text-stone-900 dark:text-white"
-                />
-              </div>
+                {/* Color Profile */}
+                <div className="bg-white dark:bg-stone-900 rounded-xl shadow-sm border border-stone-200 dark:border-stone-800 p-5">
+                  <h3 className="text-sm font-bold text-stone-500 dark:text-stone-400 uppercase tracking-wider mb-3">
+                    Color Profile
+                  </h3>
+                  {colorProfile ? (
+                    <div className="space-y-1.5 text-sm text-stone-700 dark:text-stone-300">
+                      <p>Skin Tone: {colorProfile.skin_tone || "—"}</p>
+                      <p>Hair Color: {colorProfile.hair_color || "—"}</p>
+                    </div>
+                  ) : (
+                    <p className="text-sm text-stone-400">No color analysis yet</p>
+                  )}
+                </div>
 
-              {/* Location */}
-              <div>
-                <label className="block text-sm font-semibold text-stone-900 dark:text-white">
-                  Location (optional)
-                </label>
-                <input
-                  value={location}
-                  onChange={(e) => setLocation(e.target.value)}
-                  placeholder='e.g. "Lafayette, IN"'
-                  className="mt-2 w-full rounded-lg border border-stone-300 dark:border-stone-700 bg-white dark:bg-stone-950 px-3 py-2 text-stone-900 dark:text-white"
-                />
-                <p className="text-xs text-stone-500 dark:text-stone-400 mt-1">
-                  If provided and weather is empty, backend will auto-resolve current weather via web search.
-                </p>
-              </div>
-
-              {/* Weather */}
-              <div className="md:col-span-2">
-                <label className="block text-sm font-semibold text-stone-900 dark:text-white">
-                  Weather (optional override)
-                </label>
-                <input
-                  value={weather}
-                  onChange={(e) => setWeather(e.target.value)}
-                  placeholder='e.g. "10C rainy" / "32F snow" / leave empty'
-                  className="mt-2 w-full rounded-lg border border-stone-300 dark:border-stone-700 bg-white dark:bg-stone-950 px-3 py-2 text-stone-900 dark:text-white"
-                />
-              </div>
-
-              {/* Styles */}
-              <div className="md:col-span-2">
-                <label className="block text-sm font-semibold text-stone-900 dark:text-white">
-                  Styles
-                </label>
-
-                <div className="mt-2 flex flex-wrap gap-2">
-                  {STYLE_TAGS.map((tag) => {
-                    const active = selectedStyles.includes(tag);
-                    return (
-                      <button
-                        key={tag}
-                        type="button"
-                        onClick={() => toggleStyle(tag)}
-                        className={[
-                          "px-3 py-1.5 rounded-full text-sm font-semibold border",
-                          active
-                            ? "bg-amber-600 text-white border-amber-600"
-                            : "bg-white dark:bg-stone-950 text-stone-700 dark:text-stone-300 border-stone-300 dark:border-stone-700 hover:border-amber-600",
-                        ].join(" ")}
-                      >
-                        {tag}
-                      </button>
-                    );
-                  })}
+                {/* Style Preferences */}
+                <div className="bg-white dark:bg-stone-900 rounded-xl shadow-sm border border-stone-200 dark:border-stone-800 p-5">
+                  <h3 className="text-sm font-bold text-stone-500 dark:text-stone-400 uppercase tracking-wider mb-3">
+                    Style Preferences
+                  </h3>
+                  {stylePrefs ? (
+                    <div className="space-y-1.5 text-sm text-stone-700 dark:text-stone-300">
+                      <p>Occasion: {formatLabel(stylePrefs.occasion)}</p>
+                      <p>Weather: {formatLabel(stylePrefs.weather)}</p>
+                      <p>Dress Code: {formatLabel(stylePrefs.dress_code)}</p>
+                      <p>Budget: {formatLabel(stylePrefs.price_range)}</p>
+                      {stylePrefs.preferred_styles.length > 0 && (
+                        <p>Styles: {stylePrefs.preferred_styles.join(", ")}</p>
+                      )}
+                      {stylePrefs.preferred_brands.length > 0 && (
+                        <p>Brands: {stylePrefs.preferred_brands.join(", ")}</p>
+                      )}
+                    </div>
+                  ) : (
+                    <p className="text-sm text-stone-400">No preferences saved yet</p>
+                  )}
                 </div>
               </div>
+            )}
 
-              {/* Action */}
-              <div className="md:col-span-2">
-                <button
-                  onClick={onGetRecommendations}
-                  disabled={isLoading}
-                  className="w-full md:w-auto inline-flex items-center justify-center rounded-lg bg-amber-600 hover:bg-amber-700 disabled:bg-amber-400 text-white font-semibold px-4 py-2"
-                >
-                  {isLoading ? "Generating..." : "Get Recommendations"}
-                </button>
+            {/* Generate Button */}
+            <div className="bg-white dark:bg-stone-900 rounded-xl shadow-sm border border-stone-200 dark:border-stone-800 p-6 mb-6">
+              <button
+                onClick={onGetRecommendations}
+                disabled={isLoading || !selectedProfileId}
+                className="w-full md:w-auto inline-flex items-center justify-center rounded-lg bg-amber-600 hover:bg-amber-700 disabled:bg-amber-400 text-white font-semibold px-6 py-2.5"
+              >
+                {isLoading ? "Generating..." : "Get Recommendations"}
+              </button>
 
-                {error ? (
-                  <p className="mt-3 text-sm text-red-600 dark:text-red-400">
-                    {error}
-                  </p>
-                ) : null}
+              {error && (
+                <p className="mt-3 text-sm text-red-600 dark:text-red-400">{error}</p>
+              )}
 
-                {result?.recommendation_id ? (
-                  <p className="mt-3 text-xs text-stone-500 dark:text-stone-400">
-                    Recommendation ID: {result.recommendation_id}
-                  </p>
-                ) : null}
-              </div>
+              {result?.recommendation_id && (
+                <p className="mt-3 text-xs text-stone-500 dark:text-stone-400">
+                  Recommendation ID: {result.recommendation_id}
+                </p>
+              )}
             </div>
-          </div>
+          </>
         )}
 
         {/* Results */}

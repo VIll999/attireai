@@ -217,15 +217,23 @@ class RecommendationsAIService:
         user_msg = json.dumps(context_payload, ensure_ascii=False)
 
         response = client.models.generate_content(
-            model=settings.gemini_model or "gemini-2.0-flash",
+            model=settings.gemini_model or "gemini-2.5-flash",
             contents=f"{SYSTEM_PROMPT}\n\nUser context:\n{user_msg}",
             config=GenerateContentConfig(
                 tools=[Tool(google_search=GoogleSearch())],
-                response_mime_type="application/json",
             ),
         )
 
-        return json.loads(response.text)
+        # Extract JSON from response text (may be wrapped in ```json ... ```)
+        text = response.text.strip()
+        if text.startswith("```"):
+            # Strip markdown code fences
+            lines = text.split("\n")
+            lines = lines[1:] if lines[0].startswith("```") else lines
+            if lines and lines[-1].strip() == "```":
+                lines = lines[:-1]
+            text = "\n".join(lines)
+        return json.loads(text)
 
     def _call_openai(self, context_payload: Dict[str, Any]) -> Dict[str, Any]:
         client = self._get_openai_client()
