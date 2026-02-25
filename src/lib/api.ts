@@ -247,3 +247,40 @@ export async function uploadProfilePicture(
 
   return response.json();
 }
+
+
+// --- Preferences API ---
+
+export type PriceRange = "BUDGET" | "MID_RANGE" | "LUXURY";
+
+export interface StylePreferencesData {
+  preferred_styles: string[];
+  avoided_styles: string[];
+  price_range: PriceRange;
+  preferred_brands: string[];
+  excluded_brands: string[];
+}
+
+export async function getStylePreferences(userId: string): Promise<StylePreferencesData | null> {
+  try {
+    const res = await fetch(`/api/style-preferences/${userId}`);
+    if (res.status === 404) return null;
+    if (!res.ok) throw new Error("Failed to fetch style preferences");
+    return res.json();
+  } catch {
+    return null;
+  }
+}
+
+export async function saveStylePreferences(
+  userId: string,
+  data: StylePreferencesData
+): Promise<StylePreferencesData> {
+  const res = await fetch(`/api/style-preferences/${userId}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) throw new Error("Failed to save style preferences");
+  return res.json();
+}

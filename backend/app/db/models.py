@@ -26,6 +26,7 @@ class User(Base):
 
     measurements = relationship("MeasurementProfile", back_populates="user", cascade="all, delete-orphan")
     color_profile = relationship("ColorProfile", back_populates="user", uselist=False, cascade="all, delete-orphan")
+    style_preferences = relationship("StylePreferences", back_populates="user", uselist=False, cascade="all, delete-orphan")
 
 
 class MeasurementProfile(Base):
@@ -73,3 +74,18 @@ class ColorProfile(Base):
 
     user = relationship("User", back_populates="color_profile")
     measurement_profile = relationship("MeasurementProfile")
+
+
+class StylePreferences(Base):
+    __tablename__ = "style_preferences"
+
+    id = Column(CHAR(36), primary_key=True, default=generate_uuid)
+    user_id = Column(CHAR(36), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, unique=True)
+    preferred_styles = Column(JSON, nullable=True)
+    avoided_styles = Column(JSON, nullable=True)
+    price_range = Column(Enum("BUDGET", "MID_RANGE", "LUXURY"), default="MID_RANGE")
+    preferred_brands = Column(JSON, nullable=True)
+    excluded_brands = Column(JSON, nullable=True)
+    updated_at = Column(TIMESTAMP, server_default=text("CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP"))
+
+    user = relationship("User", back_populates="style_preferences")
