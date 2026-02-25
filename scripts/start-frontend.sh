@@ -22,8 +22,8 @@ MODE="${1:---local}"
 
 case "$MODE" in
     --local)
-        echo "Starting frontend with LOCAL backend (http://localhost:8000)..."
-        BACKEND_URL="http://localhost:8000" npm run dev
+        echo "Starting frontend with LOCAL backend (http://localhost:8001)..."
+        BACKEND_URL="http://localhost:8001" NEXT_PUBLIC_BACKEND_URL="http://localhost:8001" npm run dev
         ;;
     --production)
         echo "Starting frontend with PRODUCTION backend..."

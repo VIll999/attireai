@@ -43,27 +43,24 @@ function flattenMessages(obj: Record<string, unknown>, prefix = ""): Record<stri
   return result;
 }
 
+function getInitialLocale(): Locale {
+  if (typeof window === "undefined") return "en";
+  const saved = localStorage.getItem("locale") as Locale | null;
+  if (saved && translations[saved]) return saved;
+  const browserLang = navigator.language.slice(0, 2);
+  if (browserLang === "zh") return "zh";
+  if (browserLang === "es") return "es";
+  return "en";
+}
+
 export function LocaleProvider({ children }: { children: ReactNode }) {
-  const [locale, setLocaleState] = useState<Locale>("en");
+  const [locale, setLocaleState] = useState<Locale>(() => getInitialLocale());
   const [mounted, setMounted] = useState(false);
-  const [flat, setFlat] = useState<Record<string, string>>(() => flattenMessages(en as unknown as Record<string, unknown>));
+  const [flat, setFlat] = useState<Record<string, string>>(() =>
+    flattenMessages(translations[getInitialLocale()] as unknown as Record<string, unknown>)
+  );
 
   useEffect(() => {
-    const saved = localStorage.getItem("locale") as Locale | null;
-    if (saved && translations[saved]) {
-      setLocaleState(saved);
-      setFlat(flattenMessages(translations[saved] as unknown as Record<string, unknown>));
-    } else {
-      // Check browser language
-      const browserLang = navigator.language.slice(0, 2);
-      if (browserLang === "zh") {
-        setLocaleState("zh");
-        setFlat(flattenMessages(zh as unknown as Record<string, unknown>));
-      } else if (browserLang === "es") {
-        setLocaleState("es");
-        setFlat(flattenMessages(es as unknown as Record<string, unknown>));
-      }
-    }
     setMounted(true);
   }, []);
 

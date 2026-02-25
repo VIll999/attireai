@@ -6,9 +6,9 @@ from datetime import datetime
 class OutfitRecommendationCreate(BaseModel):
     """Create a new outfit recommendation."""
     measurement_id: Optional[str] = None
-    occasion: str
-    weather: str
-    dress_code: str
+    occasion: Optional[str] = None
+    weather: Optional[str] = None
+    dress_code: Optional[str] = None
 
 
 class OutfitRecommendationUpdate(BaseModel):
@@ -25,9 +25,9 @@ class OutfitRecommendationResponse(BaseModel):
     id: str
     user_id: str
     measurement_id: Optional[str] = None
-    occasion: str
-    weather: str
-    dress_code: str
+    occasion: Optional[str] = None
+    weather: Optional[str] = None
+    dress_code: Optional[str] = None
     total_price: Optional[float] = None
     reasoning: Optional[str] = None
     user_rating: Optional[str] = None

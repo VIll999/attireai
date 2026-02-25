@@ -1,10 +1,12 @@
 {
   "nav": {
     "dashboard": "仪表板",
+    "recommendations": "推荐",
     "outfits": "穿搭",
     "measurements": "身体数据",
     "colors": "色彩分析",
     "profile": "个人资料",
+    "preferences": "偏好设置",
     "signOut": "退出登录",
     "logIn": "登录",
     "signUp": "注册",
@@ -208,6 +210,7 @@
     "delete": "删除",
     "primary": "主要",
     "profileNameRequired": "档案名称为必填项。",
+    "nameTooLong": "档案名称不能超过50个字符。",
     "measurementsUpdated": "数据已更新！",
     "measurementsSaved": "数据已保存！",
     "failedSave": "保存失败，请重试。",

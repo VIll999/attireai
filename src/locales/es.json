@@ -1,10 +1,12 @@
 {
   "nav": {
     "dashboard": "Panel",
+    "recommendations": "Recomendaciones",
     "outfits": "Conjuntos",
     "measurements": "Medidas",
     "colors": "Análisis de Color",
     "profile": "Perfil",
+    "preferences": "preferencias",
     "signOut": "Cerrar sesión",
     "logIn": "Iniciar sesión",
     "signUp": "Registrarse",
@@ -208,6 +210,7 @@
     "delete": "Eliminar",
     "primary": "Principal",
     "profileNameRequired": "El nombre del perfil es obligatorio.",
+    "nameTooLong": "El nombre del perfil no puede tener más de 50 caracteres.",
     "measurementsUpdated": "¡Medidas actualizadas!",
     "measurementsSaved": "¡Medidas guardadas!",
     "failedSave": "Error al guardar medidas. Intenta de nuevo.",

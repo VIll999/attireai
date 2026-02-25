@@ -2,7 +2,10 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import get_settings
-from app.routers import health, users, upload, measurements, sizing, color_profiles, outfit_recommendations
+from app.routers import health, users, upload, measurements, sizing, color_profiles, outfit_recommendations, style_preferences, recommendations
+
+import os
+import json
 
 settings = get_settings()
 
@@ -11,10 +14,6 @@ app = FastAPI(
     description="AI-powered fashion recommendation API",
     version="0.1.0",
 )
-
-# CORS middleware
-import os
-import json
 
 # CORS origins from env var or defaults
 cors_origins_str = os.getenv("CORS_ORIGINS", "http://localhost:3000,https://attireai-cyan.vercel.app")
@@ -41,6 +40,8 @@ app.include_router(measurements.router, prefix="/measurements", tags=["Measureme
 app.include_router(sizing.router, prefix="/sizing", tags=["Sizing"])
 app.include_router(color_profiles.router, prefix="/color-profiles", tags=["Color Profiles"])
 app.include_router(outfit_recommendations.router, prefix="/outfit-recommendations", tags=["Outfit Recommendations"])
+app.include_router(style_preferences.router, prefix="/style-preferences", tags=["Style Preferences"])
+app.include_router(recommendations.router, tags=["Recommendations"])
 
 @app.get("/")
 async def root():

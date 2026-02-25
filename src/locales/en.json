@@ -1,10 +1,12 @@
 {
   "nav": {
     "dashboard": "Dashboard",
+    "recommendations": "Recommendations",
     "outfits": "Outfits",
     "measurements": "Measurements",
     "colors": "Colors",
     "profile": "Profile",
+    "preferences": "Preferences",
     "signOut": "Sign Out",
     "logIn": "Log In",
     "signUp": "Sign Up",
@@ -208,6 +210,7 @@
     "delete": "Delete",
     "primary": "Primary",
     "profileNameRequired": "Profile name is required.",
+    "nameTooLong": "Profile name must be 50 characters or less.",
     "measurementsUpdated": "Measurements updated!",
     "measurementsSaved": "Measurements saved!",
     "failedSave": "Failed to save measurements. Please try again.",
