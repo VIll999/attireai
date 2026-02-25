@@ -80,7 +80,7 @@ export default function ColorAnalysisPage() {
     if (!user) return;
     try {
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_BACKEND_URL}/color-profiles?measurement_id=${measurementId}`,
+        `/api/color-profiles?measurement_id=${measurementId}`,
         {
           headers: {
             "X-Firebase-UID": user.uid,
@@ -529,7 +529,7 @@ export default function ColorAnalysisPage() {
 
           let response;
           if (existingProfileId) {
-            response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/color-profiles/${existingProfileId}`, {
+            response = await fetch(`/api/color-profiles/${existingProfileId}`, {
               method: "PUT",
               headers: {
                 "Content-Type": "application/json",
@@ -538,7 +538,7 @@ export default function ColorAnalysisPage() {
               body: JSON.stringify(profileData),
             });
           } else {
-            response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/color-profiles`, {
+            response = await fetch(`/api/color-profiles`, {
               method: "POST",
               headers: {
                 "Content-Type": "application/json",

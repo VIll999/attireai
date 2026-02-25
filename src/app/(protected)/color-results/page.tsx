@@ -61,8 +61,8 @@ export default function ColorResultsPage() {
     try {
       // Build URL based on whether measurementId is provided
       const url = measurementId
-        ? `${process.env.NEXT_PUBLIC_BACKEND_URL}/color-profiles?measurement_id=${measurementId}`
-        : `${process.env.NEXT_PUBLIC_BACKEND_URL}/color-profiles`;
+        ? `/api/color-profiles?measurement_id=${measurementId}`
+        : `/api/color-profiles`;
 
       const response = await fetch(url, {
         headers: {
