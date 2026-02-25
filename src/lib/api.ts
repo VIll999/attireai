@@ -247,3 +247,29 @@ export async function uploadProfilePicture(
 
   return response.json();
 }
+
+/**
+ * Upload color analysis photo to S3
+ */
+export async function uploadColorAnalysisPhoto(
+  firebaseUid: string,
+  file: File
+): Promise<{ url: string }> {
+  const formData = new FormData();
+  formData.append("file", file);
+
+  const response = await fetch(`${API_URL}/upload/color-analysis-photo`, {
+    method: "POST",
+    headers: {
+      "X-Firebase-UID": firebaseUid,
+    },
+    body: formData,
+  });
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({ detail: "Upload failed" }));
+    throw new Error(error.detail || "Failed to upload color analysis photo");
+  }
+
+  return response.json();
+}

@@ -6,7 +6,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { useLocale } from "@/context/LocaleContext";
 import Notification from "@/components/Notification";
-import { getMeasurements, MeasurementResponse } from "@/lib/api";
+import { getMeasurements, MeasurementResponse, uploadColorAnalysisPhoto } from "@/lib/api";
 
 // Skin tone options with hex colors (updated to match design)
 const SKIN_TONES = [
@@ -51,6 +51,7 @@ export default function ColorAnalysisPage() {
   const [showColorPicker, setShowColorPicker] = useState(false);
   const [uploadedPhoto, setUploadedPhoto] = useState<File | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+  const [existingPhotoUrl, setExistingPhotoUrl] = useState<string | null>(null); // Track existing photo URL
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
@@ -97,8 +98,18 @@ export default function ColorAnalysisPage() {
           setSelectedSkinToneHex(profile.skin_tone_hex);
           setSelectedHairColor(profile.hair_color);
           setSelectedHairColorHex(profile.hair_color_hex);
+
+          // Restore custom colors if "Custom" or "Other" was selected
+          if (profile.skin_tone === "Custom" && profile.skin_tone_hex) {
+            setCustomSkinTone(profile.skin_tone_hex);
+          }
+          if (profile.hair_color === "Other" && profile.hair_color_hex) {
+            setCustomHairColor(profile.hair_color_hex);
+          }
+
           if (profile.photo_url) {
             setPhotoPreview(profile.photo_url);
+            setExistingPhotoUrl(profile.photo_url); // Save existing photo URL
           }
         } else {
           setExistingProfileId(null);
@@ -190,7 +201,7 @@ export default function ColorAnalysisPage() {
   useEffect(() => {
     if (!showTransitionAnimation) return;
 
-    console.log('Animation starting...');
+    console.log('Animation starting - Spring → Summer → Autumn → Winter (1.5s each)...');
 
     const steps = [
       { id: 1, keyword: 'anim-keyword-1', bg: 'anim-bg-spring', dot: 'anim-dot-1', progress: 25 },
@@ -199,120 +210,31 @@ export default function ColorAnalysisPage() {
       { id: 4, keyword: 'anim-keyword-4', bg: 'anim-bg-winter', dot: 'anim-dot-4', progress: 100 }
     ];
 
-    // Clear all keywords first to prevent flashing
+    // Initialize: show first step
     setTimeout(() => {
-      console.log('Initializing animation - clearing all keywords');
       steps.forEach((step, index) => {
         const keyword = document.getElementById(step.keyword);
         if (keyword) {
           keyword.classList.remove('active', 'hidden');
-          // Set all except first to hidden
-          if (index !== 0) {
+          if (index === 0) {
+            keyword.classList.add('active');
+          } else {
             keyword.classList.add('hidden');
           }
-          console.log(`Cleared ${step.keyword}:`, keyword.className);
-        } else {
-          console.log(`Could not find ${step.keyword} during initialization`);
         }
       });
 
-      // Initialize first keyword as active
+      // Activate first keyword
       const firstKeyword = document.getElementById('anim-keyword-1');
-      if (firstKeyword) {
-        firstKeyword.classList.add('active');
-        console.log('First keyword activated:', firstKeyword.className);
-      } else {
-        console.log('Could not find first keyword!');
-      }
+      if (firstKeyword) firstKeyword.classList.add('active');
     }, 10);
 
     let currentStepIdx = 0;
 
-    function spawnConvergenceParticles() {
-      console.log('Spawning particles...');
-
-      // Use requestAnimationFrame to ensure DOM is ready
-      requestAnimationFrame(() => {
-        const container = document.getElementById('anim-convergence-container');
-        if (!container) {
-          console.log('Container not found after RAF!');
-          console.log('Document body:', document.body);
-          return;
-        }
-
-        console.log('Container found:', container);
-        const colors = ['#0B5563', '#D4AF37', '#148296', '#C5A028', '#FFFFFF'];
-
-        for (let i = 0; i < 120; i++) {
-          const particle = document.createElement('div');
-          particle.className = 'anim-particle';
-
-          const edge = Math.floor(Math.random() * 4);
-          let startX, startY;
-          if(edge === 0) { startX = '-50vw'; startY = (Math.random()*100-50) + 'vh'; }
-          else if(edge === 1) { startX = '50vw'; startY = (Math.random()*100-50) + 'vh'; }
-          else if(edge === 2) { startX = (Math.random()*100-50) + 'vw'; startY = '-50vh'; }
-          else { startX = (Math.random()*100-50) + 'vw'; startY = '50vh'; }
-
-          const color = colors[Math.floor(Math.random() * colors.length)];
-          const size = Math.random() * 12 + 4 + 'px';
-
-          particle.style.width = size;
-          particle.style.height = size;
-          particle.style.backgroundColor = color;
-          particle.style.borderRadius = i % 3 === 0 ? '50%' : '2px';
-          particle.style.left = '50%';
-          particle.style.top = '50%';
-          particle.style.setProperty('--start-x', startX);
-          particle.style.setProperty('--start-y', startY);
-          particle.style.animationDelay = (Math.random() * 0.5) + 's';
-
-          container.appendChild(particle);
-        }
-        console.log('120 particles created');
-      });
-    }
-
-    function showSuccessAnimation() {
-      console.log('Success animation starting...');
-
-      const headerText = document.getElementById('anim-header-text');
-      if (headerText) {
-        headerText.style.opacity = '0';
-        headerText.style.transform = 'translateY(-20px)';
-      }
-
-      const lastKeyword = document.getElementById(steps[steps.length - 1].keyword);
-      if (lastKeyword) {
-        lastKeyword.classList.remove('active');
-        lastKeyword.classList.add('hidden');
-      }
-
-      spawnConvergenceParticles();
-
-      setTimeout(() => {
-        const finalBg = document.getElementById('anim-bg-final');
-        if (finalBg) {
-          finalBg.classList.add('active');
-          console.log('Final background activated');
-        }
-      }, 1800);
-    }
-
     function advanceStep() {
-      console.log(`Step ${currentStepIdx} -> ${currentStepIdx + 1}`);
-
-      // Check if we should stop (after the last transition is done)
-      if (currentStepIdx >= steps.length) {
-        console.log('All steps completed, stopping interval');
-        return;
-      }
-
-      // Check if this is the last step to transition
+      // After winter (step 3, index 3), we're done - navigation happens via Promise.all timeout
       if (currentStepIdx >= steps.length - 1) {
-        console.log('Reached last step, scheduling success animation');
-        setTimeout(showSuccessAnimation, 600);
-        currentStepIdx++; // Increment to prevent calling again
+        console.log('Reached winter, will navigate after this step completes');
         return;
       }
 
@@ -320,50 +242,45 @@ export default function ColorAnalysisPage() {
       const nextIdx = currentStepIdx + 1;
       const next = steps[nextIdx];
 
-      // Transition Keywords - hide current in place, then show next
+      // Hide current keyword
       const currentText = document.getElementById(current.keyword);
-      const nextText = document.getElementById(next.keyword);
-
-      // Hide current in place (opacity to 0 without moving)
       if (currentText) {
         currentText.classList.remove('active');
         currentText.classList.add('hidden');
       }
 
-      // Start the next one immediately
+      // Show next keyword
+      const nextText = document.getElementById(next.keyword);
       if (nextText) {
         nextText.classList.remove('hidden');
         nextText.classList.add('active');
-        console.log(`Added 'active' to ${next.keyword}`, nextText.className);
-      } else {
-        console.log(`Could not find element: ${next.keyword}`);
       }
 
-      // Transition Backgrounds
+      // Switch backgrounds
       const currentBg = document.getElementById(current.bg);
       const nextBg = document.getElementById(next.bg);
       if (currentBg) currentBg.classList.remove('active');
       if (nextBg) nextBg.classList.add('active');
 
-      // Update Progress UI
+      // Update progress
       const progressBar = document.getElementById('anim-main-progress');
       if (progressBar) progressBar.style.width = next.progress + '%';
 
+      // Mark dot as completed
       const nextDot = document.getElementById(next.dot);
       if (nextDot) {
         nextDot.classList.add('completed');
         nextDot.classList.remove('bg-white/20');
       }
 
+      console.log(`Step ${currentStepIdx} → ${nextIdx}: ${current.keyword} → ${next.keyword}`);
       currentStepIdx = nextIdx;
     }
 
+    // Advance every 1.5 seconds
     const stepInterval = setInterval(advanceStep, 1500);
 
-    // Don't cleanup - let animation run to completion
     return () => {
-      console.log('Cleaning up animation...');
-      // Only clear interval, don't remove DOM elements
       clearInterval(stepInterval);
     };
   }, [showTransitionAnimation]);
@@ -568,20 +485,37 @@ export default function ColorAnalysisPage() {
     try {
       // Parallel execution: animation + data processing
       const [, savedProfile] = await Promise.all([
-        // Minimum animation duration (10 seconds total: 4 steps * 1.5s + 1.5s wait + 2s particles + 1.5s gradient)
-        new Promise(resolve => setTimeout(resolve, 10000)),
+        // Animation: Spring → Summer → Autumn → Winter (1.5s each = 6s total)
+        new Promise(resolve => setTimeout(resolve, 6000)),
 
         // Backend data processing
         (async () => {
-          // TODO: Upload photo to S3 if exists
-          let photoUrl = null;
-          if (uploadedPhoto) {
-            console.log("Photo upload not implemented yet");
-          }
-
           if (!user?.uid) {
             throw new Error("Not authenticated");
           }
+
+          // Determine photo URL logic:
+          // - If user uploaded new photo -> upload to S3 and use new URL
+          // - If no new photo but existing photo exists -> keep existing URL
+          // - If no photo at all -> null
+          let photoUrl: string | null = null;
+
+          if (uploadedPhoto) {
+            // User uploaded a new photo
+            try {
+              const uploadResult = await uploadColorAnalysisPhoto(user.uid, uploadedPhoto);
+              photoUrl = uploadResult.url;
+              console.log("New photo uploaded successfully:", photoUrl);
+            } catch (uploadErr) {
+              console.error("Failed to upload photo:", uploadErr);
+              throw new Error("Failed to upload photo to S3");
+            }
+          } else if (existingPhotoUrl) {
+            // No new upload, but existing photo exists - keep it
+            photoUrl = existingPhotoUrl;
+            console.log("Keeping existing photo URL:", photoUrl);
+          }
+          // else: photoUrl remains null (no photo)
 
           // Save color profile to backend
           const profileData = {
@@ -624,7 +558,7 @@ export default function ColorAnalysisPage() {
       ]);
 
       // Animation complete and data saved, redirect to results
-      router.push("/color-results");
+      router.push(`/color-results?measurement_id=${selectedMeasurementId}`);
 
     } catch (err: any) {
       console.error("Error saving color profile:", err);
@@ -876,6 +810,7 @@ export default function ColorAnalysisPage() {
                       onClick={() => {
                         setUploadedPhoto(null);
                         setPhotoPreview(null);
+                        setExistingPhotoUrl(null); // Clear existing photo URL
                         if (fileInputRef.current) {
                           fileInputRef.current.value = "";
                         }

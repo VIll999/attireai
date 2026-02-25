@@ -5,6 +5,7 @@ from typing import Optional, List
 from app.db.database import get_db
 from app.db.models import User, ColorProfile, MeasurementProfile
 from app.models.color_profile import ColorProfileCreate, ColorProfileUpdate, ColorProfileResponse
+from app.utils.color_analysis import generate_color_recommendations
 
 router = APIRouter()
 
@@ -87,6 +88,19 @@ async def create_color_profile(
             detail="Measurement profile not found",
         )
 
+    # Auto-generate recommended palette if both skin_tone_hex and hair_color_hex are provided
+    recommended_palette = data.recommended_palette
+    if data.skin_tone_hex and data.hair_color_hex and not recommended_palette:
+        try:
+            recommended_palette = generate_color_recommendations(
+                data.skin_tone_hex,
+                data.hair_color_hex
+            )
+        except Exception as e:
+            print(f"Error generating color recommendations: {e}")
+            # Continue without recommendations if generation fails
+            recommended_palette = None
+
     # Create new color profile
     color_profile = ColorProfile(
         user_id=user.id,
@@ -95,7 +109,7 @@ async def create_color_profile(
         skin_tone_hex=data.skin_tone_hex,
         hair_color=data.hair_color,
         hair_color_hex=data.hair_color_hex,
-        recommended_palette=data.recommended_palette,
+        recommended_palette=recommended_palette,
         photo_url=data.photo_url,
     )
 
@@ -143,6 +157,20 @@ async def update_color_profile(
     update_data = data.model_dump(exclude_unset=True)
     for field, value in update_data.items():
         setattr(color_profile, field, value)
+
+    # Regenerate recommended palette if skin_tone_hex or hair_color_hex changed
+    # and both are now available
+    if (('skin_tone_hex' in update_data or 'hair_color_hex' in update_data) and
+        color_profile.skin_tone_hex and color_profile.hair_color_hex):
+        try:
+            recommended_palette = generate_color_recommendations(
+                color_profile.skin_tone_hex,
+                color_profile.hair_color_hex
+            )
+            color_profile.recommended_palette = recommended_palette
+        except Exception as e:
+            print(f"Error generating color recommendations: {e}")
+            # Continue without updating recommendations if generation fails
 
     db.commit()
     db.refresh(color_profile)
