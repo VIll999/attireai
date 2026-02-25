@@ -6,7 +6,7 @@ import { useTheme } from "@/context/ThemeContext";
 import { useLocale } from "@/context/LocaleContext";
 
 interface AppNavProps {
-  activePage: "dashboard" | "outfits" | "measurements" | "colors" | "profile";
+  activePage: "dashboard" | "recommendations" | "outfits" | "measurements" | "colors" | "profile";
 }
 
 export default function AppNav({ activePage }: AppNavProps) {
@@ -20,6 +20,7 @@ export default function AppNav({ activePage }: AppNavProps) {
 
   const navLinks = [
     { key: "dashboard" as const, href: "/dashboard", label: t("nav.dashboard") },
+    { key: "recommendations" as const, href: "/recommendations", label: t("nav.recommendations") },
     { key: "measurements" as const, href: "/measurements", label: t("nav.measurements") },
     { key: "colors" as const, href: "/color-analysis", label: t("nav.colors") },
     { key: "outfits" as const, href: "/outfits", label: t("nav.outfits") },

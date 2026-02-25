@@ -21,6 +21,10 @@ class Settings(BaseSettings):
     s3_bucket: str = "attireai"
     cdn_domain: str = "cdn.attire-ai.com"
 
+    # OpenAI
+    openai_api_key: str = ""
+    openai_model: str = "gpt-4.1-mini"
+
     # CORS
     cors_origins: list[str] = ["http://localhost:3000", "https://attireai.vercel.app"]
 

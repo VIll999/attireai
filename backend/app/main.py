@@ -2,7 +2,11 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import get_settings
-from app.routers import health, users, upload, measurements, sizing, color_profiles
+from app.routers import health, users, upload, measurements, sizing, color_profiles, recommendations
+
+import os
+import json
+
 
 settings = get_settings()
 app = FastAPI(
@@ -11,10 +15,6 @@ app = FastAPI(
     version="0.1.0",
 )
 
-
-# CORS middleware
-import os
-import json
 # CORS origins from env var or defaults
 cors_origins_str = os.getenv(
     "CORS_ORIGINS",
@@ -41,8 +41,9 @@ app.include_router(users.router, prefix="/users", tags=["Users"])
 app.include_router(upload.router, prefix="/upload", tags=["Upload"])
 app.include_router(measurements.router, prefix="/measurements", tags=["Measurements"])
 app.include_router(sizing.router, prefix="/sizing", tags=["Sizing"])
-app.include_router(recommendations.router, tags=["Recommendations"])
 app.include_router(color_profiles.router, prefix="/color-profiles", tags=["Color Profiles"])
+app.include_router(recommendations.router, tags=["Recommendations"])
+
 
 @app.get("/")
 async def root():
