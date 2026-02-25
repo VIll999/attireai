@@ -1,69 +1,29 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
+import { useProfile } from "@/context/ProfileContext";
 import { useLocale } from "@/context/LocaleContext";
 import { auth, deleteUser } from "@/lib/firebase";
-import { deleteUserFromBackend, getMeasurements, getColorProfiles, getOutfitRecommendations } from "@/lib/api";
+import { deleteUserFromBackend } from "@/lib/api";
 import AppNav from "@/components/AppNav";
 
 export default function DashboardPage() {
   const { user, dbUser, signOut } = useAuth();
   const router = useRouter();
   const { t } = useLocale();
+  const {
+    hasMeasurements,
+    hasColorAnalysis,
+    hasStylePreferences,
+    primaryMeasurementId,
+    profileCompletion,
+    loaded: profileDataLoaded,
+  } = useProfile();
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
-  const [profileCompletion, setProfileCompletion] = useState(0);
-  const [hasMeasurements, setHasMeasurements] = useState(false);
-  const [hasColorAnalysis, setHasColorAnalysis] = useState(false);
-  const [hasStylePreferences, setHasStylePreferences] = useState(false);
-  const [primaryMeasurementId, setPrimaryMeasurementId] = useState<string | null>(null);
-
-  // Calculate profile completion: 3 parts, each worth 33%
-  const calculateProfileCompletion = useCallback(() => {
-    let completion = 0;
-    if (hasMeasurements) completion += 33;
-    if (hasColorAnalysis) completion += 33;
-    if (hasStylePreferences) completion += 34; // 34 to make total 100%
-    setProfileCompletion(completion);
-  }, [hasMeasurements, hasColorAnalysis, hasStylePreferences]);
-
-  // Fetch user profile data
-  const fetchProfileData = useCallback(async () => {
-    if (!user) return;
-
-    try {
-      // Check measurements
-      const measurements = await getMeasurements(user.uid);
-      setHasMeasurements(measurements.length > 0);
-
-      // Get primary measurement ID (first measurement or the one marked as primary)
-      if (measurements.length > 0) {
-        const primaryMeasurement = measurements.find(m => m.is_primary) || measurements[0];
-        setPrimaryMeasurementId(primaryMeasurement.id);
-      }
-
-      // Check color analysis
-      const colorProfiles = await getColorProfiles(user.uid);
-      setHasColorAnalysis(colorProfiles.length > 0);
-
-      // Check style preferences (outfit recommendations)
-      const outfitRecommendations = await getOutfitRecommendations(user.uid);
-      setHasStylePreferences(outfitRecommendations.length > 0);
-    } catch (err) {
-      console.error("Failed to fetch profile data:", err);
-    }
-  }, [user]);
-
-  useEffect(() => {
-    fetchProfileData();
-  }, [fetchProfileData]);
-
-  useEffect(() => {
-    calculateProfileCompletion();
-  }, [calculateProfileCompletion]);
 
   const handleDeleteAccount = async () => {
     if (!auth.currentUser) return;
@@ -157,7 +117,9 @@ export default function DashboardPage() {
               </div>
 
               {/* Onboarding Card 1: Measurements */}
-              {hasMeasurements ? (
+              {!profileDataLoaded ? (
+                <OnboardingCardSkeleton />
+              ) : hasMeasurements ? (
                 <div className="block group">
                   <div className="glass-panel p-6 rounded-[2.5rem] border border-green-200 dark:border-green-800 bg-green-50/50 dark:bg-green-900/10">
                     <div className="flex items-start gap-4">
@@ -201,7 +163,9 @@ export default function DashboardPage() {
               )}
 
               {/* Onboarding Card 2: Color Analysis */}
-              {hasColorAnalysis ? (
+              {!profileDataLoaded ? (
+                <OnboardingCardSkeleton />
+              ) : hasColorAnalysis ? (
                 <div className="block group">
                   <div className="glass-panel p-6 rounded-[2.5rem] border border-green-200 dark:border-green-800 bg-green-50/50 dark:bg-green-900/10">
                     <div className="flex items-start gap-4">
@@ -261,7 +225,9 @@ export default function DashboardPage() {
               )}
 
               {/* Onboarding Card 3: Style Quiz */}
-              {hasStylePreferences ? (
+              {!profileDataLoaded ? (
+                <OnboardingCardSkeleton />
+              ) : hasStylePreferences ? (
                 <div className="block group">
                   <div className="glass-panel p-6 rounded-[2.5rem] border border-green-200 dark:border-green-800 bg-green-50/50 dark:bg-green-900/10">
                     <div className="flex items-start gap-4">
@@ -476,6 +442,20 @@ export default function DashboardPage() {
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+function OnboardingCardSkeleton() {
+  return (
+    <div className="glass-panel p-6 rounded-[2.5rem] border border-stone-200/50 dark:border-stone-700/50 animate-pulse">
+      <div className="flex items-start gap-4">
+        <div className="w-12 h-12 rounded-2xl bg-gray-200 dark:bg-gray-700" />
+        <div className="flex-1 space-y-3">
+          <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-32" />
+          <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-48" />
+        </div>
+      </div>
     </div>
   );
 }

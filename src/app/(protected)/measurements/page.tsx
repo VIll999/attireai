@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
+import { useProfile } from "@/context/ProfileContext";
 import { useLocale } from "@/context/LocaleContext";
 import Notification from "@/components/Notification";
 import {
@@ -11,7 +12,10 @@ import {
   createMeasurement,
   updateMeasurement,
   getCurrentUser,
+  getSizeRecommendations,
   MeasurementResponse,
+  SizingResponse,
+  SizingRecommendation,
 } from "@/lib/api";
 
 // Conversion helpers
@@ -108,6 +112,7 @@ function isValueInRange(value: string, field: FieldKey, unit: Unit): boolean {
 
 export default function MeasurementsPage() {
   const { user } = useAuth();
+  const { refreshMeasurements: refreshProfileMeasurements } = useProfile();
   const { t } = useLocale();
   const router = useRouter();
   const [measurements, setMeasurements] = useState<MeasurementResponse[]>([]);
@@ -127,6 +132,20 @@ export default function MeasurementsPage() {
   const [userTier, setUserTier] = useState<"FREE" | "VIP">("FREE");
   const [showNewProfileInput, setShowNewProfileInput] = useState(false);
   const [newProfileName, setNewProfileName] = useState("");
+
+  // Sizing state
+  const [sizingData, setSizingData] = useState<SizingResponse | null>(null);
+  const [sizingLoading, setSizingLoading] = useState(false);
+  const [sizingError, setSizingError] = useState("");
+  const [sizingGender, setSizingGender] = useState<"male" | "female">(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("sizingGender");
+      if (saved === "male" || saved === "female") return saved;
+    }
+    return "male";
+  });
+  const [sizingProfileId, setSizingProfileId] = useState<string | null>(null);
+  const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set());
 
   const fieldLabels: Record<string, string> = {
     height: t("measurements.height"),
@@ -203,6 +222,7 @@ export default function MeasurementsPage() {
       });
 
       await fetchMeasurements();
+      refreshProfileMeasurements();
       setEditingId(newProfile.id);
       loadProfileData(newProfile);
       setShowNewProfileInput(false);
@@ -225,6 +245,51 @@ export default function MeasurementsPage() {
   useEffect(() => {
     fetchMeasurements();
   }, [fetchMeasurements]);
+
+  // Fetch sizing recommendations
+  const fetchSizing = useCallback(async (profileId: string, gender: "male" | "female") => {
+    if (!user) return;
+    setSizingLoading(true);
+    setSizingError("");
+    try {
+      const data = await getSizeRecommendations(user.uid, profileId, gender);
+      setSizingData(data);
+    } catch (err: unknown) {
+      const error = err as { message?: string };
+      setSizingError(error.message || "Failed to load size recommendations");
+      setSizingData(null);
+    } finally {
+      setSizingLoading(false);
+    }
+  }, [user]);
+
+  // Auto-fetch sizing when measurements load
+  useEffect(() => {
+    if (measurements.length === 0) return;
+    const profileId = sizingProfileId || measurements.find(m => m.is_primary)?.id || measurements[0]?.id;
+    if (!profileId) return;
+    if (sizingProfileId !== profileId) setSizingProfileId(profileId);
+    const profile = measurements.find(m => m.id === profileId);
+    if (profile && profile.chest && profile.waist && profile.hip) {
+      fetchSizing(profileId, sizingGender);
+    } else {
+      setSizingData(null);
+    }
+  }, [measurements, sizingProfileId, sizingGender, fetchSizing]);
+
+  const handleGenderChange = (gender: "male" | "female") => {
+    setSizingGender(gender);
+    localStorage.setItem("sizingGender", gender);
+  };
+
+  const toggleBrandExpand = (brand: string) => {
+    setExpandedBrands(prev => {
+      const next = new Set(prev);
+      if (next.has(brand)) next.delete(brand);
+      else next.add(brand);
+      return next;
+    });
+  };
 
   const handleSave = async () => {
     if (!user || !form.name.trim()) {
@@ -255,6 +320,9 @@ export default function MeasurementsPage() {
         const created = await createMeasurement(user.uid, { ...payload, is_primary: form.is_primary });
         savedMeasurementId = created.id;
       }
+
+      // Keep profile context in sync
+      refreshProfileMeasurements();
 
       // Redirect to color analysis page with measurement_id parameter
       router.push(`/color-analysis?measurement_id=${savedMeasurementId}`);
@@ -710,6 +778,23 @@ export default function MeasurementsPage() {
             </div>
           </div>
         </div>
+
+        {/* Size Recommendations Section */}
+        {measurements.length > 0 && (
+          <SizeRecommendationsSection
+            measurements={measurements}
+            sizingData={sizingData}
+            sizingLoading={sizingLoading}
+            sizingError={sizingError}
+            sizingGender={sizingGender}
+            sizingProfileId={sizingProfileId || measurements.find(m => m.is_primary)?.id || measurements[0]?.id}
+            expandedBrands={expandedBrands}
+            onGenderChange={handleGenderChange}
+            onProfileChange={(id) => setSizingProfileId(id)}
+            onToggleBrand={toggleBrandExpand}
+            t={t}
+          />
+        )}
       </main>
 
       {/* New Profile Creation Modal */}
@@ -794,6 +879,316 @@ export default function MeasurementsPage() {
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+/* ── Category Labels Map ── */
+const CATEGORY_LABELS: Record<string, string> = {
+  "Sportswear": "sportswear",
+  "Fast Fashion": "fastFashion",
+  "Denim": "denim",
+  "Basics": "basics",
+  "Luxury": "luxury",
+  "Contemporary": "contemporary",
+  "Outdoor": "outdoor",
+};
+
+/* ── Confidence Badge Component ── */
+function ConfidenceBadge({ confidence, t }: { confidence: string; t: (key: string) => string }) {
+  const styles: Record<string, string> = {
+    "Best Fit": "bg-green-100 dark:bg-green-500/10 text-green-700 dark:text-green-400",
+    "Good Fit": "bg-blue-100 dark:bg-blue-500/10 text-blue-700 dark:text-blue-400",
+    "May Run Small": "bg-orange-100 dark:bg-orange-500/10 text-orange-700 dark:text-orange-400",
+    "May Run Large": "bg-orange-100 dark:bg-orange-500/10 text-orange-700 dark:text-orange-400",
+  };
+  const labels: Record<string, string> = {
+    "Best Fit": t("sizing.bestFit"),
+    "Good Fit": t("sizing.goodFit"),
+    "May Run Small": t("sizing.mayRunSmall"),
+    "May Run Large": t("sizing.mayRunLarge"),
+  };
+  return (
+    <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${styles[confidence] || "bg-stone-100 dark:bg-stone-800 text-stone-600"}`}>
+      {labels[confidence] || confidence}
+    </span>
+  );
+}
+
+/* ── Fit Slider Component ── */
+function FitSlider({ label, position, inRange, sizeRange, userValue }: {
+  label: string;
+  position: number;
+  inRange: boolean;
+  sizeRange: [number, number];
+  userValue: number;
+}) {
+  return (
+    <div className="flex items-center gap-3">
+      <span className="text-xs text-gray-500 dark:text-gray-400 w-12 shrink-0">{label}</span>
+      <div className="flex-1 relative">
+        <div className="h-2 bg-gray-200 dark:bg-stone-700 rounded-full overflow-hidden">
+          <div className="h-full bg-gray-300 dark:bg-stone-600 rounded-full" style={{ width: "100%" }} />
+        </div>
+        <div
+          className={`absolute top-1/2 -translate-y-1/2 w-3.5 h-3.5 rounded-full border-2 border-white dark:border-stone-900 shadow-sm ${
+            inRange ? "bg-green-500" : "bg-orange-500"
+          }`}
+          style={{ left: `${Math.max(0, Math.min(100, position * 100))}%`, transform: "translate(-50%, -50%)" }}
+        />
+      </div>
+      <span className="text-xs text-gray-500 dark:text-gray-400 w-20 text-right shrink-0">
+        {userValue} / {sizeRange[0]}-{sizeRange[1]}
+      </span>
+    </div>
+  );
+}
+
+/* ── Body Type Icon ── */
+function BodyTypeIcon({ bodyType }: { bodyType: string }) {
+  const icons: Record<string, React.ReactNode> = {
+    "Hourglass": (
+      <>
+        <ellipse cx="12" cy="5" rx="4" ry="2" />
+        <ellipse cx="12" cy="19" rx="4" ry="2" />
+        <path d="M8 5c0 4 4 5.5 4 7s-4 3-4 7" />
+        <path d="M16 5c0 4-4 5.5-4 7s4 3 4 7" />
+      </>
+    ),
+    "Pear": (
+      <>
+        <ellipse cx="12" cy="5" rx="3" ry="2" />
+        <ellipse cx="12" cy="19" rx="5" ry="2" />
+        <path d="M9 5c0 4 3 5 3 7s-5 3-5 7" />
+        <path d="M15 5c0 4-3 5-3 7s5 3 5 7" />
+      </>
+    ),
+    "Inverted Triangle": (
+      <>
+        <ellipse cx="12" cy="5" rx="5" ry="2" />
+        <ellipse cx="12" cy="19" rx="3" ry="2" />
+        <path d="M7 5c0 4 2 5 5 7 0 2-2 3-3 7" />
+        <path d="M17 5c0 4-2 5-5 7 0 2 2 3 3 7" />
+      </>
+    ),
+    "Rectangle": (
+      <>
+        <ellipse cx="12" cy="5" rx="3.5" ry="2" />
+        <ellipse cx="12" cy="19" rx="3.5" ry="2" />
+        <path d="M8.5 5c0 4.5 0 9.5 0 14" />
+        <path d="M15.5 5c0 4.5 0 9.5 0 14" />
+      </>
+    ),
+    "Apple": (
+      <>
+        <ellipse cx="12" cy="5" rx="3.5" ry="2" />
+        <ellipse cx="12" cy="19" rx="3" ry="2" />
+        <path d="M8.5 5c-1.5 3-2.5 6-2 9 .5 2 2.5 3 5.5 5" />
+        <path d="M15.5 5c1.5 3 2.5 6 2 9-.5 2-2.5 3-5.5 5" />
+      </>
+    ),
+  };
+  return (
+    <svg className="w-8 h-8 text-brand dark:text-brand-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round">
+      {icons[bodyType] || icons["Rectangle"]}
+    </svg>
+  );
+}
+
+/* ── Size Recommendations Section ── */
+function SizeRecommendationsSection({
+  measurements,
+  sizingData,
+  sizingLoading,
+  sizingError,
+  sizingGender,
+  sizingProfileId,
+  expandedBrands,
+  onGenderChange,
+  onProfileChange,
+  onToggleBrand,
+  t,
+}: {
+  measurements: MeasurementResponse[];
+  sizingData: SizingResponse | null;
+  sizingLoading: boolean;
+  sizingError: string;
+  sizingGender: "male" | "female";
+  sizingProfileId: string;
+  expandedBrands: Set<string>;
+  onGenderChange: (g: "male" | "female") => void;
+  onProfileChange: (id: string) => void;
+  onToggleBrand: (brand: string) => void;
+  t: (key: string) => string;
+}) {
+  const selectedProfile = measurements.find(m => m.id === sizingProfileId);
+  const hasSizingMeasurements = selectedProfile && selectedProfile.chest && selectedProfile.waist && selectedProfile.hip;
+
+  // Group recommendations by category
+  const grouped: Record<string, SizingRecommendation[]> = {};
+  if (sizingData) {
+    for (const rec of sizingData.recommendations) {
+      if (!grouped[rec.category]) grouped[rec.category] = [];
+      grouped[rec.category].push(rec);
+    }
+  }
+
+  return (
+    <div className="mt-10 col-span-full">
+      <div className="glass-panel p-6 sm:p-10 rounded-[2rem] shadow-sm w-full border border-stone-200/50 dark:border-stone-700/50">
+        {/* Section Header */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+          <div>
+            <h2 className="text-2xl font-cabinet font-extrabold text-gray-900 dark:text-white">{t("sizing.title")}</h2>
+            <p className="text-gray-600 dark:text-gray-400 text-sm mt-1">{t("sizing.subtitle")}</p>
+          </div>
+          <div className="flex items-center gap-3">
+            {/* Gender Toggle */}
+            <div className="flex items-center bg-gray-200/50 dark:bg-stone-800/50 p-1.5 rounded-lg border border-gray-200/60 dark:border-stone-700/60">
+              <button
+                onClick={() => onGenderChange("male")}
+                className={`px-4 py-1.5 rounded-md text-sm font-bold transition-all ${
+                  sizingGender === "male" ? "bg-white dark:bg-stone-700 shadow-sm text-brand dark:text-brand-400" : "text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
+                }`}
+              >
+                {t("sizing.male")}
+              </button>
+              <button
+                onClick={() => onGenderChange("female")}
+                className={`px-4 py-1.5 rounded-md text-sm font-bold transition-all ${
+                  sizingGender === "female" ? "bg-white dark:bg-stone-700 shadow-sm text-brand dark:text-brand-400" : "text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
+                }`}
+              >
+                {t("sizing.female")}
+              </button>
+            </div>
+            {/* Profile Selector */}
+            {measurements.length > 1 && (
+              <select
+                value={sizingProfileId}
+                onChange={(e) => onProfileChange(e.target.value)}
+                className="px-3 py-2 text-sm border border-gray-200 dark:border-stone-700 rounded-lg bg-white/90 dark:bg-stone-800/50 text-gray-900 dark:text-white focus:ring-2 focus:ring-brand dark:focus:ring-brand-400 outline-none"
+              >
+                {measurements.map(m => (
+                  <option key={m.id} value={m.id}>{m.name}{m.is_primary ? " (Primary)" : ""}</option>
+                ))}
+              </select>
+            )}
+          </div>
+        </div>
+
+        {/* Missing measurements message */}
+        {!hasSizingMeasurements && (
+          <div className="p-8 text-center">
+            <div className="w-12 h-12 bg-brand/10 dark:bg-brand/20 rounded-full flex items-center justify-center mx-auto mb-3">
+              <svg className="w-6 h-6 text-brand dark:text-brand-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
+              </svg>
+            </div>
+            <p className="text-gray-600 dark:text-gray-400">{t("sizing.needMeasurements")}</p>
+          </div>
+        )}
+
+        {/* Loading state */}
+        {sizingLoading && hasSizingMeasurements && (
+          <div className="p-8">
+            <div className="flex flex-col items-center gap-3">
+              <div className="w-10 h-10 border-4 border-brand dark:border-brand-400 border-t-transparent rounded-full animate-spin" />
+              <p className="text-sm text-gray-500 dark:text-gray-400">{t("sizing.loading") || "Loading recommendations..."}</p>
+            </div>
+          </div>
+        )}
+
+        {/* Error state */}
+        {sizingError && (
+          <div className="mb-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg text-red-600 text-sm">
+            {sizingError}
+          </div>
+        )}
+
+        {/* Sizing Results */}
+        {sizingData && !sizingLoading && (
+          <div className="space-y-8">
+            {/* Body Type Card */}
+            <div className="flex items-center gap-4 p-5 bg-white/60 dark:bg-stone-800/30 rounded-2xl border border-stone-200/50 dark:border-stone-700/50">
+              <div className="w-14 h-14 bg-brand/10 dark:bg-brand/20 rounded-xl flex items-center justify-center shrink-0">
+                <BodyTypeIcon bodyType={sizingData.body_type} />
+              </div>
+              <div>
+                <p className="text-xs uppercase tracking-wider text-gray-500 dark:text-gray-400 font-bold">{t("sizing.bodyType")}</p>
+                <p className="text-lg font-cabinet font-bold text-gray-900 dark:text-white">{sizingData.body_type}</p>
+                <p className="text-sm text-gray-600 dark:text-gray-400">{sizingData.body_type_description}</p>
+              </div>
+            </div>
+
+            {/* Brand Cards by Category */}
+            {Object.entries(grouped).map(([category, recs]) => (
+              <div key={category}>
+                <h3 className="text-xs uppercase tracking-widest text-gray-500 dark:text-gray-400 font-bold mb-3">
+                  {t(`sizing.${CATEGORY_LABELS[category] || "basics"}`)}
+                </h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                  {recs.map((rec) => {
+                    const isExpanded = expandedBrands.has(rec.brand);
+                    return (
+                      <div
+                        key={rec.brand}
+                        className="bg-white/80 dark:bg-stone-800/40 rounded-xl border border-stone-200/50 dark:border-stone-700/50 overflow-hidden hover:shadow-md transition-shadow"
+                      >
+                        <button
+                          onClick={() => onToggleBrand(rec.brand)}
+                          className="w-full p-4 text-left"
+                        >
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="font-cabinet font-bold text-gray-900 dark:text-white">{rec.brand}</span>
+                            <ConfidenceBadge confidence={rec.confidence} t={t} />
+                          </div>
+                          <div className="flex items-end justify-between">
+                            <span className="text-3xl font-extrabold text-brand dark:text-brand-400">{rec.recommended_size}</span>
+                            <span className="text-xs text-gray-500 dark:text-gray-400">
+                              {t("sizing.fitScore")}: {rec.fit_score}
+                            </span>
+                          </div>
+                        </button>
+
+                        {/* Expanded Details */}
+                        {isExpanded && (
+                          <div className="px-4 pb-4 pt-0 border-t border-stone-100 dark:border-stone-800">
+                            <p className="text-xs text-gray-500 dark:text-gray-400 italic mt-3 mb-3">{rec.sizing_notes}</p>
+                            <div className="space-y-2.5">
+                              <FitSlider
+                                label={t("sizing.chest")}
+                                position={rec.fit_details.chest.position}
+                                inRange={rec.fit_details.chest.in_range}
+                                sizeRange={rec.fit_details.chest.size_range}
+                                userValue={rec.fit_details.chest.user_value}
+                              />
+                              <FitSlider
+                                label={t("sizing.waist")}
+                                position={rec.fit_details.waist.position}
+                                inRange={rec.fit_details.waist.in_range}
+                                sizeRange={rec.fit_details.waist.size_range}
+                                userValue={rec.fit_details.waist.user_value}
+                              />
+                              <FitSlider
+                                label={t("sizing.hip")}
+                                position={rec.fit_details.hip.position}
+                                inRange={rec.fit_details.hip.in_range}
+                                sizeRange={rec.fit_details.hip.size_range}
+                                userValue={rec.fit_details.hip.user_value}
+                              />
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
