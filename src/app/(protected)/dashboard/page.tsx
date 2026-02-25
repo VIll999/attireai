@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
@@ -21,7 +21,11 @@ export default function DashboardPage() {
     primaryMeasurementId,
     profileCompletion,
     loaded: profileDataLoaded,
+    ensureLoaded,
   } = useProfile();
+
+  useEffect(() => { ensureLoaded(); }, [ensureLoaded]);
+
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
 

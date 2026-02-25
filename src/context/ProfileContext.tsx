@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useEffect, useState, useCallback, ReactNode } from "react";
+import { createContext, useContext, useEffect, useState, useCallback, useRef, ReactNode } from "react";
 import { useAuth } from "./AuthContext";
 import { getMeasurements, getColorProfiles, getOutfitRecommendations, MeasurementResponse } from "@/lib/api";
 
@@ -12,6 +12,7 @@ interface ProfileContextType {
   primaryMeasurementId: string | null;
   profileCompletion: number;
   loaded: boolean;
+  ensureLoaded: () => void;
   refreshMeasurements: () => Promise<void>;
   refreshColorProfiles: () => Promise<void>;
   refreshStylePreferences: () => Promise<void>;
@@ -26,6 +27,7 @@ const ProfileContext = createContext<ProfileContextType>({
   primaryMeasurementId: null,
   profileCompletion: 0,
   loaded: false,
+  ensureLoaded: () => {},
   refreshMeasurements: async () => {},
   refreshColorProfiles: async () => {},
   refreshStylePreferences: async () => {},
@@ -38,6 +40,8 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
   const [hasColorAnalysis, setHasColorAnalysis] = useState(false);
   const [hasStylePreferences, setHasStylePreferences] = useState(false);
   const [loaded, setLoaded] = useState(false);
+  const [requested, setRequested] = useState(false);
+  const fetchingRef = useRef(false);
 
   const hasMeasurements = measurements.length > 0;
   const primaryMeasurementId = hasMeasurements
@@ -76,7 +80,8 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
   }, [user]);
 
   const refreshAll = useCallback(async () => {
-    if (!user) return;
+    if (!user || fetchingRef.current) return;
+    fetchingRef.current = true;
     try {
       const [measurementsData, colorData, outfitData] = await Promise.all([
         getMeasurements(user.uid),
@@ -90,21 +95,35 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
       console.error("Failed to fetch profile data:", err);
     } finally {
       setLoaded(true);
+      fetchingRef.current = false;
     }
   }, [user]);
 
-  // Fetch once when user becomes available
+  // Lazy fetch: only runs when a consumer calls ensureLoaded()
+  const ensureLoaded = useCallback(() => {
+    if (!loaded && !fetchingRef.current) {
+      setRequested(true);
+    }
+  }, [loaded]);
+
+  // Fetch when requested and user is available
   useEffect(() => {
-    if (user && !loaded) {
+    if (user && requested && !loaded && !fetchingRef.current) {
       refreshAll();
     }
+  }, [user, requested, loaded, refreshAll]);
+
+  // Reset on logout
+  useEffect(() => {
     if (!user) {
       setMeasurements([]);
       setHasColorAnalysis(false);
       setHasStylePreferences(false);
       setLoaded(false);
+      setRequested(false);
+      fetchingRef.current = false;
     }
-  }, [user, loaded, refreshAll]);
+  }, [user]);
 
   return (
     <ProfileContext.Provider value={{
@@ -115,6 +134,7 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
       primaryMeasurementId,
       profileCompletion,
       loaded,
+      ensureLoaded,
       refreshMeasurements,
       refreshColorProfiles,
       refreshStylePreferences,

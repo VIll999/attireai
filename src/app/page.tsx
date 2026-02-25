@@ -6,7 +6,7 @@ import { useTheme } from "@/context/ThemeContext";
 import { useLocale } from "@/context/LocaleContext";
 
 export default function LandingPage() {
-  const { user, loading, signOut } = useAuth();
+  const { user, dbUser, loading, signOut } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const { t, locale, setLocale } = useLocale();
 
@@ -102,17 +102,14 @@ export default function LandingPage() {
 
             {/* Auth Buttons */}
             {loading ? (
-              <div className="flex items-center gap-3">
-                <div className="w-16 h-10 bg-stone-200 dark:bg-stone-700 rounded-full animate-pulse" />
-                <div className="w-20 h-10 bg-stone-300 dark:bg-stone-600 rounded-full animate-pulse" />
-              </div>
+              <div className="w-10 h-10 rounded-full bg-stone-200 dark:bg-stone-700 animate-pulse" />
             ) : user ? (
               <div className="relative group">
                 {/* User Avatar */}
                 <button className="w-10 h-10 rounded-full bg-brand/10 dark:bg-brand/20 border-2 border-brand/20 flex items-center justify-center overflow-hidden hover:border-brand transition-all">
-                  {user.photoURL ? (
+                  {(dbUser?.profile_picture_url || user.photoURL) ? (
                     <img
-                      src={user.photoURL}
+                      src={dbUser?.profile_picture_url || user.photoURL || ""}
                       alt="User"
                       className="w-full h-full object-cover"
                     />
