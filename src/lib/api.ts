@@ -327,17 +327,31 @@ interface OutfitRecommendationCreate {
   dress_code: string;
 }
 
-interface OutfitRecommendationResponse {
+export interface OutfitRecommendationItemResponse {
+  id: string;
+  name: string;
+  brand: string | null;
+  category: string | null;
+  price: number | null;
+  currency: string | null;
+  image_url: string | null;
+  purchase_url: string | null;
+  recommended_size: string | null;
+  outfit_index: number | null;
+}
+
+export interface OutfitRecommendationResponse {
   id: string;
   user_id: string;
   measurement_id: string | null;
-  occasion: string;
-  weather: string;
-  dress_code: string;
+  occasion: string | null;
+  weather: string | null;
+  dress_code: string | null;
   total_price: number | null;
   reasoning: string | null;
   user_rating: string | null;
   created_at: string;
+  items: OutfitRecommendationItemResponse[];
 }
 
 /**
@@ -462,6 +476,7 @@ export interface AIRecommendationRequest {
   gender?: string;
   location?: string;
   weather?: string;
+  dress_code?: string;
   measurement_profile_id?: string;
   k?: number;
   save_to_db?: boolean;
@@ -479,11 +494,12 @@ export interface AIRecommendationItem {
   recommended_color?: string | null;
   recommended_size?: string | null;
   source_urls?: string[];
+  outfit_index?: number | null;
 }
 
 export interface AIRecommendationResponse {
   items: AIRecommendationItem[];
-  recommendation_id?: string | null;
+  recommendation_ids?: string[];
   debug?: Record<string, unknown>;
 }
 
@@ -503,6 +519,30 @@ export async function getAIRecommendations(
   if (!response.ok) {
     const error = await response.json().catch(() => ({ detail: "Failed to get recommendations" }));
     throw new Error(error.detail || "Failed to get AI recommendations");
+  }
+
+  return response.json();
+}
+
+/**
+ * Rate an outfit recommendation (like/dislike)
+ */
+export async function rateOutfitRecommendation(
+  firebaseUid: string,
+  recommendationId: string,
+  rating: "LIKE" | "DISLIKE" | "NONE"
+): Promise<OutfitRecommendationResponse> {
+  const response = await fetch(`${API_URL}/outfit-recommendations/${recommendationId}`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+      "X-Firebase-UID": firebaseUid,
+    },
+    body: JSON.stringify({ user_rating: rating }),
+  });
+
+  if (!response.ok) {
+    throw new Error("Failed to rate recommendation");
   }
 
   return response.json();

@@ -1,4 +1,4 @@
-from sqlalchemy import Column, String, Enum, TIMESTAMP, text, Boolean, ForeignKey, Numeric, JSON, Text
+from sqlalchemy import Column, String, Enum, TIMESTAMP, text, Boolean, ForeignKey, Numeric, JSON, Text, Integer
 from sqlalchemy.dialects.mysql import CHAR
 from sqlalchemy.orm import relationship
 
@@ -169,6 +169,7 @@ class RecommendationItem(Base):
     recommended_size = Column(String(20), nullable=True)
     colors = Column(JSON, nullable=True)
     material = Column(String(100), nullable=True)
+    outfit_index = Column(Integer, nullable=True)
 
     recommendation = relationship("OutfitRecommendation", back_populates="items")
 

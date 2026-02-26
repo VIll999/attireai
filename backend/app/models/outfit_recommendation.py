@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from typing import Optional
+from typing import List, Optional
 from datetime import datetime
 
 
@@ -21,6 +21,22 @@ class OutfitRecommendationUpdate(BaseModel):
     user_rating: Optional[str] = None
 
 
+class RecommendationItemResponse(BaseModel):
+    id: str
+    name: str
+    brand: Optional[str] = None
+    category: Optional[str] = None
+    price: Optional[float] = None
+    currency: Optional[str] = "USD"
+    image_url: Optional[str] = None
+    purchase_url: Optional[str] = None
+    recommended_size: Optional[str] = None
+    outfit_index: Optional[int] = None
+
+    class Config:
+        from_attributes = True
+
+
 class OutfitRecommendationResponse(BaseModel):
     id: str
     user_id: str
@@ -32,6 +48,7 @@ class OutfitRecommendationResponse(BaseModel):
     reasoning: Optional[str] = None
     user_rating: Optional[str] = None
     created_at: datetime
+    items: List[RecommendationItemResponse] = []
 
     class Config:
         from_attributes = True

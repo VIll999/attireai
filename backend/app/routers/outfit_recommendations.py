@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException, Header, Depends
 from typing import Optional, List
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from app.db.database import get_db
 from app.db.models import OutfitRecommendation, User
 from app.models.outfit_recommendation import (
@@ -58,8 +58,10 @@ async def get_outfit_recommendations(
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
 
-    # Query recommendations
-    query = db.query(OutfitRecommendation).filter(
+    # Query recommendations with items eagerly loaded
+    query = db.query(OutfitRecommendation).options(
+        joinedload(OutfitRecommendation.items)
+    ).filter(
         OutfitRecommendation.user_id == user.id
     )
 

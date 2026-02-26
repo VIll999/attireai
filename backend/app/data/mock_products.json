@@ -1,0 +1,252 @@
+{
+  "casual": {
+    "outfits": [
+      {
+        "reasoning": "Clean minimalist everyday look — a crisp white tee with chinos and classic sneakers keeps it simple yet put-together.",
+        "items": [
+          {"name": "Classic Cotton Crew Neck T-Shirt", "brand": "Uniqlo", "category": "TOP", "price": 14.90, "currency": "USD", "recommended_color": "White"},
+          {"name": "Slim Fit Chino Pants", "brand": "H&M", "category": "BOTTOM", "price": 29.99, "currency": "USD", "recommended_color": "Khaki"},
+          {"name": "Old Skool Sneakers", "brand": "Vans", "category": "SHOES", "price": 70.00, "currency": "USD", "recommended_color": "Black/White"},
+          {"name": "Canvas Tote Bag", "brand": "Muji", "category": "ACCESSORY", "price": 24.90, "currency": "USD", "recommended_color": "Natural"}
+        ]
+      },
+      {
+        "reasoning": "Relaxed streetwear vibe — an oversized hoodie paired with joggers and chunky sneakers for effortless cool.",
+        "items": [
+          {"name": "Oversized French Terry Hoodie", "brand": "Nike", "category": "TOP", "price": 65.00, "currency": "USD", "recommended_color": "Heather Gray"},
+          {"name": "Tapered Jogger Pants", "brand": "Adidas", "category": "BOTTOM", "price": 55.00, "currency": "USD", "recommended_color": "Black"},
+          {"name": "Air Force 1 Low", "brand": "Nike", "category": "SHOES", "price": 110.00, "currency": "USD", "recommended_color": "White"},
+          {"name": "Classic Baseball Cap", "brand": "New Era", "category": "ACCESSORY", "price": 32.00, "currency": "USD", "recommended_color": "Navy"}
+        ]
+      },
+      {
+        "reasoning": "Smart-casual weekend look — a linen shirt with tailored shorts and loafers bridges comfort and style.",
+        "items": [
+          {"name": "Relaxed Linen Shirt", "brand": "Zara", "category": "TOP", "price": 45.90, "currency": "USD", "recommended_color": "Light Blue"},
+          {"name": "Tailored Chino Shorts", "brand": "J.Crew", "category": "BOTTOM", "price": 49.50, "currency": "USD", "recommended_color": "Olive"},
+          {"name": "Suede Penny Loafers", "brand": "Clarks", "category": "SHOES", "price": 120.00, "currency": "USD", "recommended_color": "Tan"},
+          {"name": "Woven Leather Belt", "brand": "Gap", "category": "ACCESSORY", "price": 29.95, "currency": "USD", "recommended_color": "Brown"}
+        ]
+      },
+      {
+        "reasoning": "Layered transitional outfit — a flannel over a plain tee with dark jeans works for cooler casual days.",
+        "items": [
+          {"name": "Heavyweight Flannel Shirt", "brand": "L.L.Bean", "category": "OUTERWEAR", "price": 59.95, "currency": "USD", "recommended_color": "Red Plaid"},
+          {"name": "Supima Cotton T-Shirt", "brand": "Uniqlo", "category": "TOP", "price": 12.90, "currency": "USD", "recommended_color": "Charcoal"},
+          {"name": "Slim Straight Jeans", "brand": "Levi's", "category": "BOTTOM", "price": 69.50, "currency": "USD", "recommended_color": "Dark Wash"},
+          {"name": "Canvas Low-Top Sneakers", "brand": "Converse", "category": "SHOES", "price": 55.00, "currency": "USD", "recommended_color": "Off-White"},
+          {"name": "Minimalist Digital Watch", "brand": "Casio", "category": "ACCESSORY", "price": 24.99, "currency": "USD", "recommended_color": "Black"}
+        ]
+      },
+      {
+        "reasoning": "Athleisure-meets-casual — performance polo with stretch pants and retro runners for an active lifestyle.",
+        "items": [
+          {"name": "Dry-EX Polo Shirt", "brand": "Uniqlo", "category": "TOP", "price": 29.90, "currency": "USD", "recommended_color": "Navy"},
+          {"name": "Stretch Easy Pants", "brand": "Muji", "category": "BOTTOM", "price": 39.90, "currency": "USD", "recommended_color": "Dark Gray"},
+          {"name": "574 Classic Sneakers", "brand": "New Balance", "category": "SHOES", "price": 89.99, "currency": "USD", "recommended_color": "Gray/Navy"},
+          {"name": "Nylon Crossbody Bag", "brand": "Uniqlo", "category": "ACCESSORY", "price": 19.90, "currency": "USD", "recommended_color": "Black"}
+        ]
+      }
+    ]
+  },
+  "formal": {
+    "outfits": [
+      {
+        "reasoning": "Classic navy suit ensemble — a timeless pairing of dress shirt, wool trousers, and oxford shoes for any formal event.",
+        "items": [
+          {"name": "Slim Fit Dress Shirt", "brand": "Charles Tyrwhitt", "category": "TOP", "price": 69.00, "currency": "USD", "recommended_color": "Light Blue"},
+          {"name": "Wool Blend Dress Trousers", "brand": "Hugo Boss", "category": "BOTTOM", "price": 178.00, "currency": "USD", "recommended_color": "Charcoal"},
+          {"name": "Cap Toe Oxford Shoes", "brand": "Allen Edmonds", "category": "SHOES", "price": 395.00, "currency": "USD", "recommended_color": "Dark Brown"},
+          {"name": "Leather Dress Belt", "brand": "Ralph Lauren", "category": "ACCESSORY", "price": 65.00, "currency": "USD", "recommended_color": "Brown"},
+          {"name": "Single-Breasted Blazer", "brand": "Zara", "category": "OUTERWEAR", "price": 119.00, "currency": "USD", "recommended_color": "Navy"}
+        ]
+      },
+      {
+        "reasoning": "Modern black-tie option — sleek black trousers with a fitted white shirt and patent leather shoes for evening events.",
+        "items": [
+          {"name": "French Cuff Dress Shirt", "brand": "Brooks Brothers", "category": "TOP", "price": 98.00, "currency": "USD", "recommended_color": "White"},
+          {"name": "Flat Front Tuxedo Trousers", "brand": "Hugo Boss", "category": "BOTTOM", "price": 220.00, "currency": "USD", "recommended_color": "Black"},
+          {"name": "Patent Leather Oxford", "brand": "To Boot New York", "category": "SHOES", "price": 325.00, "currency": "USD", "recommended_color": "Black"},
+          {"name": "Silk Pocket Square", "brand": "Drake's", "category": "ACCESSORY", "price": 75.00, "currency": "USD", "recommended_color": "White"}
+        ]
+      },
+      {
+        "reasoning": "Italian-inspired formal — linen blend shirt with tailored trousers and monk strap shoes for warm-weather elegance.",
+        "items": [
+          {"name": "Cotton-Linen Dress Shirt", "brand": "Suitsupply", "category": "TOP", "price": 79.00, "currency": "USD", "recommended_color": "Pale Pink"},
+          {"name": "Pleated Wool Trousers", "brand": "Incotex", "category": "BOTTOM", "price": 245.00, "currency": "USD", "recommended_color": "Light Gray"},
+          {"name": "Double Monk Strap Shoes", "brand": "Magnanni", "category": "SHOES", "price": 375.00, "currency": "USD", "recommended_color": "Cognac"},
+          {"name": "Leather Dress Watch", "brand": "Seiko", "category": "ACCESSORY", "price": 275.00, "currency": "USD", "recommended_color": "Rose Gold"}
+        ]
+      },
+      {
+        "reasoning": "Power suit combination — a bold pinstripe with a solid tie for commanding presence at formal gatherings.",
+        "items": [
+          {"name": "Fitted Poplin Dress Shirt", "brand": "Thomas Pink", "category": "TOP", "price": 85.00, "currency": "USD", "recommended_color": "Crisp White"},
+          {"name": "Pinstripe Wool Trousers", "brand": "Ralph Lauren", "category": "BOTTOM", "price": 198.00, "currency": "USD", "recommended_color": "Navy Pinstripe"},
+          {"name": "Whole Cut Oxford Shoes", "brand": "Meermin", "category": "SHOES", "price": 215.00, "currency": "USD", "recommended_color": "Black"},
+          {"name": "Silk Tie", "brand": "Turnbull & Asser", "category": "ACCESSORY", "price": 125.00, "currency": "USD", "recommended_color": "Burgundy"},
+          {"name": "Pinstripe Blazer", "brand": "Ralph Lauren", "category": "OUTERWEAR", "price": 350.00, "currency": "USD", "recommended_color": "Navy Pinstripe"}
+        ]
+      },
+      {
+        "reasoning": "Refined earth tones — warm neutrals with textured fabrics create a sophisticated yet approachable formal look.",
+        "items": [
+          {"name": "Slim Fit Twill Shirt", "brand": "Massimo Dutti", "category": "TOP", "price": 69.90, "currency": "USD", "recommended_color": "Cream"},
+          {"name": "Flannel Wool Trousers", "brand": "Canali", "category": "BOTTOM", "price": 265.00, "currency": "USD", "recommended_color": "Camel"},
+          {"name": "Burnished Wingtip Shoes", "brand": "Cole Haan", "category": "SHOES", "price": 180.00, "currency": "USD", "recommended_color": "Tan"},
+          {"name": "Knit Tie", "brand": "The Tie Bar", "category": "ACCESSORY", "price": 25.00, "currency": "USD", "recommended_color": "Forest Green"}
+        ]
+      }
+    ]
+  },
+  "work": {
+    "outfits": [
+      {
+        "reasoning": "Professional classic — wrinkle-free shirt with wool dress pants and derby shoes for a reliable office look.",
+        "items": [
+          {"name": "Wrinkle-Free Button Down Shirt", "brand": "Brooks Brothers", "category": "TOP", "price": 88.00, "currency": "USD", "recommended_color": "White"},
+          {"name": "Stretch Wool Dress Pants", "brand": "Banana Republic", "category": "BOTTOM", "price": 110.00, "currency": "USD", "recommended_color": "Navy"},
+          {"name": "Leather Derby Shoes", "brand": "Clarks", "category": "SHOES", "price": 130.00, "currency": "USD", "recommended_color": "Black"},
+          {"name": "Minimalist Analog Watch", "brand": "Timex", "category": "ACCESSORY", "price": 89.00, "currency": "USD", "recommended_color": "Silver/White"}
+        ]
+      },
+      {
+        "reasoning": "Business casual Friday — a cotton blazer over a polo with chinos keeps it polished without being stuffy.",
+        "items": [
+          {"name": "Pique Polo Shirt", "brand": "Lacoste", "category": "TOP", "price": 89.50, "currency": "USD", "recommended_color": "Navy"},
+          {"name": "Slim Fit Cotton Chinos", "brand": "Dockers", "category": "BOTTOM", "price": 60.00, "currency": "USD", "recommended_color": "Stone"},
+          {"name": "Leather Penny Loafers", "brand": "G.H. Bass", "category": "SHOES", "price": 110.00, "currency": "USD", "recommended_color": "Burgundy"},
+          {"name": "Cotton Blazer", "brand": "J.Crew", "category": "OUTERWEAR", "price": 198.00, "currency": "USD", "recommended_color": "Navy"},
+          {"name": "Leather Portfolio", "brand": "Fossil", "category": "ACCESSORY", "price": 78.00, "currency": "USD", "recommended_color": "Cognac"}
+        ]
+      },
+      {
+        "reasoning": "Modern tech office — merino sweater with tailored trousers and clean sneakers for a smart-casual tech environment.",
+        "items": [
+          {"name": "Extra Fine Merino Crew Neck", "brand": "Uniqlo", "category": "TOP", "price": 39.90, "currency": "USD", "recommended_color": "Charcoal"},
+          {"name": "Slim Tapered Dress Pants", "brand": "Theory", "category": "BOTTOM", "price": 195.00, "currency": "USD", "recommended_color": "Black"},
+          {"name": "Minimalist Leather Sneakers", "brand": "Common Projects", "category": "SHOES", "price": 410.00, "currency": "USD", "recommended_color": "White"},
+          {"name": "Nylon Laptop Backpack", "brand": "Aer", "category": "ACCESSORY", "price": 150.00, "currency": "USD", "recommended_color": "Black"}
+        ]
+      },
+      {
+        "reasoning": "Creative professional — a textured button-down with dark denim and suede boots for design and media offices.",
+        "items": [
+          {"name": "Oxford Cloth Button Down", "brand": "Gitman Vintage", "category": "TOP", "price": 165.00, "currency": "USD", "recommended_color": "Light Blue"},
+          {"name": "Selvedge Denim Jeans", "brand": "A.P.C.", "category": "BOTTOM", "price": 220.00, "currency": "USD", "recommended_color": "Raw Indigo"},
+          {"name": "Suede Desert Boots", "brand": "Clarks", "category": "SHOES", "price": 140.00, "currency": "USD", "recommended_color": "Sand"},
+          {"name": "Canvas Messenger Bag", "brand": "Fjallraven", "category": "ACCESSORY", "price": 120.00, "currency": "USD", "recommended_color": "Dark Olive"}
+        ]
+      },
+      {
+        "reasoning": "Executive meeting-ready — a sharp fitted shirt with pressed trousers and cap-toe shoes projects authority.",
+        "items": [
+          {"name": "Non-Iron Fitted Dress Shirt", "brand": "Calvin Klein", "category": "TOP", "price": 69.50, "currency": "USD", "recommended_color": "Light Gray"},
+          {"name": "Tailored Wool Trousers", "brand": "J.Crew", "category": "BOTTOM", "price": 128.00, "currency": "USD", "recommended_color": "Charcoal"},
+          {"name": "Cap Toe Derby Shoes", "brand": "Johnston & Murphy", "category": "SHOES", "price": 165.00, "currency": "USD", "recommended_color": "Black"},
+          {"name": "Stainless Steel Watch", "brand": "Citizen", "category": "ACCESSORY", "price": 295.00, "currency": "USD", "recommended_color": "Silver/Blue"}
+        ]
+      }
+    ]
+  },
+  "date": {
+    "outfits": [
+      {
+        "reasoning": "Effortlessly refined — a soft merino sweater with dark jeans and suede boots says confident and approachable.",
+        "items": [
+          {"name": "Merino Wool V-Neck Sweater", "brand": "COS", "category": "TOP", "price": 89.00, "currency": "USD", "recommended_color": "Burgundy"},
+          {"name": "Tailored Slim Fit Jeans", "brand": "Levi's", "category": "BOTTOM", "price": 69.50, "currency": "USD", "recommended_color": "Dark Indigo"},
+          {"name": "Suede Chelsea Boots", "brand": "Thursday Boot Co", "category": "SHOES", "price": 199.00, "currency": "USD", "recommended_color": "Tobacco"},
+          {"name": "Leather Card Wallet", "brand": "Bellroy", "category": "ACCESSORY", "price": 79.00, "currency": "USD", "recommended_color": "Black"}
+        ]
+      },
+      {
+        "reasoning": "Dinner date polish — a fitted blazer over a clean tee with tailored trousers for upscale restaurant ambiance.",
+        "items": [
+          {"name": "Premium Cotton T-Shirt", "brand": "COS", "category": "TOP", "price": 35.00, "currency": "USD", "recommended_color": "Black"},
+          {"name": "Tapered Wool-Blend Trousers", "brand": "Massimo Dutti", "category": "BOTTOM", "price": 89.90, "currency": "USD", "recommended_color": "Dark Navy"},
+          {"name": "Leather Chelsea Boots", "brand": "Mango", "category": "SHOES", "price": 129.00, "currency": "USD", "recommended_color": "Black"},
+          {"name": "Unstructured Slim Blazer", "brand": "Zara", "category": "OUTERWEAR", "price": 89.90, "currency": "USD", "recommended_color": "Charcoal"},
+          {"name": "Leather Bracelet", "brand": "Miansai", "category": "ACCESSORY", "price": 65.00, "currency": "USD", "recommended_color": "Black"}
+        ]
+      },
+      {
+        "reasoning": "Casual date energy — a henley with well-fitted chinos and clean sneakers for coffee or a walk in the park.",
+        "items": [
+          {"name": "Long Sleeve Henley", "brand": "J.Crew", "category": "TOP", "price": 49.50, "currency": "USD", "recommended_color": "Heather Gray"},
+          {"name": "Athletic Fit Chinos", "brand": "Bonobos", "category": "BOTTOM", "price": 98.00, "currency": "USD", "recommended_color": "Caramel"},
+          {"name": "Leather Low-Top Sneakers", "brand": "Koio", "category": "SHOES", "price": 248.00, "currency": "USD", "recommended_color": "White"},
+          {"name": "Classic Sunglasses", "brand": "Ray-Ban", "category": "ACCESSORY", "price": 161.00, "currency": "USD", "recommended_color": "Tortoise"}
+        ]
+      },
+      {
+        "reasoning": "Weekend brunch date — a linen button-up with tailored shorts and espadrilles for warm-weather charm.",
+        "items": [
+          {"name": "Premium Linen Shirt", "brand": "Massimo Dutti", "category": "TOP", "price": 79.90, "currency": "USD", "recommended_color": "White"},
+          {"name": "Pleated Cotton Shorts", "brand": "Polo Ralph Lauren", "category": "BOTTOM", "price": 85.00, "currency": "USD", "recommended_color": "Navy"},
+          {"name": "Canvas Espadrilles", "brand": "Soludos", "category": "SHOES", "price": 65.00, "currency": "USD", "recommended_color": "Natural"},
+          {"name": "Woven Straw Hat", "brand": "Lack of Color", "category": "ACCESSORY", "price": 59.00, "currency": "USD", "recommended_color": "Natural"}
+        ]
+      },
+      {
+        "reasoning": "Evening cocktail look — a dark button-down with fitted pants and polished loafers exudes sophistication.",
+        "items": [
+          {"name": "Slim Fit Satin Shirt", "brand": "AllSaints", "category": "TOP", "price": 139.00, "currency": "USD", "recommended_color": "Black"},
+          {"name": "Slim Stretch Trousers", "brand": "Reiss", "category": "BOTTOM", "price": 145.00, "currency": "USD", "recommended_color": "Dark Gray"},
+          {"name": "Suede Tassel Loafers", "brand": "Tod's", "category": "SHOES", "price": 445.00, "currency": "USD", "recommended_color": "Navy"},
+          {"name": "Silver Chain Necklace", "brand": "Vitaly", "category": "ACCESSORY", "price": 78.00, "currency": "USD", "recommended_color": "Silver"}
+        ]
+      }
+    ]
+  },
+  "sport": {
+    "outfits": [
+      {
+        "reasoning": "High-performance running kit — moisture-wicking top with stretch shorts and responsive running shoes.",
+        "items": [
+          {"name": "Dri-FIT Running T-Shirt", "brand": "Nike", "category": "TOP", "price": 35.00, "currency": "USD", "recommended_color": "Black"},
+          {"name": "Stretch Training Shorts", "brand": "Under Armour", "category": "BOTTOM", "price": 40.00, "currency": "USD", "recommended_color": "Gray"},
+          {"name": "Ultraboost Running Shoes", "brand": "Adidas", "category": "SHOES", "price": 190.00, "currency": "USD", "recommended_color": "Core Black"},
+          {"name": "Sport Digital Watch", "brand": "Casio", "category": "ACCESSORY", "price": 24.99, "currency": "USD", "recommended_color": "Black"}
+        ]
+      },
+      {
+        "reasoning": "Gym training setup — a tank top with training shorts and cross-training shoes for weight room sessions.",
+        "items": [
+          {"name": "Pro Training Tank Top", "brand": "Under Armour", "category": "TOP", "price": 30.00, "currency": "USD", "recommended_color": "Navy"},
+          {"name": "Flex Woven Shorts", "brand": "Nike", "category": "BOTTOM", "price": 45.00, "currency": "USD", "recommended_color": "Black"},
+          {"name": "Metcon Training Shoes", "brand": "Nike", "category": "SHOES", "price": 130.00, "currency": "USD", "recommended_color": "White/Black"},
+          {"name": "Sweat-Wicking Headband", "brand": "Nike", "category": "ACCESSORY", "price": 12.00, "currency": "USD", "recommended_color": "Black"}
+        ]
+      },
+      {
+        "reasoning": "Outdoor hiking gear — a quick-dry polo with convertible pants and trail shoes for nature adventures.",
+        "items": [
+          {"name": "Quick-Dry Hiking Polo", "brand": "Columbia", "category": "TOP", "price": 40.00, "currency": "USD", "recommended_color": "Olive"},
+          {"name": "Convertible Trail Pants", "brand": "The North Face", "category": "BOTTOM", "price": 75.00, "currency": "USD", "recommended_color": "Khaki"},
+          {"name": "Moab Speed Trail Shoes", "brand": "Merrell", "category": "SHOES", "price": 120.00, "currency": "USD", "recommended_color": "Earth Brown"},
+          {"name": "UV Protection Sunglasses", "brand": "Oakley", "category": "ACCESSORY", "price": 123.00, "currency": "USD", "recommended_color": "Matte Black"}
+        ]
+      },
+      {
+        "reasoning": "Yoga and stretch session — a breathable long-sleeve with training tights and lightweight shoes for flexibility work.",
+        "items": [
+          {"name": "Breathe Long Sleeve Top", "brand": "Lululemon", "category": "TOP", "price": 68.00, "currency": "USD", "recommended_color": "Heather Gray"},
+          {"name": "ABC Jogger Pants", "brand": "Lululemon", "category": "BOTTOM", "price": 128.00, "currency": "USD", "recommended_color": "True Navy"},
+          {"name": "Tree Dasher Shoes", "brand": "Allbirds", "category": "SHOES", "price": 135.00, "currency": "USD", "recommended_color": "Natural White"},
+          {"name": "Silicone Sport Band Watch", "brand": "Apple", "category": "ACCESSORY", "price": 249.00, "currency": "USD", "recommended_color": "Midnight"}
+        ]
+      },
+      {
+        "reasoning": "Weekend cycling look — a zip-up jersey with padded shorts and clip-in shoes for road or trail cycling.",
+        "items": [
+          {"name": "Half-Zip Cycling Jersey", "brand": "Rapha", "category": "TOP", "price": 95.00, "currency": "USD", "recommended_color": "Dark Navy"},
+          {"name": "Padded Cycling Shorts", "brand": "Pearl Izumi", "category": "BOTTOM", "price": 65.00, "currency": "USD", "recommended_color": "Black"},
+          {"name": "Road Cycling Shoes", "brand": "Shimano", "category": "SHOES", "price": 150.00, "currency": "USD", "recommended_color": "White"},
+          {"name": "Cycling Sunglasses", "brand": "100%", "category": "ACCESSORY", "price": 75.00, "currency": "USD", "recommended_color": "Matte Black"}
+        ]
+      }
+    ]
+  }
+}

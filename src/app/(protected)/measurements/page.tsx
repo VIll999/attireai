@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
@@ -17,18 +17,14 @@ import {
   SizingResponse,
   SizingRecommendation,
 } from "@/lib/api";
+import {
+  toCm, toInches, toKg, toLbs,
+  convertForDisplay, convertForStorage,
+  getDisplayRange, isValueInRange, clampValue,
+  type Unit, type FieldKey,
+} from "@/lib/measurementUtils";
 
-// Conversion helpers
-const CM_PER_INCH = 2.54;
-const KG_PER_LB = 0.453592;
-
-const toCm = (inches: number) => inches * CM_PER_INCH;
-const toInches = (cm: number) => cm / CM_PER_INCH;
-const toKg = (lbs: number) => lbs * KG_PER_LB;
-const toLbs = (kg: number) => kg / KG_PER_LB;
-
-type Unit = "CM" | "IN";
-
+// Field definitions for the form UI
 const MEASUREMENT_FIELDS = [
   { key: "height", cmUnit: "cm", inUnit: "in", group: "basic" },
   { key: "weight", cmUnit: "kg", inUnit: "lbs", group: "basic" },
@@ -39,8 +35,6 @@ const MEASUREMENT_FIELDS = [
   { key: "arm_length", cmUnit: "cm", inUnit: "in", group: "detailed" },
   { key: "inseam", cmUnit: "cm", inUnit: "in", group: "detailed" },
 ] as const;
-
-type FieldKey = (typeof MEASUREMENT_FIELDS)[number]["key"];
 
 interface FormValues {
   name: string;
@@ -68,57 +62,6 @@ const emptyForm: FormValues = {
   is_primary: true,
 };
 
-function convertForDisplay(cmValue: number | null, field: FieldKey, unit: Unit): string {
-  if (cmValue === null || cmValue === undefined) return "";
-  if (unit === "CM") return cmValue.toFixed(1);
-  if (field === "weight") return toLbs(cmValue).toFixed(1);
-  return toInches(cmValue).toFixed(1);
-}
-
-function convertForStorage(displayValue: string, field: FieldKey, unit: Unit): number | null {
-  const num = parseFloat(displayValue);
-  if (isNaN(num)) return null;
-  if (unit === "CM") return num;
-  if (field === "weight") return toKg(num);
-  return toCm(num);
-}
-
-// Realistic human body ranges in CM/kg (metric)
-const MEASUREMENT_RANGES: Record<FieldKey, { min: number; max: number }> = {
-  height: { min: 40, max: 300 },
-  weight: { min: 2, max: 350 },
-  chest: { min: 30, max: 180 },
-  waist: { min: 20, max: 170 },
-  hip: { min: 30, max: 180 },
-  inseam: { min: 20, max: 110 },
-  shoulder_width: { min: 15, max: 70 },
-  arm_length: { min: 20, max: 100 },
-};
-
-function getDisplayRange(field: FieldKey, unit: Unit): { min: number; max: number } {
-  const range = MEASUREMENT_RANGES[field];
-  if (unit === "CM") return range;
-  if (field === "weight") return { min: Math.round(toLbs(range.min)), max: Math.round(toLbs(range.max)) };
-  return { min: Math.round(toInches(range.min)), max: Math.round(toInches(range.max)) };
-}
-
-function isValueInRange(value: string, field: FieldKey, unit: Unit): boolean {
-  if (value === "") return true;
-  const num = parseFloat(value);
-  if (isNaN(num)) return true;
-  const { min, max } = getDisplayRange(field, unit);
-  return num >= min && num <= max;
-}
-
-function clampValue(value: string, field: FieldKey, unit: Unit): string {
-  if (value === "") return "";
-  const num = parseFloat(value);
-  if (isNaN(num)) return "";
-  const { min, max } = getDisplayRange(field, unit);
-  if (num < min) return String(min);
-  if (num > max) return String(max);
-  return value;
-}
 
 export default function MeasurementsPage() {
   const { user } = useAuth();
@@ -168,6 +111,25 @@ export default function MeasurementsPage() {
     arm_length: t("measurements.armLength"),
   };
 
+  // Keep a ref to the current unit so fetchMeasurements doesn't re-run on unit change
+  const unitRef = useRef(unit);
+  unitRef.current = unit;
+
+  const loadProfileDataWithUnit = useCallback((profile: MeasurementResponse, u: Unit) => {
+    setForm({
+      name: profile.name,
+      height: convertForDisplay(profile.height, "height", u),
+      weight: convertForDisplay(profile.weight, "weight", u),
+      chest: convertForDisplay(profile.chest, "chest", u),
+      waist: convertForDisplay(profile.waist, "waist", u),
+      hip: convertForDisplay(profile.hip, "hip", u),
+      inseam: convertForDisplay(profile.inseam, "inseam", u),
+      shoulder_width: convertForDisplay(profile.shoulder_width, "shoulder_width", u),
+      arm_length: convertForDisplay(profile.arm_length, "arm_length", u),
+      is_primary: profile.is_primary,
+    });
+  }, []);
+
   const fetchMeasurements = useCallback(async () => {
     if (!user) return;
     try {
@@ -184,28 +146,17 @@ export default function MeasurementsPage() {
       if (data.length > 0 && !editingId) {
         const primary = data.find(m => m.is_primary) || data[0];
         setEditingId(primary.id);
-        loadProfileData(primary);
+        loadProfileDataWithUnit(primary, unitRef.current);
       }
     } catch (err) {
       console.error("Failed to fetch measurements:", err);
     } finally {
       setIsLoading(false);
     }
-  }, [user, editingId, unit]);
+  }, [user, editingId, loadProfileDataWithUnit]);
 
   const loadProfileData = (profile: MeasurementResponse) => {
-    setForm({
-      name: profile.name,
-      height: convertForDisplay(profile.height, "height", unit),
-      weight: convertForDisplay(profile.weight, "weight", unit),
-      chest: convertForDisplay(profile.chest, "chest", unit),
-      waist: convertForDisplay(profile.waist, "waist", unit),
-      hip: convertForDisplay(profile.hip, "hip", unit),
-      inseam: convertForDisplay(profile.inseam, "inseam", unit),
-      shoulder_width: convertForDisplay(profile.shoulder_width, "shoulder_width", unit),
-      arm_length: convertForDisplay(profile.arm_length, "arm_length", unit),
-      is_primary: profile.is_primary,
-    });
+    loadProfileDataWithUnit(profile, unit);
   };
 
   const handleProfileChange = (profileId: string) => {
