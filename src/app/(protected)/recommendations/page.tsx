@@ -702,15 +702,31 @@ export default function RecommendationsPage() {
                         </p>
                         {expandedRecId === rec.id && rec.items && rec.items.length > 0 && (
                           <div className="mt-4 pt-4 border-t border-gray-200 dark:border-stone-700 space-y-2">
-                            {rec.items.map((item) => (
-                              <div key={item.id} className="flex items-center gap-2 text-xs">
-                                <span className="text-lg">{CATEGORY_ICONS[(item.category || "").toUpperCase()] || "👔"}</span>
-                                <span className="flex-1 truncate text-gray-700 dark:text-gray-300">{item.name}</span>
-                                {typeof item.price === "number" && (
-                                  <span className="font-semibold text-brand dark:text-brand-400">${item.price.toFixed(0)}</span>
-                                )}
-                              </div>
-                            ))}
+                            {rec.items.map((item) => {
+                              const itemUrl = pickBestUrl(item);
+                              return (
+                                <div key={item.id} className="flex items-center gap-2 text-xs group">
+                                  <span className="text-lg">{CATEGORY_ICONS[(item.category || "").toUpperCase()] || "👔"}</span>
+                                  <span className="flex-1 truncate text-gray-700 dark:text-gray-300">{item.name}</span>
+                                  <div className="flex items-center gap-2">
+                                    {typeof item.price === "number" && (
+                                      <span className="font-semibold text-brand dark:text-brand-400">${item.price.toFixed(0)}</span>
+                                    )}
+                                    {itemUrl && (
+                                      <a
+                                        href={itemUrl}
+                                        target="_blank"
+                                        rel="noreferrer"
+                                        onClick={(e) => e.stopPropagation()}
+                                        className="text-brand dark:text-brand-400 hover:underline font-semibold"
+                                      >
+                                        View
+                                      </a>
+                                    )}
+                                  </div>
+                                </div>
+                              );
+                            })}
                           </div>
                         )}
                       </div>

@@ -1,6 +1,8 @@
 from fastapi import APIRouter, Depends, Header, HTTPException, status
 from sqlalchemy.orm import Session
 from typing import Optional
+import asyncio
+from functools import partial
 
 from app.db.database import get_db
 from app.models.recommendations_ai import AIWebCandidatesRequest, AIWebCandidatesResponse
@@ -54,7 +56,14 @@ async def ai_products(
     try:
         svc = get_svc()
         data = _merge_frontend_fields(data)
-        return svc.generate_web_candidates(db=db, firebase_uid=x_firebase_uid or "", req=data)
+
+        # Run the blocking AI generation in a thread pool to avoid blocking the event loop
+        loop = asyncio.get_event_loop()
+        result = await loop.run_in_executor(
+            None,  # Use default executor
+            partial(svc.generate_web_candidates, db=db, firebase_uid=x_firebase_uid or "", req=data)
+        )
+        return result
     except ValueError as e:
         msg = str(e)
         if "Missing Firebase UID" in msg:
