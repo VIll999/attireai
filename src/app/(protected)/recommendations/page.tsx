@@ -262,10 +262,10 @@ export default function RecommendationsPage() {
       <main className="flex-1 w-full max-w-[1440px] mx-auto px-6 lg:px-12 py-10 relative z-10">
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12">
           <div>
-            <h1 className="text-4xl lg:text-5xl font-cabinet font-extrabold text-gray-900 tracking-tight mb-3">
+            <h1 className="text-4xl lg:text-5xl font-cabinet font-extrabold text-gray-900 dark:text-white tracking-tight mb-3">
               Outfit Recommendations
             </h1>
-            <p className="text-gray-600 text-lg max-w-2xl">
+            <p className="text-gray-600 dark:text-gray-400 text-lg max-w-2xl">
               Curated wardrobe suggestions based on your unique measurements and color profile.
             </p>
           </div>
@@ -273,12 +273,12 @@ export default function RecommendationsPage() {
           {/* Measurement Profile Dropdown */}
           {!profilesLoading && profiles.length > 0 && (
             <div className="relative min-w-[280px]">
-              <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Measurement Profile</label>
+              <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">Measurement Profile</label>
               <div className="relative">
                 <select
                   value={selectedProfileId || ""}
                   onChange={(e) => setSelectedProfileId(e.target.value)}
-                  className="flex items-center justify-between w-full bg-white border border-gray-200 rounded-xl px-4 py-3.5 shadow-sm hover:border-brand transition-colors appearance-none cursor-pointer font-bold text-gray-900"
+                  className="flex items-center justify-between w-full bg-white dark:bg-stone-900 border border-gray-200 dark:border-stone-700 rounded-xl px-4 py-3.5 shadow-sm hover:border-brand transition-colors appearance-none cursor-pointer font-bold text-gray-900 dark:text-white"
                 >
                   {profiles.map((p) => (
                     <option key={p.id} value={p.id}>
@@ -287,7 +287,7 @@ export default function RecommendationsPage() {
                   ))}
                 </select>
                 <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
-                  <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-5 h-5 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                   </svg>
                 </div>
@@ -301,10 +301,10 @@ export default function RecommendationsPage() {
             background: "rgba(255, 255, 255, 0.8)",
             backdropFilter: "blur(20px)",
             border: "1px solid rgba(255, 255, 255, 0.9)"
-          }}>
+          }} className="dark:!bg-stone-900/80 dark:!border-stone-800">
             <div className="flex items-center gap-3">
               <div className="w-6 h-6 border-4 border-brand border-t-transparent rounded-full animate-spin" />
-              <p className="text-gray-700 font-medium">Loading profile data...</p>
+              <p className="text-gray-700 dark:text-gray-300 font-medium">Loading profile data...</p>
             </div>
           </div>
         ) : profiles.length === 0 ? (
@@ -312,8 +312,8 @@ export default function RecommendationsPage() {
             background: "rgba(255, 255, 255, 0.8)",
             backdropFilter: "blur(20px)",
             border: "1px solid rgba(255, 255, 255, 0.9)"
-          }}>
-            <p className="text-gray-700 font-medium">
+          }} className="dark:!bg-stone-900/80 dark:!border-stone-800">
+            <p className="text-gray-700 dark:text-gray-300 font-medium">
               No measurement profiles found. Please{" "}
               <a href="/measurements" className="text-brand hover:underline font-bold">
                 create a profile
@@ -327,135 +327,135 @@ export default function RecommendationsPage() {
             {selectedProfile && (
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
                 {/* Card 1: Measurements */}
-                <div className="rounded-[2rem] p-8 shadow-soft relative overflow-hidden group hover:shadow-glow transition-all duration-300" style={{
+                <div className="rounded-[2rem] p-8 shadow-soft relative overflow-hidden group hover:shadow-glow transition-all duration-300 dark:!bg-stone-900/80 dark:!border-stone-800" style={{
                   background: "rgba(255, 255, 255, 0.8)",
                   backdropFilter: "blur(20px)",
                   border: "1px solid rgba(255, 255, 255, 0.9)"
                 }}>
-                  <div className="absolute top-0 right-0 w-32 h-32 bg-brand/5 rounded-bl-[100px] -z-10 group-hover:bg-brand/10 transition-colors"></div>
-                  <div className="w-14 h-14 rounded-2xl bg-brand/10 text-brand flex items-center justify-center mb-6">
+                  <div className="absolute top-0 right-0 w-32 h-32 bg-brand/5 dark:bg-brand/10 rounded-bl-[100px] -z-10 group-hover:bg-brand/10 dark:group-hover:bg-brand/20 transition-colors"></div>
+                  <div className="w-14 h-14 rounded-2xl bg-brand/10 dark:bg-brand/20 text-brand dark:text-brand-400 flex items-center justify-center mb-6">
                     <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M7.5 21L3 16.5m0 0L7.5 12M3 16.5h13.5m0-13.5L21 7.5m0 0L16.5 12M21 7.5H7.5" />
                     </svg>
                   </div>
-                  <h2 className="font-cabinet font-bold text-2xl text-gray-900 mb-6">Measurements</h2>
+                  <h2 className="font-cabinet font-bold text-2xl text-gray-900 dark:text-white mb-6">Measurements</h2>
                   <div className="grid grid-cols-2 gap-y-5 gap-x-4 text-sm">
                     {selectedProfile.height != null && (
-                      <div><span className="text-gray-500 block mb-1">Height</span><span className="font-bold text-gray-900 text-base">{selectedProfile.height} cm</span></div>
+                      <div><span className="text-gray-500 dark:text-gray-400 block mb-1">Height</span><span className="font-bold text-gray-900 dark:text-white text-base">{selectedProfile.height} cm</span></div>
                     )}
                     {selectedProfile.weight != null && (
-                      <div><span className="text-gray-500 block mb-1">Weight</span><span className="font-bold text-gray-900 text-base">{selectedProfile.weight} kg</span></div>
+                      <div><span className="text-gray-500 dark:text-gray-400 block mb-1">Weight</span><span className="font-bold text-gray-900 dark:text-white text-base">{selectedProfile.weight} kg</span></div>
                     )}
                     {selectedProfile.chest != null && (
-                      <div><span className="text-gray-500 block mb-1">Chest</span><span className="font-bold text-gray-900 text-base">{selectedProfile.chest} cm</span></div>
+                      <div><span className="text-gray-500 dark:text-gray-400 block mb-1">Chest</span><span className="font-bold text-gray-900 dark:text-white text-base">{selectedProfile.chest} cm</span></div>
                     )}
                     {selectedProfile.waist != null && (
-                      <div><span className="text-gray-500 block mb-1">Waist</span><span className="font-bold text-gray-900 text-base">{selectedProfile.waist} cm</span></div>
+                      <div><span className="text-gray-500 dark:text-gray-400 block mb-1">Waist</span><span className="font-bold text-gray-900 dark:text-white text-base">{selectedProfile.waist} cm</span></div>
                     )}
                     {selectedProfile.hip != null && (
-                      <div><span className="text-gray-500 block mb-1">Hip</span><span className="font-bold text-gray-900 text-base">{selectedProfile.hip} cm</span></div>
+                      <div><span className="text-gray-500 dark:text-gray-400 block mb-1">Hip</span><span className="font-bold text-gray-900 dark:text-white text-base">{selectedProfile.hip} cm</span></div>
                     )}
                     {selectedProfile.inseam != null && (
-                      <div><span className="text-gray-500 block mb-1">Inseam</span><span className="font-bold text-gray-900 text-base">{selectedProfile.inseam} cm</span></div>
+                      <div><span className="text-gray-500 dark:text-gray-400 block mb-1">Inseam</span><span className="font-bold text-gray-900 dark:text-white text-base">{selectedProfile.inseam} cm</span></div>
                     )}
                     {selectedProfile.shoulder_width != null && (
-                      <div><span className="text-gray-500 block mb-1">Shoulder</span><span className="font-bold text-gray-900 text-base">{selectedProfile.shoulder_width} cm</span></div>
+                      <div><span className="text-gray-500 dark:text-gray-400 block mb-1">Shoulder</span><span className="font-bold text-gray-900 dark:text-white text-base">{selectedProfile.shoulder_width} cm</span></div>
                     )}
                     {selectedProfile.arm_length != null && (
-                      <div><span className="text-gray-500 block mb-1">Arm</span><span className="font-bold text-gray-900 text-base">{selectedProfile.arm_length} cm</span></div>
+                      <div><span className="text-gray-500 dark:text-gray-400 block mb-1">Arm</span><span className="font-bold text-gray-900 dark:text-white text-base">{selectedProfile.arm_length} cm</span></div>
                     )}
                   </div>
                 </div>
 
                 {/* Card 2: Color Profile */}
-                <div className="rounded-[2rem] p-8 shadow-soft relative overflow-hidden group hover:shadow-glow transition-all duration-300" style={{
+                <div className="rounded-[2rem] p-8 shadow-soft relative overflow-hidden group hover:shadow-glow transition-all duration-300 dark:!bg-stone-900/80 dark:!border-stone-800" style={{
                   background: "rgba(255, 255, 255, 0.8)",
                   backdropFilter: "blur(20px)",
                   border: "1px solid rgba(255, 255, 255, 0.9)"
                 }}>
-                  <div className="absolute top-0 right-0 w-32 h-32 bg-accent/10 rounded-bl-[100px] -z-10 group-hover:bg-accent/20 transition-colors"></div>
-                  <div className="w-14 h-14 rounded-2xl bg-accent/10 text-accent flex items-center justify-center mb-6">
+                  <div className="absolute top-0 right-0 w-32 h-32 bg-accent/10 dark:bg-accent/20 rounded-bl-[100px] -z-10 group-hover:bg-accent/20 dark:group-hover:bg-accent/30 transition-colors"></div>
+                  <div className="w-14 h-14 rounded-2xl bg-accent/10 dark:bg-accent/20 text-accent dark:text-accent-500 flex items-center justify-center mb-6">
                     <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M4.098 19.902a3.75 3.75 0 005.304 0l6.401-6.402M6.75 21A3.75 3.75 0 013 17.25V4.125C3 3.504 3.504 3 4.125 3h5.25c.621 0 1.125.504 1.125 1.125v4.072M6.75 21a3.75 3.75 0 003.75-3.75V8.197M6.75 21h13.125c.621 0 1.125-.504 1.125-1.125v-5.25c0-.621-.504-1.125-1.125-1.125h-4.072M10.5 8.197l2.88-2.88c.438-.439 1.15-.439 1.59 0l3.712 3.713c.44.44.44 1.152 0 1.59l-2.879 2.88M6.75 17.25h.008v.008H6.75v-.008z" />
                     </svg>
                   </div>
-                  <h2 className="font-cabinet font-bold text-2xl text-gray-900 mb-6">Color Profile</h2>
+                  <h2 className="font-cabinet font-bold text-2xl text-gray-900 dark:text-white mb-6">Color Profile</h2>
                   {colorProfile ? (
                     <div className="space-y-6">
                       <div>
-                        <span className="text-gray-500 block mb-2 text-sm">Skin Tone</span>
+                        <span className="text-gray-500 dark:text-gray-400 block mb-2 text-sm">Skin Tone</span>
                         <div className="flex items-center gap-4">
                           {colorProfile.skin_tone_hex && (
                             <div
-                              className="w-10 h-10 rounded-full border-4 border-white shadow-sm flex-shrink-0"
+                              className="w-10 h-10 rounded-full border-4 border-white dark:border-stone-700 shadow-sm flex-shrink-0"
                               style={{ backgroundColor: colorProfile.skin_tone_hex }}
                             ></div>
                           )}
-                          <span className="font-bold text-gray-900 text-base">{colorProfile.skin_tone || "—"}</span>
+                          <span className="font-bold text-gray-900 dark:text-white text-base">{colorProfile.skin_tone || "—"}</span>
                         </div>
                       </div>
                       <div>
-                        <span className="text-gray-500 block mb-2 text-sm">Hair Color</span>
+                        <span className="text-gray-500 dark:text-gray-400 block mb-2 text-sm">Hair Color</span>
                         <div className="flex items-center gap-4">
                           {colorProfile.hair_color_hex && (
                             <div
-                              className="w-10 h-10 rounded-full border-4 border-white shadow-sm flex-shrink-0"
+                              className="w-10 h-10 rounded-full border-4 border-white dark:border-stone-700 shadow-sm flex-shrink-0"
                               style={{ backgroundColor: colorProfile.hair_color_hex }}
                             ></div>
                           )}
-                          <span className="font-bold text-gray-900 text-base">{colorProfile.hair_color || "—"}</span>
+                          <span className="font-bold text-gray-900 dark:text-white text-base">{colorProfile.hair_color || "—"}</span>
                         </div>
                       </div>
                     </div>
                   ) : (
-                    <p className="text-sm text-gray-400">No color analysis yet</p>
+                    <p className="text-sm text-gray-400 dark:text-gray-500">No color analysis yet</p>
                   )}
                 </div>
 
                 {/* Card 3: Style Preferences */}
-                <div className="rounded-[2rem] p-8 shadow-soft relative overflow-hidden group hover:shadow-glow transition-all duration-300" style={{
+                <div className="rounded-[2rem] p-8 shadow-soft relative overflow-hidden group hover:shadow-glow transition-all duration-300 dark:!bg-stone-900/80 dark:!border-stone-800" style={{
                   background: "rgba(255, 255, 255, 0.8)",
                   backdropFilter: "blur(20px)",
                   border: "1px solid rgba(255, 255, 255, 0.9)"
                 }}>
-                  <div className="absolute top-0 right-0 w-32 h-32 bg-brand/5 rounded-bl-[100px] -z-10 group-hover:bg-brand/10 transition-colors"></div>
-                  <div className="w-14 h-14 rounded-2xl bg-brand/10 text-brand flex items-center justify-center mb-6">
+                  <div className="absolute top-0 right-0 w-32 h-32 bg-brand/5 dark:bg-brand/10 rounded-bl-[100px] -z-10 group-hover:bg-brand/10 dark:group-hover:bg-brand/20 transition-colors"></div>
+                  <div className="w-14 h-14 rounded-2xl bg-brand/10 dark:bg-brand/20 text-brand dark:text-brand-400 flex items-center justify-center mb-6">
                     <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M11.48 3.499a.562.562 0 011.04 0l2.125 5.111a.563.563 0 00.475.345l5.518.442c.499.04.701.663.321.988l-4.204 3.602a.563.563 0 00-.182.557l1.285 5.385a.562.562 0 01-.84.61l-4.725-2.885a.563.563 0 00-.586 0L6.982 20.54a.562.562 0 01-.84-.61l1.285-5.386a.562.562 0 00-.182-.557l-4.204-3.602a.563.563 0 01.321-.988l5.518-.442a.563.563 0 00.475-.345L11.48 3.5z" />
                     </svg>
                   </div>
-                  <h2 className="font-cabinet font-bold text-2xl text-gray-900 mb-6">Style Preferences</h2>
+                  <h2 className="font-cabinet font-bold text-2xl text-gray-900 dark:text-white mb-6">Style Preferences</h2>
                   {stylePrefs ? (
                     <div className="grid grid-cols-1 gap-5 text-sm">
-                      <div className="flex justify-between items-center border-b border-gray-100 pb-2">
-                        <span className="text-gray-500">Occasion</span>
-                        <span className="font-bold text-gray-900">{formatLabel(stylePrefs.occasion)}</span>
+                      <div className="flex justify-between items-center border-b border-gray-100 dark:border-stone-800 pb-2">
+                        <span className="text-gray-500 dark:text-gray-400">Occasion</span>
+                        <span className="font-bold text-gray-900 dark:text-white">{formatLabel(stylePrefs.occasion)}</span>
                       </div>
-                      <div className="flex justify-between items-center border-b border-gray-100 pb-2">
-                        <span className="text-gray-500">Weather</span>
-                        <span className="font-bold text-gray-900">{formatLabel(stylePrefs.weather)}</span>
+                      <div className="flex justify-between items-center border-b border-gray-100 dark:border-stone-800 pb-2">
+                        <span className="text-gray-500 dark:text-gray-400">Weather</span>
+                        <span className="font-bold text-gray-900 dark:text-white">{formatLabel(stylePrefs.weather)}</span>
                       </div>
-                      <div className="flex justify-between items-center border-b border-gray-100 pb-2">
-                        <span className="text-gray-500">Dress Code</span>
-                        <span className="font-bold text-gray-900">{formatLabel(stylePrefs.dress_code)}</span>
+                      <div className="flex justify-between items-center border-b border-gray-100 dark:border-stone-800 pb-2">
+                        <span className="text-gray-500 dark:text-gray-400">Dress Code</span>
+                        <span className="font-bold text-gray-900 dark:text-white">{formatLabel(stylePrefs.dress_code)}</span>
                       </div>
-                      <div className="flex justify-between items-center border-b border-gray-100 pb-2">
-                        <span className="text-gray-500">Budget</span>
-                        <span className="font-bold text-brand">{formatLabel(stylePrefs.price_range)}</span>
+                      <div className="flex justify-between items-center border-b border-gray-100 dark:border-stone-800 pb-2">
+                        <span className="text-gray-500 dark:text-gray-400">Budget</span>
+                        <span className="font-bold text-brand dark:text-brand-400">{formatLabel(stylePrefs.price_range)}</span>
                       </div>
                       {stylePrefs.preferred_styles && stylePrefs.preferred_styles.length > 0 && (
                         <div className="pt-1">
-                          <span className="text-gray-500 block mb-3">Preferred Styles</span>
+                          <span className="text-gray-500 dark:text-gray-400 block mb-3">Preferred Styles</span>
                           <div className="flex flex-wrap gap-2">
                             {stylePrefs.preferred_styles.map((style, idx) => (
-                              <span key={idx} className="px-3 py-1.5 bg-white rounded-full border border-gray-200 text-xs font-bold text-gray-700 shadow-sm">{style}</span>
+                              <span key={idx} className="px-3 py-1.5 bg-white dark:bg-stone-800 rounded-full border border-gray-200 dark:border-stone-700 text-xs font-bold text-gray-700 dark:text-gray-300 shadow-sm">{style}</span>
                             ))}
                           </div>
                         </div>
                       )}
                     </div>
                   ) : (
-                    <p className="text-sm text-gray-400">No preferences saved yet</p>
+                    <p className="text-sm text-gray-400 dark:text-gray-500">No preferences saved yet</p>
                   )}
                 </div>
               </div>
@@ -613,21 +613,21 @@ export default function RecommendationsPage() {
         {!profilesLoading && profiles.length > 0 && (
           <div className="mt-8">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
-              <h2 className="text-3xl font-cabinet font-extrabold text-gray-900">Past Recommendations</h2>
+              <h2 className="text-3xl font-cabinet font-extrabold text-gray-900 dark:text-white">Past Recommendations</h2>
             </div>
 
             {pastLoading ? (
               <div className="flex items-center gap-3 p-6">
                 <div className="w-5 h-5 border-3 border-brand border-t-transparent rounded-full animate-spin" />
-                <p className="text-gray-500 text-sm">Loading history...</p>
+                <p className="text-gray-500 dark:text-gray-400 text-sm">Loading history...</p>
               </div>
             ) : pastRecs.length === 0 ? (
-              <div className="rounded-3xl shadow-soft p-8" style={{
+              <div className="rounded-3xl shadow-soft p-8 dark:!bg-stone-900/80 dark:!border-stone-800" style={{
                 background: "rgba(255, 255, 255, 0.8)",
                 backdropFilter: "blur(20px)",
                 border: "1px solid rgba(255, 255, 255, 0.9)"
               }}>
-                <p className="text-gray-500 text-sm">No past recommendations for this profile yet.</p>
+                <p className="text-gray-500 dark:text-gray-400 text-sm">No past recommendations for this profile yet.</p>
               </div>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
@@ -636,12 +636,12 @@ export default function RecommendationsPage() {
                   const totalPrice = rec.items?.reduce((sum, item) => sum + (typeof item.price === 'number' ? item.price : 0), 0) || 0;
 
                   return (
-                    <div key={rec.id} className="rounded-[2rem] p-4 flex flex-col group hover:shadow-glow transition-all duration-500 cursor-pointer" style={{
+                    <div key={rec.id} className="rounded-[2rem] p-4 flex flex-col group hover:shadow-glow transition-all duration-500 cursor-pointer dark:!bg-stone-900/80 dark:!border-stone-800" style={{
                       background: "rgba(255, 255, 255, 0.8)",
                       backdropFilter: "blur(20px)",
                       border: "1px solid rgba(255, 255, 255, 0.6)"
                     }} onClick={() => setExpandedRecId(expandedRecId === rec.id ? null : rec.id)}>
-                      <div className="relative aspect-[3/4] rounded-2xl overflow-hidden mb-4 bg-gray-100">
+                      <div className="relative aspect-[3/4] rounded-2xl overflow-hidden mb-4 bg-gray-100 dark:bg-stone-800">
                         {displayItem?.image_url ? (
                           <img
                             src={displayItem.image_url}
@@ -660,13 +660,13 @@ export default function RecommendationsPage() {
                         </div>
 
                         {/* Rating buttons overlay */}
-                        <div className="absolute top-3 right-3 flex items-center gap-1 bg-white/90 backdrop-blur-sm rounded-lg p-1">
+                        <div className="absolute top-3 right-3 flex items-center gap-1 bg-white/90 dark:bg-stone-900/90 backdrop-blur-sm rounded-lg p-1">
                           <button
                             onClick={(e) => { e.stopPropagation(); handleRate(rec.id, "LIKE"); }}
                             className={`p-1.5 rounded-lg transition-colors ${
                               rec.user_rating === "LIKE"
-                                ? "text-green-600 bg-green-50"
-                                : "text-gray-400 hover:text-green-600"
+                                ? "text-green-600 bg-green-50 dark:bg-green-900/30"
+                                : "text-gray-400 dark:text-gray-500 hover:text-green-600 dark:hover:text-green-400"
                             }`}
                             title="Like"
                           >
@@ -676,8 +676,8 @@ export default function RecommendationsPage() {
                             onClick={(e) => { e.stopPropagation(); handleRate(rec.id, "DISLIKE"); }}
                             className={`p-1.5 rounded-lg transition-colors ${
                               rec.user_rating === "DISLIKE"
-                                ? "text-red-600 bg-red-50"
-                                : "text-gray-400 hover:text-red-600"
+                                ? "text-red-600 bg-red-50 dark:bg-red-900/30"
+                                : "text-gray-400 dark:text-gray-500 hover:text-red-600 dark:hover:text-red-400"
                             }`}
                             title="Dislike"
                           >
@@ -687,27 +687,27 @@ export default function RecommendationsPage() {
                       </div>
                       <div className="px-2 pb-2">
                         <div className="flex justify-between items-start gap-4 mb-2">
-                          <h3 className="font-cabinet font-bold text-xl text-gray-900 leading-tight">
+                          <h3 className="font-cabinet font-bold text-xl text-gray-900 dark:text-white leading-tight">
                             {formatLabel(rec.occasion)} {rec.weather ? `· ${formatLabel(rec.weather)}` : ""}
                           </h3>
                           {totalPrice > 0 && (
-                            <span className="font-bold text-brand text-lg">${totalPrice.toFixed(0)}</span>
+                            <span className="font-bold text-brand dark:text-brand-400 text-lg">${totalPrice.toFixed(0)}</span>
                           )}
                         </div>
                         {rec.reasoning && (
-                          <p className="text-sm text-gray-600 mb-2 leading-relaxed">{rec.reasoning}</p>
+                          <p className="text-sm text-gray-600 dark:text-gray-400 mb-2 leading-relaxed">{rec.reasoning}</p>
                         )}
-                        <p className="text-xs text-gray-500 mb-2">
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">
                           {rec.items?.length || 0} items · {formatDate(rec.created_at)}
                         </p>
                         {expandedRecId === rec.id && rec.items && rec.items.length > 0 && (
-                          <div className="mt-4 pt-4 border-t border-gray-200 space-y-2">
+                          <div className="mt-4 pt-4 border-t border-gray-200 dark:border-stone-700 space-y-2">
                             {rec.items.map((item) => (
                               <div key={item.id} className="flex items-center gap-2 text-xs">
                                 <span className="text-lg">{CATEGORY_ICONS[(item.category || "").toUpperCase()] || "👔"}</span>
-                                <span className="flex-1 truncate text-gray-700">{item.name}</span>
+                                <span className="flex-1 truncate text-gray-700 dark:text-gray-300">{item.name}</span>
                                 {typeof item.price === "number" && (
-                                  <span className="font-semibold text-brand">${item.price.toFixed(0)}</span>
+                                  <span className="font-semibold text-brand dark:text-brand-400">${item.price.toFixed(0)}</span>
                                 )}
                               </div>
                             ))}
