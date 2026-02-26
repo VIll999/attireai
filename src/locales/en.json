@@ -248,8 +248,42 @@
     "noProfile": "Select a measurement profile to see size recommendations",
     "usingProfile": "Using profile"
   },
+  "preferences": {
+    "selectStyles": "Select Preferred Styles",
+    "aestheticPreview": "Aesthetic Preview",
+    "budgetAlignment": "Budget Alignment",
+    "budget": "Budget",
+    "midRange": "Mid Range",
+    "luxury": "Luxury",
+    "brandAffinities": "Brand Affinities",
+    "brandPlaceholder": "Brand name",
+    "addBrand": "+ Add Brand",
+    "stylesToAvoid": "Styles to Avoid",
+    "exclusionPlaceholder": "Style to avoid",
+    "addExclusion": "⊕ Add another exclusion",
+    "updatePreferences": "Update Preferences",
+    "sliderBudget": "BUDGET",
+    "sliderMidRange": "MID RANGE",
+    "sliderLuxury": "LUXURY"
+  },
+  "styles": {
+    "minimalist": "Minimalist",
+    "streetwear": "Streetwear",
+    "classic": "Classic",
+    "bohemian": "Bohemian",
+    "preppy": "Preppy",
+    "athleisure": "Athleisure",
+    "vintage": "Vintage",
+    "elegant": "Elegant",
+    "casual": "Casual"
+  },
   "common": {
     "loading": "Loading...",
-    "error": "An error occurred"
+    "error": "An error occurred",
+    "add": "Add",
+    "cancel": "Cancel",
+    "saving": "Saving...",
+    "saved": "Saved!",
+    "failedSave": "Failed to save, please try again."
   }
 }
