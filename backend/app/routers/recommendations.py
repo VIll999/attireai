@@ -27,6 +27,8 @@ def _merge_frontend_fields(data: AIWebCandidatesRequest) -> AIWebCandidatesReque
         overrides.location = data.location
     if not overrides.weather and data.weather:
         overrides.weather = data.weather
+    if not overrides.dress_code and data.dress_code:
+        overrides.dress_code = data.dress_code
 
     extra = overrides.extra or {}
     if data.budget is not None and "budget" not in extra:

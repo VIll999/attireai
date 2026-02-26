@@ -62,3 +62,4 @@ if __name__ == "__main__":
 
     migration_file = sys.argv[1]
     run_migration(migration_file)
+do

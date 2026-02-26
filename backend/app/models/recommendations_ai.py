@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field, HttpUrl, conint, confloat
+from pydantic import BaseModel, Field, conint, confloat
 
 from typing import Any, Dict, List, Literal, Optional
 
@@ -34,26 +34,28 @@ class AIWebCandidatesRequest(BaseModel):
     gender: Optional[str] = None
     location: Optional[str] = None
     weather: Optional[str] = None
+    dress_code: Optional[str] = None
 
 
 class CandidateItem(BaseModel):
     name: str
     category: Optional[Category] = None
-    reasoning: str
+    reasoning: str = ""
 
     query_terms: List[str] = Field(default_factory=list)
-    source_urls: List[HttpUrl] = Field(default_factory=list)
+    source_urls: List[str] = Field(default_factory=list)
 
     brand: Optional[str] = None
     price: Optional[confloat(gt=0)] = None
     currency: Optional[str] = Field(default="USD", min_length=3, max_length=3)
-    image_url: Optional[HttpUrl] = None
-    purchase_url: Optional[HttpUrl] = None
+    image_url: Optional[str] = None
+    purchase_url: Optional[str] = None
     recommended_size: Optional[str] = None
     recommended_color: Optional[str] = None
+    outfit_index: Optional[int] = None
 
 
 class AIWebCandidatesResponse(BaseModel):
-    recommendation_id: Optional[str] = None
+    recommendation_ids: List[str] = Field(default_factory=list)
     items: List[CandidateItem] = Field(default_factory=list)
     debug: Dict[str, Any] = Field(default_factory=dict)

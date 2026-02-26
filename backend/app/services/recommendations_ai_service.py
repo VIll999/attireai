@@ -67,41 +67,55 @@ def normalize_category(raw: Optional[str]) -> Optional[str]:
 PRODUCT_SCHEMA = {
     "type": "object",
     "properties": {
-        "items": {
+        "outfits": {
             "type": "array",
             "items": {
                 "type": "object",
                 "properties": {
-                    "name": {"type": "string"},
-                    "brand": {"type": "string"},
-                    "category": {"type": "string"},
                     "reasoning": {"type": "string"},
-                    "source_urls": {"type": "array", "items": {"type": "string"}},
-                    "price": {"type": "number"},
-                    "currency": {"type": "string"},
-                    "image_url": {"type": "string"},
-                    "purchase_url": {"type": "string"},
-                    "recommended_color": {"type": "string"},
+                    "items": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "name": {"type": "string"},
+                                "brand": {"type": "string"},
+                                "category": {"type": "string"},
+                                "source_urls": {"type": "array", "items": {"type": "string"}},
+                                "price": {"type": "number"},
+                                "currency": {"type": "string"},
+                                "image_url": {"type": "string"},
+                                "purchase_url": {"type": "string"},
+                                "recommended_color": {"type": "string"},
+                            },
+                            "required": ["name", "category"],
+                        },
+                    },
                 },
-                "required": ["name", "category", "reasoning"],
+                "required": ["reasoning", "items"],
             },
         }
     },
-    "required": ["items"],
+    "required": ["outfits"],
 }
 
 SYSTEM_PROMPT = (
     "You are a product discovery assistant.\n"
     "Use search to find REAL products that match the user's context and preferences.\n"
-    "Return ONLY valid JSON matching this schema: {items: [{name, brand, category, reasoning, "
-    "source_urls, price, currency, image_url, purchase_url, recommended_color}]}\n"
+    "Return ONLY valid JSON with this structure:\n"
+    "{outfits: [{reasoning: '...', items: [{name, brand, category, source_urls, price, "
+    "currency, image_url, purchase_url, recommended_color}]}]}\n"
     "IMPORTANT:\n"
+    "- Return exactly 5 DISTINCT complete outfits\n"
+    "- Each outfit MUST have at least 4 items: one TOP, one BOTTOM, one SHOES, and one ACCESSORY\n"
+    "- Outfits may include additional items like OUTERWEAR if appropriate for the weather/occasion\n"
+    "- Each outfit should have a 'reasoning' explaining why the combination works together\n"
     "- Find real products with real prices from real stores\n"
     "- category MUST be one of: TOP, BOTTOM, SHOES, ACCESSORY, OUTERWEAR, OTHER\n"
     "- If price is unknown, omit it\n"
     "- Include source_urls from search results\n"
     "- image_url and purchase_url should be real links when available\n"
-    "- Avoid duplicates; keep results diverse across categories\n"
+    "- Each outfit should be stylistically different from the others\n"
     "- If location is provided but weather is not, infer current weather for that location\n"
 )
 
@@ -184,7 +198,7 @@ class RecommendationsAIService:
                 "gender": extra.get("gender"),
             },
             "categories": req.categories,
-            "num_items": req.k,
+            "num_outfits": 5,
         }
 
         if measurement:
@@ -318,10 +332,9 @@ class RecommendationsAIService:
     def _post_process_items(
         self, result: Dict[str, Any], measurement: Optional[MeasurementProfile], req: AIWebCandidatesRequest,
     ) -> Dict[str, Any]:
-        items: List[Dict[str, Any]] = result.get("items", []) or []
         currency_default = (req.context_overrides.extra or {}).get("currency") or req.currency or "USD"
 
-        for it in items:
+        def _process_item(it: Dict[str, Any]) -> Dict[str, Any]:
             cat_norm = normalize_category(it.get("category"))
             it["category"] = cat_norm
             if not it.get("currency"):
@@ -330,67 +343,91 @@ class RecommendationsAIService:
                 urls = it.get("source_urls") or []
                 it["purchase_url"] = urls[0] if urls else None
             it["recommended_size"] = self._recommended_size(cat_norm, measurement)
+            return it
 
-        result["items"] = items
-        return result
+        # Handle outfit format ({outfits: [...]})
+        raw_outfits = result.get("outfits") or []
+        if raw_outfits:
+            outfits = []
+            for outfit in raw_outfits:
+                outfits.append({
+                    "reasoning": outfit.get("reasoning", ""),
+                    "items": [_process_item(it) for it in outfit.get("items", [])],
+                })
+            return {"outfits": outfits}
+
+        # Fallback: flat items list — wrap as single outfit
+        items: List[Dict[str, Any]] = result.get("items", []) or []
+        return {"outfits": [{"reasoning": "", "items": [_process_item(it) for it in items]}]}
 
     # ---- Persist ----
 
-    def _persist(self, db: Session, user_id: str, req: AIWebCandidatesRequest, result: Dict[str, Any]) -> str:
-        rec = OutfitRecommendation(
-            user_id=user_id,
-            occasion=req.context_overrides.occasion,
-            weather=req.context_overrides.weather,
-            dress_code=req.context_overrides.dress_code,
-            reasoning=f"AI recommendations via {settings.ai_provider}",
-        )
-        db.add(rec)
-        db.flush()
+    def _persist(self, db: Session, user_id: str, req: AIWebCandidatesRequest, result: Dict[str, Any]) -> List[str]:
+        rec_ids: List[str] = []
 
-        for it in result.get("items", []) or []:
-            name = (it.get("name") or "").strip() or "Unknown Item"
-            price_val = it.get("price")
-            price_dec: Optional[Decimal] = None
-            try:
-                if price_val is not None:
-                    price_dec = Decimal(str(price_val)).quantize(Decimal("0.01"))
-            except Exception:
-                price_dec = None
+        for outfit in result.get("outfits", []):
+            rec = OutfitRecommendation(
+                user_id=user_id,
+                measurement_id=req.measurement_profile_id,
+                occasion=req.context_overrides.occasion,
+                weather=req.context_overrides.weather,
+                dress_code=req.context_overrides.dress_code,
+                reasoning=outfit.get("reasoning") or f"AI recommendations via {settings.ai_provider}",
+            )
+            db.add(rec)
+            db.flush()
 
-            db.add(RecommendationItem(
-                recommendation_id=rec.id,
-                name=name,
-                brand=it.get("brand") or None,
-                category=normalize_category(it.get("category")),
-                price=price_dec,
-                currency=(it.get("currency") or req.currency or "USD")[:3],
-                image_url=it.get("image_url") or None,
-                purchase_url=it.get("purchase_url") or None,
-                recommended_size=it.get("recommended_size") or None,
-            ))
+            for it in outfit.get("items", []):
+                name = (it.get("name") or "").strip() or "Unknown Item"
+                price_val = it.get("price")
+                price_dec: Optional[Decimal] = None
+                try:
+                    if price_val is not None:
+                        price_dec = Decimal(str(price_val)).quantize(Decimal("0.01"))
+                except Exception:
+                    price_dec = None
+
+                db.add(RecommendationItem(
+                    recommendation_id=rec.id,
+                    name=name,
+                    brand=it.get("brand") or None,
+                    category=normalize_category(it.get("category")),
+                    price=price_dec,
+                    currency=(it.get("currency") or req.currency or "USD")[:3],
+                    image_url=it.get("image_url") or None,
+                    purchase_url=it.get("purchase_url") or None,
+                    recommended_size=it.get("recommended_size") or None,
+                ))
+
+            rec_ids.append(rec.id)
 
         db.commit()
-        db.refresh(rec)
-        return rec.id
+        return rec_ids
 
     # ---- Mock fallback ----
 
     def _get_mock_items(self, req: AIWebCandidatesRequest, measurement: Optional[MeasurementProfile]) -> Dict[str, Any]:
         occasion = (req.context_overrides.occasion or req.occasion or "casual").lower()
-        # Map to closest mock category
-        if occasion in MOCK_PRODUCTS:
-            items = MOCK_PRODUCTS[occasion]
-        else:
-            items = MOCK_PRODUCTS.get("casual", [])
 
-        # Add recommended_size based on measurements
-        result_items = []
-        for it in items:
-            item = dict(it)
-            item["recommended_size"] = self._recommended_size(item.get("category"), measurement)
-            result_items.append(item)
+        # New format: mock data has outfits array per occasion
+        occasion_data = MOCK_PRODUCTS.get(occasion) or MOCK_PRODUCTS.get("casual", {})
 
-        return {"items": result_items[:req.k]}
+        raw_outfits = []
+        if isinstance(occasion_data, dict) and "outfits" in occasion_data:
+            raw_outfits = occasion_data["outfits"]
+        elif isinstance(occasion_data, list):
+            raw_outfits = [{"reasoning": "Classic combination for the occasion", "items": occasion_data}]
+
+        result_outfits = []
+        for outfit in raw_outfits[:5]:
+            items = []
+            for it in outfit.get("items", []):
+                item = dict(it)
+                item["recommended_size"] = self._recommended_size(item.get("category"), measurement)
+                items.append(item)
+            result_outfits.append({"reasoning": outfit.get("reasoning", ""), "items": items})
+
+        return {"outfits": result_outfits}
 
     def _ai_available(self) -> bool:
         provider = settings.ai_provider
@@ -419,12 +456,20 @@ class RecommendationsAIService:
             result = self._call_ai(context_payload)
             result = self._post_process_items(result, measurement, req)
 
-        recommendation_id: Optional[str] = None
+        recommendation_ids: List[str] = []
         if req.save_to_db:
-            recommendation_id = self._persist(db, user.id, req, result)
+            recommendation_ids = self._persist(db, user.id, req, result)
+
+        # Flatten outfits into items for the response
+        all_items: List[Dict[str, Any]] = []
+        for idx, outfit in enumerate(result.get("outfits", [])):
+            for it in outfit.get("items", []):
+                it["outfit_index"] = idx
+                it["reasoning"] = outfit.get("reasoning", "")
+                all_items.append(it)
 
         return AIWebCandidatesResponse.model_validate({
-            "recommendation_id": recommendation_id,
-            "items": result.get("items", []),
+            "recommendation_ids": recommendation_ids,
+            "items": all_items,
             "debug": {"provider": "mock" if use_mock else settings.ai_provider},
         })
