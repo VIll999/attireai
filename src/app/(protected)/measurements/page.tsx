@@ -82,6 +82,7 @@ export default function MeasurementsPage() {
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [userTier, setUserTier] = useState<"FREE" | "VIP">("FREE");
   const [showNewProfileInput, setShowNewProfileInput] = useState(false);
   const [newProfileName, setNewProfileName] = useState("");
@@ -253,6 +254,10 @@ export default function MeasurementsPage() {
   };
 
   const handleSave = async () => {
+    // Clear previous errors
+    setError("");
+    setFieldErrors({});
+
     if (!user || !form.name.trim()) {
       setError(t("measurements.profileNameRequired"));
       return;
@@ -263,14 +268,41 @@ export default function MeasurementsPage() {
       return;
     }
 
+    // Define required fields
+    const requiredFields: FieldKey[] = ["height", "weight", "chest", "waist", "hip"];
+    const newFieldErrors: Record<string, string> = {};
+    let hasErrors = false;
+
+    // Check if required fields are filled
+    for (const fieldKey of requiredFields) {
+      if (!form[fieldKey] || form[fieldKey].trim() === "") {
+        newFieldErrors[fieldKey] = `${fieldLabels[fieldKey]} is required`;
+        hasErrors = true;
+      }
+    }
+
+    // If there are missing required fields, show errors and don't proceed
+    if (hasErrors) {
+      setFieldErrors(newFieldErrors);
+      setError("Please fill in all required fields");
+      return;
+    }
+
     // Check all fields are within valid ranges before saving
     for (const field of MEASUREMENT_FIELDS) {
       if (form[field.key] !== "" && !isValueInRange(form[field.key], field.key, unit)) {
         const range = getDisplayRange(field.key, unit);
         const unitLabel = unit === "CM" ? field.cmUnit : field.inUnit;
-        setError(`${fieldLabels[field.key]} must be between ${range.min}${unitLabel} and ${range.max}${unitLabel}`);
-        return;
+        newFieldErrors[field.key] = `Must be between ${range.min}${unitLabel} and ${range.max}${unitLabel}`;
+        hasErrors = true;
       }
+    }
+
+    // If there are range validation errors, show them and don't proceed
+    if (hasErrors) {
+      setFieldErrors(newFieldErrors);
+      setError("Please correct the highlighted fields");
+      return;
     }
 
     setIsSaving(true);
@@ -557,11 +589,14 @@ export default function MeasurementsPage() {
                       {MEASUREMENT_FIELDS.filter(f => f.group === "basic").map((field) => {
                         const inRange = isValueInRange(form[field.key], field.key, unit);
                         const range = getDisplayRange(field.key, unit);
-                        const showError = form[field.key] !== "" && !inRange;
+                        const rangeError = form[field.key] !== "" && !inRange;
+                        const fieldError = fieldErrors[field.key];
+                        const showError = rangeError || !!fieldError;
+                        const isRequired = ["height", "weight", "chest", "waist", "hip"].includes(field.key);
                         return (
                           <div key={field.key}>
                             <label className={`block text-sm font-medium mb-1.5 ${showError ? "text-red-600 dark:text-red-400" : "text-gray-700 dark:text-gray-300"}`}>
-                              {fieldLabels[field.key]}
+                              {fieldLabels[field.key]} {isRequired && <span className="text-red-500">*</span>}
                             </label>
                             <div className="relative">
                               <input
@@ -570,7 +605,17 @@ export default function MeasurementsPage() {
                                 min={getDisplayRange(field.key, unit).min}
                                 max={getDisplayRange(field.key, unit).max}
                                 value={form[field.key]}
-                                onChange={(e) => setForm({ ...form, [field.key]: e.target.value })}
+                                onChange={(e) => {
+                                  setForm({ ...form, [field.key]: e.target.value });
+                                  // Clear field error when user starts typing
+                                  if (fieldErrors[field.key]) {
+                                    setFieldErrors(prev => {
+                                      const next = { ...prev };
+                                      delete next[field.key];
+                                      return next;
+                                    });
+                                  }
+                                }}
                                 onBlur={() => setForm((prev) => ({ ...prev, [field.key]: clampValue(prev[field.key], field.key, unit) }))}
                                 className={`w-full border rounded-xl px-4 py-3.5 focus:outline-none focus:ring-2 transition-shadow shadow-sm ${
                                   showError
@@ -588,7 +633,7 @@ export default function MeasurementsPage() {
                                 <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                                 </svg>
-                                {fieldLabels[field.key]} must be between {range.min}{unit === "CM" ? field.cmUnit : field.inUnit} and {range.max}{unit === "CM" ? field.cmUnit : field.inUnit}
+                                {fieldError || `${fieldLabels[field.key]} must be between ${range.min}${unit === "CM" ? field.cmUnit : field.inUnit} and ${range.max}${unit === "CM" ? field.cmUnit : field.inUnit}`}
                               </p>
                             )}
                           </div>
@@ -609,11 +654,16 @@ export default function MeasurementsPage() {
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
                       {MEASUREMENT_FIELDS.filter(f => f.group === "core").map((field) => {
+                        const inRange = isValueInRange(form[field.key], field.key, unit);
                         const range = getDisplayRange(field.key, unit);
+                        const rangeError = form[field.key] !== "" && !inRange;
+                        const fieldError = fieldErrors[field.key];
+                        const showError = rangeError || !!fieldError;
+                        const isRequired = ["height", "weight", "chest", "waist", "hip"].includes(field.key);
                         return (
                           <div key={field.key}>
-                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
-                              {fieldLabels[field.key]}
+                            <label className={`block text-sm font-medium mb-1.5 ${showError ? "text-red-600 dark:text-red-400" : "text-gray-700 dark:text-gray-300"}`}>
+                              {fieldLabels[field.key]} {isRequired && <span className="text-red-500">*</span>}
                             </label>
                             <div className="relative">
                               <input
@@ -622,15 +672,37 @@ export default function MeasurementsPage() {
                                 min={getDisplayRange(field.key, unit).min}
                                 max={getDisplayRange(field.key, unit).max}
                                 value={form[field.key]}
-                                onChange={(e) => setForm({ ...form, [field.key]: e.target.value })}
+                                onChange={(e) => {
+                                  setForm({ ...form, [field.key]: e.target.value });
+                                  // Clear field error when user starts typing
+                                  if (fieldErrors[field.key]) {
+                                    setFieldErrors(prev => {
+                                      const next = { ...prev };
+                                      delete next[field.key];
+                                      return next;
+                                    });
+                                  }
+                                }}
                                 onBlur={() => setForm((prev) => ({ ...prev, [field.key]: clampValue(prev[field.key], field.key, unit) }))}
-                                className="w-full bg-white/90 dark:bg-stone-800/50 border border-gray-200 dark:border-stone-700 text-gray-900 dark:text-white rounded-xl px-4 py-3.5 focus:outline-none focus:ring-2 focus:ring-brand dark:focus:ring-brand-400 transition-shadow shadow-sm"
+                                className={`w-full border rounded-xl px-4 py-3.5 focus:outline-none focus:ring-2 transition-shadow shadow-sm ${
+                                  showError
+                                    ? "bg-red-50/50 dark:bg-red-900/10 border-red-300 dark:border-red-700 text-red-900 dark:text-red-100 focus:ring-red-500"
+                                    : "bg-white/90 dark:bg-stone-800/50 border-gray-200 dark:border-stone-700 text-gray-900 dark:text-white focus:ring-brand dark:focus:ring-brand-400"
+                                }`}
                                 placeholder={`${Math.round((range.min + range.max) / 2)}`}
                               />
-                              <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500 text-sm font-medium">
+                              <span className={`absolute right-4 top-1/2 -translate-y-1/2 text-sm font-medium ${showError ? "text-red-400 dark:text-red-500" : "text-gray-400 dark:text-gray-500"}`}>
                                 {unit === "CM" ? field.cmUnit : field.inUnit}
                               </span>
                             </div>
+                            {showError && (
+                              <p className="text-xs text-red-500 dark:text-red-400 mt-2 flex items-center gap-1.5 font-medium">
+                                <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                                {fieldError || `${fieldLabels[field.key]} must be between ${range.min}${unit === "CM" ? field.cmUnit : field.inUnit} and ${range.max}${unit === "CM" ? field.cmUnit : field.inUnit}`}
+                              </p>
+                            )}
                           </div>
                         );
                       })}
@@ -649,10 +721,14 @@ export default function MeasurementsPage() {
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
                       {MEASUREMENT_FIELDS.filter(f => f.group === "detailed").map((field) => {
+                        const inRange = isValueInRange(form[field.key], field.key, unit);
                         const range = getDisplayRange(field.key, unit);
+                        const rangeError = form[field.key] !== "" && !inRange;
+                        const fieldError = fieldErrors[field.key];
+                        const showError = rangeError || !!fieldError;
                         return (
                           <div key={field.key}>
-                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+                            <label className={`block text-sm font-medium mb-1.5 ${showError ? "text-red-600 dark:text-red-400" : "text-gray-700 dark:text-gray-300"}`}>
                               {fieldLabels[field.key]}
                             </label>
                             <div className="relative">
@@ -662,15 +738,37 @@ export default function MeasurementsPage() {
                                 min={getDisplayRange(field.key, unit).min}
                                 max={getDisplayRange(field.key, unit).max}
                                 value={form[field.key]}
-                                onChange={(e) => setForm({ ...form, [field.key]: e.target.value })}
+                                onChange={(e) => {
+                                  setForm({ ...form, [field.key]: e.target.value });
+                                  // Clear field error when user starts typing
+                                  if (fieldErrors[field.key]) {
+                                    setFieldErrors(prev => {
+                                      const next = { ...prev };
+                                      delete next[field.key];
+                                      return next;
+                                    });
+                                  }
+                                }}
                                 onBlur={() => setForm((prev) => ({ ...prev, [field.key]: clampValue(prev[field.key], field.key, unit) }))}
-                                className="w-full bg-white/90 dark:bg-stone-800/50 border border-gray-200 dark:border-stone-700 text-gray-900 dark:text-white rounded-xl px-4 py-3.5 focus:outline-none focus:ring-2 focus:ring-brand dark:focus:ring-brand-400 transition-shadow shadow-sm"
+                                className={`w-full border rounded-xl px-4 py-3.5 focus:outline-none focus:ring-2 transition-shadow shadow-sm ${
+                                  showError
+                                    ? "bg-red-50/50 dark:bg-red-900/10 border-red-300 dark:border-red-700 text-red-900 dark:text-red-100 focus:ring-red-500"
+                                    : "bg-white/90 dark:bg-stone-800/50 border-gray-200 dark:border-stone-700 text-gray-900 dark:text-white focus:ring-brand dark:focus:ring-brand-400"
+                                }`}
                                 placeholder={`${Math.round((range.min + range.max) / 2)}`}
                               />
-                              <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500 text-sm font-medium">
+                              <span className={`absolute right-4 top-1/2 -translate-y-1/2 text-sm font-medium ${showError ? "text-red-400 dark:text-red-500" : "text-gray-400 dark:text-gray-500"}`}>
                                 {unit === "CM" ? field.cmUnit : field.inUnit}
                               </span>
                             </div>
+                            {showError && (
+                              <p className="text-xs text-red-500 dark:text-red-400 mt-2 flex items-center gap-1.5 font-medium">
+                                <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                                {fieldError || `${fieldLabels[field.key]} must be between ${range.min}${unit === "CM" ? field.cmUnit : field.inUnit} and ${range.max}${unit === "CM" ? field.cmUnit : field.inUnit}`}
+                              </p>
+                            )}
                           </div>
                         );
                       })}
