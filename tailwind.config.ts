@@ -43,6 +43,7 @@ const config: Config = {
         float: "float 5s ease-in-out infinite",
         "slide-in-right": "slideInRight 0.5s ease-out forwards",
         "fade-in-up": "fadeInUp 0.4s ease-out forwards",
+        shimmer: "shimmer 1.5s infinite",
       },
       keyframes: {
         scan: {
@@ -62,6 +63,9 @@ const config: Config = {
         fadeInUp: {
           "0%": { transform: "translateY(20px)", opacity: "0" },
           "100%": { transform: "translateY(0)", opacity: "1" },
+        },
+        shimmer: {
+          "100%": { transform: "translateX(100%)" },
         },
       },
     },
