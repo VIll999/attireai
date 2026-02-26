@@ -414,6 +414,34 @@ export default function ColorResultsPage() {
                 )}
               </div>
 
+              {/* Color Profile Details */}
+              <div className="space-y-4 mb-4">
+                {profile.skin_tone && (
+                  <div className="flex items-center justify-between p-3 rounded-xl bg-gray-50 dark:bg-stone-800/30">
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-full border-2 border-white dark:border-stone-700 shadow-md" style={{ backgroundColor: profile.skin_tone_hex || '#E8B999' }}></div>
+                      <div>
+                        <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wide">Skin Tone</p>
+                        <p className="text-sm font-bold text-gray-900 dark:text-white">{profile.skin_tone}</p>
+                      </div>
+                    </div>
+                    <span className="text-xs font-mono text-gray-500 dark:text-gray-400 bg-white dark:bg-stone-900 px-2 py-1 rounded">{profile.skin_tone_hex || '#E8B999'}</span>
+                  </div>
+                )}
+                {profile.hair_color && (
+                  <div className="flex items-center justify-between p-3 rounded-xl bg-gray-50 dark:bg-stone-800/30">
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-full border-2 border-white dark:border-stone-700 shadow-md" style={{ backgroundColor: profile.hair_color_hex || '#1A1A1A' }}></div>
+                      <div>
+                        <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wide">Hair Color</p>
+                        <p className="text-sm font-bold text-gray-900 dark:text-white">{profile.hair_color}</p>
+                      </div>
+                    </div>
+                    <span className="text-xs font-mono text-gray-500 dark:text-gray-400 bg-white dark:bg-stone-900 px-2 py-1 rounded">{profile.hair_color_hex || '#1A1A1A'}</span>
+                  </div>
+                )}
+              </div>
+
               {/* Attributes List - Styled like Image #2 */}
               <div className="grid grid-cols-2 gap-3">
                 <div className="text-left">
