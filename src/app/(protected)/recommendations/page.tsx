@@ -297,22 +297,22 @@ export default function RecommendationsPage() {
         </div>
 
         {profilesLoading || !dbUser ? (
-          <div className="rounded-3xl shadow-soft p-8 mb-6" style={{
+          <div className="rounded-3xl shadow-soft p-8 mb-6 dark:!bg-stone-900/80 dark:!border-stone-800" style={{
             background: "rgba(255, 255, 255, 0.8)",
             backdropFilter: "blur(20px)",
             border: "1px solid rgba(255, 255, 255, 0.9)"
-          }} className="dark:!bg-stone-900/80 dark:!border-stone-800">
+          }}>
             <div className="flex items-center gap-3">
               <div className="w-6 h-6 border-4 border-brand border-t-transparent rounded-full animate-spin" />
               <p className="text-gray-700 dark:text-gray-300 font-medium">Loading profile data...</p>
             </div>
           </div>
         ) : profiles.length === 0 ? (
-          <div className="rounded-3xl shadow-soft p-8 mb-6" style={{
+          <div className="rounded-3xl shadow-soft p-8 mb-6 dark:!bg-stone-900/80 dark:!border-stone-800" style={{
             background: "rgba(255, 255, 255, 0.8)",
             backdropFilter: "blur(20px)",
             border: "1px solid rgba(255, 255, 255, 0.9)"
-          }} className="dark:!bg-stone-900/80 dark:!border-stone-800">
+          }}>
             <p className="text-gray-700 dark:text-gray-300 font-medium">
               No measurement profiles found. Please{" "}
               <a href="/measurements" className="text-brand hover:underline font-bold">
