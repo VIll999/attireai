@@ -150,15 +150,15 @@ export default function StylePreferencesPage() {
   const pillClass = (active: boolean) =>
     `px-5 py-3 rounded-2xl border font-bold text-sm transition-all ${
       active
-        ? "bg-brand border-brand text-white shadow-[0_8px_20px_-4px_rgba(11,85,99,0.25)] transform -translate-y-0.5"
-        : "bg-white border-gray-100 text-gray-600 shadow-sm hover:border-brand/40"
+        ? "bg-brand dark:bg-brand-400 border-brand dark:border-brand-400 text-white dark:text-gray-900 shadow-[0_8px_20px_-4px_rgba(11,85,99,0.25)] transform -translate-y-0.5"
+        : "bg-white dark:bg-stone-800 border-gray-100 dark:border-stone-700 text-gray-600 dark:text-gray-300 shadow-sm hover:border-brand/40 dark:hover:border-brand-400/40"
     }`;
 
   return (
-    <div className="min-h-screen bg-[#FAFAFC] relative flex flex-col">
+    <div className="min-h-screen bg-[#FAFAFC] dark:bg-stone-950 relative flex flex-col">
       {/* Background Effects */}
       <div
-        className="absolute top-0 left-0 w-[600px] h-[600px] -z-10 pointer-events-none"
+        className="absolute top-0 left-0 w-[600px] h-[600px] -z-10 pointer-events-none opacity-100 dark:opacity-30"
         style={{
           background:
             "linear-gradient(135deg, rgba(11, 85, 99, 0.08) 0%, transparent 100%)",
@@ -166,14 +166,14 @@ export default function StylePreferencesPage() {
         }}
       />
       <div
-        className="absolute bottom-0 left-0 w-[600px] h-[600px] -z-10 pointer-events-none"
+        className="absolute bottom-0 left-0 w-[600px] h-[600px] -z-10 pointer-events-none opacity-100 dark:opacity-20"
         style={{
           background:
             "linear-gradient(135deg, rgba(212, 175, 55, 0.08) 0%, transparent 100%)",
           filter: "blur(100px)",
         }}
       />
-      <div className="fixed bottom-[-10%] right-[-5%] w-[500px] h-[500px] bg-brand/5 rounded-full blur-[100px] pointer-events-none -z-10 animate-[float_5s_ease-in-out_infinite]" />
+      <div className="fixed bottom-[-10%] right-[-5%] w-[500px] h-[500px] bg-brand/5 dark:bg-brand/10 rounded-full blur-[100px] pointer-events-none -z-10 animate-[float_5s_ease-in-out_infinite]" />
 
       {/* Header */}
       <header className="w-full px-6 lg:px-12 py-6 relative z-50 bg-white dark:bg-stone-950 border-b border-stone-200 dark:border-stone-800">
@@ -311,10 +311,10 @@ export default function StylePreferencesPage() {
 
         {/* Title */}
         <div className="w-full max-w-2xl mx-auto text-center mb-12">
-          <h1 className="text-5xl md:text-7xl font-black text-brand tracking-tighter font-cabinet mb-6">
-            Refine Your <span className="text-accent">Style</span>
+          <h1 className="text-5xl md:text-7xl font-black text-brand dark:text-brand-400 tracking-tighter font-cabinet mb-6">
+            Refine Your <span className="text-accent dark:text-accent-500">Style</span>
           </h1>
-          <p className="text-gray-500 text-lg md:text-xl font-satoshi leading-relaxed max-w-lg mx-auto">
+          <p className="text-gray-500 dark:text-gray-400 text-lg md:text-xl font-satoshi leading-relaxed max-w-lg mx-auto">
             Tailor the AI recommendations by selecting your specific fashion
             goals and preferences.
           </p>
@@ -327,14 +327,14 @@ export default function StylePreferencesPage() {
           </div>
         ) : (
           /* Form Panel */
-          <div className="w-full max-w-3xl mx-auto bg-white/85 backdrop-blur-xl rounded-[2.5rem] p-8 md:p-14 relative z-10 border border-white/60 shadow-[0_25px_60px_rgba(11,85,99,0.04)]">
+          <div className="w-full max-w-3xl mx-auto bg-white/85 dark:bg-stone-900/85 backdrop-blur-xl rounded-[2.5rem] p-8 md:p-14 relative z-10 border border-white/60 dark:border-stone-800 shadow-[0_25px_60px_rgba(11,85,99,0.04)]">
             <form onSubmit={handleSubmit} className="space-y-14">
               {/* 1. Occasion Selection */}
               <div className="space-y-8">
                 <div className="flex items-center justify-between">
-                  <label className="flex items-center space-x-3 text-sm font-bold text-brand uppercase tracking-widest font-satoshi">
+                  <label className="flex items-center space-x-3 text-sm font-bold text-brand dark:text-brand-400 uppercase tracking-widest font-satoshi">
                     <svg
-                      className="w-5 h-5 text-accent"
+                      className="w-5 h-5 text-accent dark:text-accent-500"
                       fill="none"
                       stroke="currentColor"
                       viewBox="0 0 24 24"
@@ -348,7 +348,7 @@ export default function StylePreferencesPage() {
                     </svg>
                     <span>Target Occasion</span>
                   </label>
-                  <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">
+                  <span className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest">
                     One Choice
                   </span>
                 </div>
@@ -370,9 +370,9 @@ export default function StylePreferencesPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-14">
                 {/* Weather */}
                 <div className="space-y-8">
-                  <label className="flex items-center space-x-3 text-sm font-bold text-brand uppercase tracking-widest font-satoshi">
+                  <label className="flex items-center space-x-3 text-sm font-bold text-brand dark:text-brand-400 uppercase tracking-widest font-satoshi">
                     <svg
-                      className="w-5 h-5 text-accent"
+                      className="w-5 h-5 text-accent dark:text-accent-500"
                       fill="none"
                       stroke="currentColor"
                       viewBox="0 0 24 24"
@@ -402,9 +402,9 @@ export default function StylePreferencesPage() {
 
                 {/* Dress Code */}
                 <div className="space-y-8">
-                  <label className="flex items-center space-x-3 text-sm font-bold text-brand uppercase tracking-widest font-satoshi">
+                  <label className="flex items-center space-x-3 text-sm font-bold text-brand dark:text-brand-400 uppercase tracking-widest font-satoshi">
                     <svg
-                      className="w-5 h-5 text-accent"
+                      className="w-5 h-5 text-accent dark:text-accent-500"
                       fill="none"
                       stroke="currentColor"
                       viewBox="0 0 24 24"
@@ -436,9 +436,9 @@ export default function StylePreferencesPage() {
               {/* 4. Preferred Styles */}
               <div className="space-y-8">
                 <div className="flex items-center justify-between">
-                  <label className="flex items-center space-x-3 text-sm font-bold text-brand uppercase tracking-widest font-satoshi">
+                  <label className="flex items-center space-x-3 text-sm font-bold text-brand dark:text-brand-400 uppercase tracking-widest font-satoshi">
                     <svg
-                      className="w-5 h-5 text-accent"
+                      className="w-5 h-5 text-accent dark:text-accent-500"
                       fill="none"
                       stroke="currentColor"
                       viewBox="0 0 24 24"
@@ -452,7 +452,7 @@ export default function StylePreferencesPage() {
                     </svg>
                     <span>Preferred Styles</span>
                   </label>
-                  <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">
+                  <span className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest">
                     Select Multiple
                   </span>
                 </div>
@@ -466,8 +466,8 @@ export default function StylePreferencesPage() {
                         onClick={() => toggleStyle(s.value)}
                         className={`px-5 py-3 rounded-2xl border font-bold text-sm transition-all ${
                           active
-                            ? "bg-accent border-accent text-white shadow-[0_8px_20px_-4px_rgba(212,175,55,0.25)] transform -translate-y-0.5"
-                            : "bg-white border-gray-100 text-gray-600 shadow-sm hover:border-accent/40"
+                            ? "bg-accent dark:bg-accent-500 border-accent dark:border-accent-500 text-white dark:text-gray-900 shadow-[0_8px_20px_-4px_rgba(212,175,55,0.25)] transform -translate-y-0.5"
+                            : "bg-white dark:bg-stone-800 border-gray-100 dark:border-stone-700 text-gray-600 dark:text-gray-300 shadow-sm hover:border-accent/40 dark:hover:border-accent-500/40"
                         }`}
                       >
                         {s.label}
@@ -481,9 +481,9 @@ export default function StylePreferencesPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-14">
                 {/* Budget */}
                 <div className="space-y-8">
-                  <label className="flex items-center space-x-3 text-sm font-bold text-brand uppercase tracking-widest font-satoshi">
+                  <label className="flex items-center space-x-3 text-sm font-bold text-brand dark:text-brand-400 uppercase tracking-widest font-satoshi">
                     <svg
-                      className="w-5 h-5 text-accent"
+                      className="w-5 h-5 text-accent dark:text-accent-500"
                       fill="none"
                       stroke="currentColor"
                       viewBox="0 0 24 24"
@@ -513,9 +513,9 @@ export default function StylePreferencesPage() {
 
                 {/* Preferred Brands */}
                 <div className="space-y-8">
-                  <label className="flex items-center space-x-3 text-sm font-bold text-brand uppercase tracking-widest font-satoshi">
+                  <label className="flex items-center space-x-3 text-sm font-bold text-brand dark:text-brand-400 uppercase tracking-widest font-satoshi">
                     <svg
-                      className="w-5 h-5 text-accent"
+                      className="w-5 h-5 text-accent dark:text-accent-500"
                       fill="none"
                       stroke="currentColor"
                       viewBox="0 0 24 24"
@@ -533,13 +533,13 @@ export default function StylePreferencesPage() {
                     {brands.map((brand) => (
                       <span
                         key={brand}
-                        className="inline-flex items-center gap-2 px-4 py-2 bg-gray-50 rounded-full text-xs font-bold text-gray-600 border border-gray-100"
+                        className="inline-flex items-center gap-2 px-4 py-2 bg-gray-50 dark:bg-stone-800 rounded-full text-xs font-bold text-gray-600 dark:text-gray-300 border border-gray-100 dark:border-stone-700"
                       >
                         {brand}
                         <button
                           type="button"
                           onClick={() => removeBrand(brand)}
-                          className="hover:text-red-500 transition-colors"
+                          className="hover:text-red-500 dark:hover:text-red-400 transition-colors"
                         >
                           &times;
                         </button>
@@ -553,12 +553,12 @@ export default function StylePreferencesPage() {
                           onChange={(e) => setNewBrand(e.target.value)}
                           onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), addBrand())}
                           placeholder="Brand name"
-                          className="px-3 py-1.5 text-xs border border-brand/30 rounded-full outline-none focus:border-brand"
+                          className="px-3 py-1.5 text-xs border border-brand/30 dark:border-brand-400/30 rounded-full outline-none focus:border-brand dark:focus:border-brand-400 bg-white dark:bg-stone-800 text-gray-900 dark:text-white"
                         />
                         <button
                           type="button"
                           onClick={addBrand}
-                          className="text-xs font-bold text-brand hover:underline"
+                          className="text-xs font-bold text-brand dark:text-brand-400 hover:underline"
                         >
                           Add
                         </button>
@@ -568,7 +568,7 @@ export default function StylePreferencesPage() {
                             setShowBrandInput(false);
                             setNewBrand("");
                           }}
-                          className="text-xs text-gray-400 hover:text-gray-600"
+                          className="text-xs text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-400"
                         >
                           Cancel
                         </button>
@@ -577,7 +577,7 @@ export default function StylePreferencesPage() {
                       <button
                         type="button"
                         onClick={() => setShowBrandInput(true)}
-                        className="inline-flex items-center gap-2 px-4 py-2 bg-white rounded-full text-xs font-bold text-brand border border-brand/20 hover:bg-brand/5"
+                        className="inline-flex items-center gap-2 px-4 py-2 bg-white dark:bg-stone-800 rounded-full text-xs font-bold text-brand dark:text-brand-400 border border-brand/20 dark:border-brand-400/20 hover:bg-brand/5 dark:hover:bg-brand-400/10"
                       >
                         + Add Brand
                       </button>
@@ -591,14 +591,14 @@ export default function StylePreferencesPage() {
                 <button
                   type="submit"
                   disabled={!isFormComplete || isSubmitting}
-                  className="w-full py-6 rounded-2xl bg-brand text-white font-black text-xl flex items-center justify-center space-x-4 transition-all active:scale-[0.98] disabled:opacity-20 disabled:cursor-not-allowed group relative overflow-hidden shadow-[0_10px_25px_-5px_rgba(11,85,99,0.3)]"
+                  className="w-full py-6 rounded-2xl bg-brand dark:bg-brand-400 text-white dark:text-gray-900 font-black text-xl flex items-center justify-center space-x-4 transition-all active:scale-[0.98] disabled:opacity-20 disabled:cursor-not-allowed group relative overflow-hidden shadow-[0_10px_25px_-5px_rgba(11,85,99,0.3)]"
                 >
                   <span className="relative z-10 font-cabinet tracking-tight">
                     {isSubmitting ? "Saving..." : "Save & Get Recommendations"}
                   </span>
                   {!isSubmitting && (
                     <svg
-                      className="w-6 h-6 text-accent group-hover:translate-x-1 transition-transform relative z-10"
+                      className="w-6 h-6 text-accent dark:text-accent-500 group-hover:translate-x-1 transition-transform relative z-10"
                       fill="none"
                       stroke="currentColor"
                       viewBox="0 0 24 24"
@@ -613,7 +613,7 @@ export default function StylePreferencesPage() {
                   )}
                   {isSubmitting && (
                     <svg
-                      className="w-6 h-6 text-accent animate-spin"
+                      className="w-6 h-6 text-accent dark:text-accent-500 animate-spin"
                       fill="none"
                       viewBox="0 0 24 24"
                     >
@@ -634,11 +634,11 @@ export default function StylePreferencesPage() {
                   )}
                   <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
                 </button>
-                <p className="text-center text-sm text-brand/60 mt-8 font-medium flex items-center justify-center space-x-2">
+                <p className="text-center text-sm text-brand/60 dark:text-brand-400/60 mt-8 font-medium flex items-center justify-center space-x-2">
                   {isFormComplete ? (
                     <>
                       <svg
-                        className="w-5 h-5 text-emerald-500"
+                        className="w-5 h-5 text-emerald-500 dark:text-emerald-400"
                         fill="none"
                         stroke="currentColor"
                         viewBox="0 0 24 24"
@@ -650,14 +650,14 @@ export default function StylePreferencesPage() {
                           d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
                         />
                       </svg>
-                      <span className="text-emerald-600 font-bold">
+                      <span className="text-emerald-600 dark:text-emerald-400 font-bold">
                         Ready to save your preferences and get recommendations.
                       </span>
                     </>
                   ) : (
                     <>
                       <svg
-                        className="w-5 h-5"
+                        className="w-5 h-5 text-brand/60 dark:text-brand-400/60"
                         fill="none"
                         stroke="currentColor"
                         viewBox="0 0 24 24"
@@ -669,7 +669,7 @@ export default function StylePreferencesPage() {
                           d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
                         />
                       </svg>
-                      <span>
+                      <span className="text-brand/60 dark:text-brand-400/60">
                         Pick an occasion, weather, and dress code to continue.
                       </span>
                     </>

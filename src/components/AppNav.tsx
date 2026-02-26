@@ -60,7 +60,7 @@ export default function AppNav({ activePage }: AppNavProps) {
 
   return (
     <nav className="bg-white dark:bg-stone-950/80 backdrop-blur-md border-b border-stone-200 dark:border-stone-800">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="max-w-[1440px] mx-auto px-6 lg:px-12">
         <div className="flex justify-between items-center h-16">
 
           {/* Logo */}
@@ -74,15 +74,15 @@ export default function AppNav({ activePage }: AppNavProps) {
           </Link>
 
           {/* Desktop Navigation Links */}
-          <nav className="hidden md:flex items-center gap-8 font-medium">
+          <nav className="hidden lg:flex items-center gap-4 xl:gap-6 font-medium text-sm">
             {navLinks.map((link) => (
               <Link
                 key={link.key}
                 href={link.href}
                 className={
                   activePage === link.key
-                    ? "text-brand dark:text-brand-400 font-medium"
-                    : "text-gray-600 dark:text-gray-400 hover:text-brand dark:hover:text-brand-400 transition-colors"
+                    ? "text-brand dark:text-brand-400 font-semibold whitespace-nowrap"
+                    : "text-gray-600 dark:text-gray-400 hover:text-brand dark:hover:text-brand-400 transition-colors whitespace-nowrap"
                 }
               >
                 {link.label}
@@ -91,14 +91,14 @@ export default function AppNav({ activePage }: AppNavProps) {
           </nav>
 
           {/* Desktop Actions */}
-          <div className="hidden md:flex items-center gap-4">
+          <div className="hidden md:flex items-center gap-2 xl:gap-3">
             {/* Language Selector */}
-            <div className="flex items-center gap-1 bg-white dark:bg-stone-900/50 border border-stone-200 dark:border-stone-800 rounded-lg p-1">
+            <div className="flex items-center gap-0.5 bg-white dark:bg-stone-900/50 border border-stone-200 dark:border-stone-800 rounded-lg p-0.5">
               {langOptions.map(({ value, label }) => (
                 <button
                   key={value}
                   onClick={() => setLocale(value)}
-                  className={`px-3 py-1.5 text-xs font-bold uppercase rounded-md transition-all ${
+                  className={`px-2.5 py-1 text-xs font-bold uppercase rounded-md transition-all ${
                     locale === value
                       ? "bg-brand text-white shadow-sm"
                       : "text-stone-600 dark:text-stone-400 hover:text-stone-900 dark:hover:text-white"
@@ -110,14 +110,14 @@ export default function AppNav({ activePage }: AppNavProps) {
             </div>
 
             {/* Theme Toggle */}
-            <button onClick={toggleTheme} className="p-2.5 hover:bg-stone-100 dark:hover:bg-stone-800 rounded-lg transition-colors" aria-label="Toggle theme">
+            <button onClick={toggleTheme} className="p-2 hover:bg-stone-100 dark:hover:bg-stone-800 rounded-lg transition-colors" aria-label="Toggle theme">
               {themeToggleIcon}
             </button>
 
             {/* Profile Link */}
             <Link href="/profile" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
               {profileAvatar}
-              <span className="hidden lg:block text-sm font-medium text-gray-700 dark:text-gray-300">
+              <span className="hidden xl:block text-sm font-medium text-gray-700 dark:text-gray-300 whitespace-nowrap">
                 {displayName}
               </span>
             </Link>
@@ -125,7 +125,7 @@ export default function AppNav({ activePage }: AppNavProps) {
             {/* Sign Out */}
             <button
               onClick={signOut}
-              className="px-4 py-2 text-sm font-medium text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
+              className="px-3 py-2 text-sm font-medium text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors whitespace-nowrap"
             >
               {t("nav.signOut")}
             </button>
