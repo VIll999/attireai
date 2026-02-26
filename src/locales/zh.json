@@ -15,7 +15,8 @@
     "howItWorks": "如何使用",
     "features": "功能特色",
     "pricing": "价格方案",
-    "successStories": "成功案例"
+    "successStories": "成功案例",
+    "language": "语言"
   },
   "landing": {
     "eyebrow": "AI+时尚模拟",
@@ -268,14 +269,23 @@
   },
   "styles": {
     "minimalist": "极简主义",
+    "minimalist_desc": "干净的线条、中性色调与克制的美学。",
     "streetwear": "街头风",
-    "classic": "经典",
+    "streetwear_desc": "大胆印花、宽松廓形与城市文化气息。",
+    "classic": "经典风",
+    "classic_desc": "经得住时间考验的廓形与优质单品。",
     "bohemian": "波西米亚",
+    "bohemian_desc": "自由随性的叠穿、大地色调与自然纹理。",
     "preppy": "学院风",
+    "preppy_desc": "大学风经典单品，精致而有型。",
     "athleisure": "运动休闲",
-    "vintage": "复古",
-    "elegant": "优雅",
-    "casual": "休闲"
+    "athleisure_desc": "性能与舒适兼顾，带有时髦的运动感。",
+    "vintage": "复古风",
+    "vintage_desc": "精心挑选的复古单品，充满怀旧故事感。",
+    "elegant": "优雅风",
+    "elegant_desc": "精炼的廓形、奢华面料与低调自信。",
+    "casual": "休闲风",
+    "casual_desc": "轻松自在的日常基础款，舒适不费力。"
   },
   "common": {
     "loading": "加载中...",
