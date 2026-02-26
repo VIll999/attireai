@@ -117,7 +117,7 @@ export default function StylePreferences() {
   };
 
   return (
-    <div className="min-h-screen bg-white flex flex-col">
+    <div className="min-h-screen bg-white dark:bg-stone-950 flex flex-col">
       <AppNav activePage="preferences" />
 
       <main className="flex-1 max-w-7xl mx-auto w-full px-8 py-12">
@@ -131,20 +131,20 @@ export default function StylePreferences() {
               {/* Left: Style List */}
               <div className="lg:col-span-4">
                 <div className="space-y-1 mb-8">
-                  <h2 className="text-xs font-black uppercase tracking-[0.2em] text-gray-400 mb-6">
+                  <h2 className="text-xs font-black uppercase tracking-[0.2em] text-gray-400 dark:text-stone-500 mb-6">
                     {t("preferences.selectStyles")}
                   </h2>
-                  <div className="border rounded-2xl overflow-hidden divide-y divide-gray-100">
+                  <div className="border dark:border-stone-800 rounded-2xl overflow-hidden divide-y divide-gray-100 dark:divide-stone-800">
                     {STYLES.map((style) => {
                       const isChecked = selectedStyles.includes(style.value);
                       return (
                         <label
                           key={style.value}
-                          className={`flex items-center justify-between p-5 cursor-pointer transition-all hover:bg-gray-50 ${
-                            isChecked ? "bg-[#F0F7F8] border-l-4 border-[#0B5563]" : ""
+                          className={`flex items-center justify-between p-5 cursor-pointer transition-all hover:bg-gray-50 dark:hover:bg-stone-800/50 ${
+                            isChecked ? "bg-[#F0F7F8] dark:bg-[#0B5563]/20 border-l-4 border-[#0B5563]" : ""
                           }`}
                         >
-                          <span className="font-bold text-gray-700">{t(`styles.${style.value}`)}</span>
+                          <span className="font-bold text-gray-700 dark:text-stone-300">{t(`styles.${style.value}`)}</span>
                           <input
                             type="checkbox"
                             checked={isChecked}
@@ -156,7 +156,7 @@ export default function StylePreferences() {
                     })}
                   </div>
                 </div>
-                <div className="hidden sm:block">
+                <div className="hidden lg:block">
                   <button
                     onClick={handleSave}
                     disabled={isSaving}
@@ -176,7 +176,7 @@ export default function StylePreferences() {
               <div className="lg:col-span-8 space-y-12">
                 {/* Style Cards - All 9 styles */}
                 <section>
-                  <h2 className="text-xs font-black uppercase tracking-[0.2em] text-gray-400 mb-6">
+                  <h2 className="text-xs font-black uppercase tracking-[0.2em] text-gray-400 dark:text-stone-500 mb-6">
                     {t("preferences.aestheticPreview")}
                   </h2>
                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
@@ -190,7 +190,7 @@ export default function StylePreferences() {
                           className={`relative rounded-2xl p-5 text-left transition-all duration-200 group border-2 ${
                             isSelected
                               ? "border-[#0B5563] shadow-md scale-[1.02]"
-                              : "border-transparent hover:border-gray-200 hover:shadow-sm"
+                              : "border-transparent hover:border-gray-200 dark:hover:border-stone-600 hover:shadow-sm"
                           }`}
                           style={{ backgroundColor: card.bg }}
                         >
@@ -236,10 +236,10 @@ export default function StylePreferences() {
                   {/* Budget Slider */}
                   <div className="space-y-6">
                     <div className="flex justify-between items-center">
-                      <h2 className="text-xs font-black uppercase tracking-[0.2em] text-gray-400">
+                      <h2 className="text-xs font-black uppercase tracking-[0.2em] text-gray-400 dark:text-stone-500">
                         {t("preferences.budgetAlignment")}
                       </h2>
-                      <span className="text-sm font-bold text-[#0B5563]">
+                      <span className="text-sm font-bold text-[#0B5563] dark:text-[#4AABB8]">
                         {budget === "BUDGET" ? t("preferences.budget") : budget === "LUXURY" ? t("preferences.luxury") : t("preferences.midRange")}
                       </span>
                     </div>
@@ -266,23 +266,23 @@ export default function StylePreferences() {
                         }}
                       />
                       <div className="flex justify-between mt-3">
-                        <span className="text-[10px] font-bold text-gray-400">{t("preferences.sliderBudget")}</span>
-                        <span className="text-[10px] font-bold text-gray-400">{t("preferences.sliderMidRange")}</span>
-                        <span className="text-[10px] font-bold text-gray-400">{t("preferences.sliderLuxury")}</span>
+                        <span className="text-[10px] font-bold text-gray-400 dark:text-stone-500">{t("preferences.sliderBudget")}</span>
+                        <span className="text-[10px] font-bold text-gray-400 dark:text-stone-500">{t("preferences.sliderMidRange")}</span>
+                        <span className="text-[10px] font-bold text-gray-400 dark:text-stone-500">{t("preferences.sliderLuxury")}</span>
                       </div>
                     </div>
                   </div>
 
                   {/* Brand Affinities */}
                   <div className="space-y-6">
-                    <h2 className="text-xs font-black uppercase tracking-[0.2em] text-gray-400">
+                    <h2 className="text-xs font-black uppercase tracking-[0.2em] text-gray-400 dark:text-stone-500">
                       {t("preferences.brandAffinities")}
                     </h2>
                     <div className="flex flex-wrap gap-2">
                       {brands.map((brand) => (
                         <span
                           key={brand}
-                          className="inline-flex items-center gap-2 px-4 py-2 bg-gray-50 rounded-full text-xs font-bold text-gray-600 border border-gray-100"
+                          className="inline-flex items-center gap-2 px-4 py-2 bg-gray-50 dark:bg-stone-800 rounded-full text-xs font-bold text-gray-600 dark:text-stone-300 border border-gray-100 dark:border-stone-700"
                         >
                           {brand}
                           <button
@@ -301,19 +301,19 @@ export default function StylePreferences() {
                             onChange={(e) => setNewBrand(e.target.value)}
                             onKeyDown={(e) => e.key === "Enter" && addBrand()}
                             placeholder={t("preferences.brandPlaceholder")}
-                            className="px-3 py-1.5 text-xs border border-[#0B5563]/30 rounded-full outline-none focus:border-[#0B5563]"
+                            className="px-3 py-1.5 text-xs border border-[#0B5563]/30 dark:border-[#0B5563]/50 rounded-full outline-none focus:border-[#0B5563] bg-white dark:bg-stone-900 text-gray-700 dark:text-stone-300"
                           />
-                          <button onClick={addBrand} className="text-xs font-bold text-[#0B5563] hover:underline">
+                          <button onClick={addBrand} className="text-xs font-bold text-[#0B5563] dark:text-[#4AABB8] hover:underline">
                             {t("common.add")}
                           </button>
-                          <button onClick={() => setShowBrandInput(false)} className="text-xs text-gray-400 hover:text-gray-600">
+                          <button onClick={() => setShowBrandInput(false)} className="text-xs text-gray-400 dark:text-stone-500 hover:text-gray-600 dark:hover:text-stone-300">
                             {t("common.cancel")}
                           </button>
                         </div>
                       ) : (
                         <button
                           onClick={() => setShowBrandInput(true)}
-                          className="inline-flex items-center gap-2 px-4 py-2 bg-white rounded-full text-xs font-bold text-[#0B5563] border border-[#0B5563]/20 hover:bg-[#0B5563]/5"
+                          className="inline-flex items-center gap-2 px-4 py-2 bg-white dark:bg-stone-900 rounded-full text-xs font-bold text-[#0B5563] dark:text-[#4AABB8] border border-[#0B5563]/20 dark:border-[#0B5563]/30 hover:bg-[#0B5563]/5 dark:hover:bg-[#0B5563]/10"
                         >
                           {t("preferences.addBrand")}
                         </button>
@@ -324,19 +324,19 @@ export default function StylePreferences() {
 
                 {/* Exclusions */}
                 <section className="pt-8">
-                  <h2 className="text-xs font-black uppercase tracking-[0.2em] text-gray-400 mb-6">
+                  <h2 className="text-xs font-black uppercase tracking-[0.2em] text-gray-400 dark:text-stone-500 mb-6">
                     {t("preferences.stylesToAvoid")}
                   </h2>
                   <div className="flex flex-col gap-3 max-w-md">
                     {exclusions.map((exclusion) => (
                       <div
                         key={exclusion}
-                        className="flex items-center justify-between p-4 bg-gray-50/50 rounded-xl border border-gray-100"
+                        className="flex items-center justify-between p-4 bg-gray-50/50 dark:bg-stone-800/50 rounded-xl border border-gray-100 dark:border-stone-700"
                       >
-                        <span className="text-sm font-medium text-gray-600">{exclusion}</span>
+                        <span className="text-sm font-medium text-gray-600 dark:text-stone-300">{exclusion}</span>
                         <button
                           onClick={() => removeExclusion(exclusion)}
-                          className="text-gray-300 hover:text-red-500 transition-colors"
+                          className="text-gray-300 dark:text-stone-600 hover:text-red-500 transition-colors"
                         >
                           ⊗
                         </button>
@@ -350,19 +350,19 @@ export default function StylePreferences() {
                           onChange={(e) => setNewExclusion(e.target.value)}
                           onKeyDown={(e) => e.key === "Enter" && addExclusion()}
                           placeholder={t("preferences.exclusionPlaceholder")}
-                          className="flex-1 px-3 py-2 text-sm border border-[#0B5563]/30 rounded-xl outline-none focus:border-[#0B5563]"
+                          className="flex-1 px-3 py-2 text-sm border border-[#0B5563]/30 dark:border-[#0B5563]/50 rounded-xl outline-none focus:border-[#0B5563] bg-white dark:bg-stone-900 text-gray-700 dark:text-stone-300"
                         />
-                        <button onClick={addExclusion} className="text-sm font-bold text-[#0B5563] hover:underline">
+                        <button onClick={addExclusion} className="text-sm font-bold text-[#0B5563] dark:text-[#4AABB8] hover:underline">
                           {t("common.add")}
                         </button>
-                        <button onClick={() => setShowExclusionInput(false)} className="text-sm text-gray-400 hover:text-gray-600">
+                        <button onClick={() => setShowExclusionInput(false)} className="text-sm text-gray-400 dark:text-stone-500 hover:text-gray-600 dark:hover:text-stone-300">
                           {t("common.cancel")}
                         </button>
                       </div>
                     ) : (
                       <button
                         onClick={() => setShowExclusionInput(true)}
-                        className="text-xs font-bold text-[#0B5563] hover:underline text-left mt-2 flex items-center gap-2"
+                        className="text-xs font-bold text-[#0B5563] dark:text-[#4AABB8] hover:underline text-left mt-2 flex items-center gap-2"
                       >
                         {t("preferences.addExclusion")}
                       </button>
@@ -373,7 +373,7 @@ export default function StylePreferences() {
             </div>
 
             {/* Bottom Save Bar */}
-            <div className="sm:hidden mt-12 pt-8 border-t border-gray-100">
+            <div className="lg:hidden mt-12 pt-8 border-t border-gray-100 dark:border-stone-800">
               {saveMessage ? (
                 <p className={`text-center text-sm mb-3 font-medium ${saveMessage === t("common.saved") ? "text-green-600" : "text-red-500"}`}>
                   {saveMessage}
@@ -394,14 +394,14 @@ export default function StylePreferences() {
       </main>
 
       {/* Footer */}
-      <footer className="py-12 border-t border-gray-50">
+      <footer className="py-12 border-t border-gray-50 dark:border-stone-800 dark:bg-stone-950">
         <div className="max-w-7xl mx-auto px-8 flex justify-between items-center">
-          <span className="font-black text-xl tracking-tighter text-gray-900">
+          <span className="font-black text-xl tracking-tighter text-gray-900 dark:text-white">
             ATTIRE<span className="text-[#0B5563]">AI</span>
           </span>
           <div className="flex gap-8">
             {["Terms", "Privacy", "Help"].map((item) => (
-              <a key={item} href="#" className="text-xs font-bold text-gray-400 hover:text-[#0B5563]">
+              <a key={item} href="#" className="text-xs font-bold text-gray-400 dark:text-stone-500 hover:text-[#0B5563] dark:hover:text-[#4AABB8]">
                 {item}
               </a>
             ))}

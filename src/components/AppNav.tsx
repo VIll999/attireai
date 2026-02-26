@@ -73,7 +73,7 @@ export default function AppNav({ activePage }: AppNavProps) {
             <span className="font-cabinet font-extrabold text-2xl tracking-tight text-gray-900 dark:text-white">AttireAI</span>
           </Link>
 
-          {/* Desktop Navigation Links */}
+          {/* Desktop Navigation Links — hidden below lg (1024px) */}
           <nav className="hidden lg:flex items-center gap-4 xl:gap-6 font-medium text-sm">
             {navLinks.map((link) => (
               <Link
@@ -90,8 +90,8 @@ export default function AppNav({ activePage }: AppNavProps) {
             ))}
           </nav>
 
-          {/* Desktop Actions */}
-          <div className="hidden md:flex items-center gap-2 xl:gap-3">
+          {/* Desktop Actions — hidden below lg (1024px) */}
+          <div className="hidden lg:flex items-center gap-2 xl:gap-3">
             {/* Language Selector */}
             <div className="flex items-center gap-0.5 bg-white dark:bg-stone-900/50 border border-stone-200 dark:border-stone-800 rounded-lg p-0.5">
               {langOptions.map(({ value, label }) => (
@@ -131,8 +131,8 @@ export default function AppNav({ activePage }: AppNavProps) {
             </button>
           </div>
 
-          {/* Mobile: Theme Toggle + Hamburger */}
-          <div className="flex md:hidden items-center gap-1">
+          {/* Mobile/Tablet: Theme Toggle + Hamburger — visible below lg (1024px) */}
+          <div className="flex lg:hidden items-center gap-1">
             <button onClick={toggleTheme} className="p-2.5 hover:bg-stone-100 dark:hover:bg-stone-800 rounded-lg transition-colors" aria-label="Toggle theme">
               {themeToggleIcon}
             </button>
@@ -156,9 +156,9 @@ export default function AppNav({ activePage }: AppNavProps) {
         </div>
       </div>
 
-      {/* Mobile Dropdown */}
+      {/* Mobile/Tablet Dropdown — visible below lg (1024px) */}
       {mobileMenuOpen && (
-        <div className="md:hidden border-t border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-950">
+        <div className="lg:hidden border-t border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-950">
           <div className="px-4 py-3 space-y-1">
 
             {/* Nav Links */}
@@ -190,7 +190,7 @@ export default function AppNav({ activePage }: AppNavProps) {
 
             {/* Language Selector */}
             <div className="flex items-center gap-2 px-3 py-2">
-              <span className="text-xs text-stone-500 dark:text-stone-400">Language</span>
+              <span className="text-xs text-stone-500 dark:text-stone-400">{t("nav.language")}</span>
               <div className="flex items-center gap-1 bg-white dark:bg-stone-900/50 border border-stone-200 dark:border-stone-800 rounded-lg p-1">
                 {langOptions.map(({ value, label }) => (
                   <button
