@@ -1,0 +1,33 @@
+{
+  "casual": [
+    {"name": "Classic Cotton Crew Neck T-Shirt", "brand": "Uniqlo", "category": "TOP", "price": 14.90, "currency": "USD", "reasoning": "Versatile everyday basic that pairs with anything", "recommended_color": "White"},
+    {"name": "Slim Fit Chino Pants", "brand": "H&M", "category": "BOTTOM", "price": 29.99, "currency": "USD", "reasoning": "Clean silhouette for a polished casual look", "recommended_color": "Khaki"},
+    {"name": "Old Skool Sneakers", "brand": "Vans", "category": "SHOES", "price": 70.00, "currency": "USD", "reasoning": "Classic skate shoe that works with any casual outfit", "recommended_color": "Black/White"},
+    {"name": "Canvas Tote Bag", "brand": "Muji", "category": "ACCESSORY", "price": 24.90, "currency": "USD", "reasoning": "Minimalist carry-all for everyday use", "recommended_color": "Natural"}
+  ],
+  "formal": [
+    {"name": "Slim Fit Dress Shirt", "brand": "Charles Tyrwhitt", "category": "TOP", "price": 69.00, "currency": "USD", "reasoning": "Crisp cotton dress shirt for formal occasions", "recommended_color": "Light Blue"},
+    {"name": "Wool Blend Dress Trousers", "brand": "Hugo Boss", "category": "BOTTOM", "price": 178.00, "currency": "USD", "reasoning": "Tailored fit with a clean drape for formal settings", "recommended_color": "Charcoal"},
+    {"name": "Cap Toe Oxford Shoes", "brand": "Allen Edmonds", "category": "SHOES", "price": 395.00, "currency": "USD", "reasoning": "Timeless formal shoe that pairs with suits and dress trousers", "recommended_color": "Dark Brown"},
+    {"name": "Leather Dress Belt", "brand": "Ralph Lauren", "category": "ACCESSORY", "price": 65.00, "currency": "USD", "reasoning": "Polished leather belt to complete a formal look", "recommended_color": "Brown"},
+    {"name": "Single-Breasted Blazer", "brand": "Zara", "category": "OUTERWEAR", "price": 119.00, "currency": "USD", "reasoning": "Structured blazer that elevates any formal outfit", "recommended_color": "Navy"}
+  ],
+  "work": [
+    {"name": "Wrinkle-Free Button Down Shirt", "brand": "Brooks Brothers", "category": "TOP", "price": 88.00, "currency": "USD", "reasoning": "Professional look that stays crisp all day", "recommended_color": "White"},
+    {"name": "Stretch Wool Dress Pants", "brand": "Banana Republic", "category": "BOTTOM", "price": 110.00, "currency": "USD", "reasoning": "Comfortable stretch fabric for long office days", "recommended_color": "Navy"},
+    {"name": "Leather Derby Shoes", "brand": "Clarks", "category": "SHOES", "price": 130.00, "currency": "USD", "reasoning": "Smart office shoe with all-day comfort", "recommended_color": "Black"},
+    {"name": "Minimalist Analog Watch", "brand": "Timex", "category": "ACCESSORY", "price": 89.00, "currency": "USD", "reasoning": "Clean dial design appropriate for business settings", "recommended_color": "Silver/White"}
+  ],
+  "date": [
+    {"name": "Merino Wool V-Neck Sweater", "brand": "COS", "category": "TOP", "price": 89.00, "currency": "USD", "reasoning": "Soft texture and refined look perfect for a date", "recommended_color": "Burgundy"},
+    {"name": "Tailored Slim Fit Jeans", "brand": "Levi's", "category": "BOTTOM", "price": 69.50, "currency": "USD", "reasoning": "Dark wash denim for a smart-casual date look", "recommended_color": "Dark Indigo"},
+    {"name": "Suede Chelsea Boots", "brand": "Thursday Boot Co", "category": "SHOES", "price": 199.00, "currency": "USD", "reasoning": "Elevated casual footwear with a refined edge", "recommended_color": "Tobacco"},
+    {"name": "Leather Card Wallet", "brand": "Bellroy", "category": "ACCESSORY", "price": 79.00, "currency": "USD", "reasoning": "Slim and stylish — a subtle detail that shows taste", "recommended_color": "Black"}
+  ],
+  "sport": [
+    {"name": "Dri-FIT Running T-Shirt", "brand": "Nike", "category": "TOP", "price": 35.00, "currency": "USD", "reasoning": "Moisture-wicking fabric keeps you cool during activity", "recommended_color": "Black"},
+    {"name": "Stretch Training Shorts", "brand": "Under Armour", "category": "BOTTOM", "price": 40.00, "currency": "USD", "reasoning": "Lightweight with four-way stretch for full mobility", "recommended_color": "Gray"},
+    {"name": "Ultraboost Running Shoes", "brand": "Adidas", "category": "SHOES", "price": 190.00, "currency": "USD", "reasoning": "Responsive cushioning and energy return for any workout", "recommended_color": "Core Black"},
+    {"name": "Sport Digital Watch", "brand": "Casio", "category": "ACCESSORY", "price": 24.99, "currency": "USD", "reasoning": "Durable and water-resistant for active use", "recommended_color": "Black"}
+  ]
+}

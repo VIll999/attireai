@@ -1,10 +1,16 @@
 import json
+import os
 from decimal import Decimal
 from typing import Any, Dict, List, Optional
 
 from sqlalchemy.orm import Session
 
 from app.config import get_settings
+
+# Load mock product data once at module level
+_MOCK_DATA_PATH = os.path.join(os.path.dirname(__file__), "..", "data", "mock_products.json")
+with open(_MOCK_DATA_PATH, "r") as _f:
+    MOCK_PRODUCTS: Dict[str, List[Dict[str, Any]]] = json.load(_f)
 from app.db.models import (
     User,
     MeasurementProfile,
@@ -367,6 +373,33 @@ class RecommendationsAIService:
         db.refresh(rec)
         return rec.id
 
+    # ---- Mock fallback ----
+
+    def _get_mock_items(self, req: AIWebCandidatesRequest, measurement: Optional[MeasurementProfile]) -> Dict[str, Any]:
+        occasion = (req.context_overrides.occasion or req.occasion or "casual").lower()
+        # Map to closest mock category
+        if occasion in MOCK_PRODUCTS:
+            items = MOCK_PRODUCTS[occasion]
+        else:
+            items = MOCK_PRODUCTS.get("casual", [])
+
+        # Add recommended_size based on measurements
+        result_items = []
+        for it in items:
+            item = dict(it)
+            item["recommended_size"] = self._recommended_size(item.get("category"), measurement)
+            result_items.append(item)
+
+        return {"items": result_items[:req.k]}
+
+    def _ai_available(self) -> bool:
+        provider = settings.ai_provider
+        if provider == "gemini":
+            return bool(settings.google_api_key)
+        elif provider == "openai":
+            return bool(settings.openai_api_key)
+        return False
+
     # ---- Public entry point ----
 
     def generate_web_candidates(
@@ -377,9 +410,14 @@ class RecommendationsAIService:
         color = self._get_color_profile(db, user.id)
         style = self._get_style_preference(db, user.id)
 
-        context_payload = self._build_context_payload(user, measurement, color, style, req)
-        result = self._call_ai(context_payload)
-        result = self._post_process_items(result, measurement, req)
+        use_mock = not self._ai_available()
+
+        if use_mock:
+            result = self._get_mock_items(req, measurement)
+        else:
+            context_payload = self._build_context_payload(user, measurement, color, style, req)
+            result = self._call_ai(context_payload)
+            result = self._post_process_items(result, measurement, req)
 
         recommendation_id: Optional[str] = None
         if req.save_to_db:
@@ -388,5 +426,5 @@ class RecommendationsAIService:
         return AIWebCandidatesResponse.model_validate({
             "recommendation_id": recommendation_id,
             "items": result.get("items", []),
-            "debug": {"provider": settings.ai_provider},
+            "debug": {"provider": "mock" if use_mock else settings.ai_provider},
         })
