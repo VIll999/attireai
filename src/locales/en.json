@@ -268,14 +268,23 @@
   },
   "styles": {
     "minimalist": "Minimalist",
+    "minimalist_desc": "Clean lines, neutral tones, and intentional simplicity.",
     "streetwear": "Streetwear",
+    "streetwear_desc": "Bold graphics, oversized fits, and urban culture energy.",
     "classic": "Classic",
+    "classic_desc": "Timeless silhouettes and enduring quality pieces.",
     "bohemian": "Bohemian",
+    "bohemian_desc": "Free-spirited layers, earthy tones, and natural textures.",
     "preppy": "Preppy",
+    "preppy_desc": "Collegiate staples with polished, put-together energy.",
     "athleisure": "Athleisure",
+    "athleisure_desc": "Performance meets comfort with a sleek, active edge.",
     "vintage": "Vintage",
+    "vintage_desc": "Curated retro finds with nostalgic, story-rich charm.",
     "elegant": "Elegant",
-    "casual": "Casual"
+    "elegant_desc": "Refined silhouettes, luxurious fabrics, and quiet confidence.",
+    "casual": "Casual",
+    "casual_desc": "Effortless, relaxed basics for everyday comfort and ease."
   },
   "common": {
     "loading": "Loading...",

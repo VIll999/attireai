@@ -18,10 +18,16 @@ const STYLES = [
   { value: "casual", defaultChecked: false },
 ];
 
-const PREVIEW_IMAGES = [
-  { src: "/assets/minimalist.png", styleValue: "minimalist" },
-  { src: "https://images.unsplash.com/photo-1492707892479-7bc8d5a4ee93?auto=format&fit=crop&q=80&w=400", styleValue: "elegant" },
-  { src: "/assets/classic.png", styleValue: "classic" },
+const STYLE_CARDS: { value: string; emoji: string; bg: string; accent: string }[] = [
+  { value: "minimalist", emoji: "◻", bg: "#F7F7F5", accent: "#888" },
+  { value: "streetwear", emoji: "◈", bg: "#1C1C1C", accent: "#fff" },
+  { value: "classic", emoji: "◇", bg: "#F2EDE6", accent: "#7A6247" },
+  { value: "bohemian", emoji: "✿", bg: "#EEE8DC", accent: "#9B7B4F" },
+  { value: "preppy", emoji: "◉", bg: "#E8EEF5", accent: "#3B6EA5" },
+  { value: "athleisure", emoji: "⚡", bg: "#EAF2F5", accent: "#2A7A8C" },
+  { value: "vintage", emoji: "◎", bg: "#F5EFE6", accent: "#A07850" },
+  { value: "elegant", emoji: "✦", bg: "#F4F0F8", accent: "#7B5EA7" },
+  { value: "casual", emoji: "○", bg: "#EFF5F0", accent: "#4A9060" },
 ];
 
 const INITIAL_BRANDS = ["Zara", "COS", "Ralph Lauren"];
@@ -95,260 +101,294 @@ export default function StylePreferences() {
     setIsSaving(true);
     setSaveMessage("");
     try {
-        await saveStylePreferences(user.uid, {
+      await saveStylePreferences(user.uid, {
         preferred_styles: selectedStyles,
         avoided_styles: exclusions,
         price_range: budget,
         preferred_brands: brands,
         excluded_brands: [],
-        });
-        setSaveMessage(t("common.saved"));
+      });
+      setSaveMessage(t("common.saved"));
     } catch {
-        setSaveMessage(t("common.failedSave"));
+      setSaveMessage(t("common.failedSave"));
     } finally {
-        setIsSaving(false);
+      setIsSaving(false);
     }
-    };
+  };
 
   return (
     <div className="min-h-screen bg-white flex flex-col">
       <AppNav activePage="preferences" />
 
-      <main className="flex-1 max-w-7xl mx-auto w-full px-8 py-12">    
+      <main className="flex-1 max-w-7xl mx-auto w-full px-8 py-12">
         {isLoading ? (
           <div className="flex items-center justify-center h-64">
             <div className="w-10 h-10 border-4 border-[#0B5563] border-t-transparent rounded-full animate-spin" />
           </div>
         ) : (
           <>
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-16">
-            {/* Left: Style List */}
-            <div className="lg:col-span-4">
-              <div className="space-y-1 mb-8">
-                <h2 className="text-xs font-black uppercase tracking-[0.2em] text-gray-400 mb-6">
-                  {t("preferences.selectStyles")}
-                </h2>
-                <div className="border rounded-2xl overflow-hidden divide-y divide-gray-100">
-                  {STYLES.map((style) => {
-                    const isChecked = selectedStyles.includes(style.value);
-                    return (
-                      <label
-                        key={style.value}
-                        className={`flex items-center justify-between p-5 cursor-pointer transition-all hover:bg-gray-50 ${
-                          isChecked ? "bg-[#F0F7F8] border-l-4 border-[#0B5563]" : ""
-                        }`}
-                      >
-                        <span className="font-bold text-gray-700">{t(`styles.${style.value}`)}</span>
-                        <input
-                          type="checkbox"
-                          checked={isChecked}
-                          onChange={() => toggleStyle(style.value)}
-                          className="w-5 h-5 rounded border-gray-300 accent-[#0B5563]"
-                        />
-                      </label>
-                    );
-                  })}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-16">
+              {/* Left: Style List */}
+              <div className="lg:col-span-4">
+                <div className="space-y-1 mb-8">
+                  <h2 className="text-xs font-black uppercase tracking-[0.2em] text-gray-400 mb-6">
+                    {t("preferences.selectStyles")}
+                  </h2>
+                  <div className="border rounded-2xl overflow-hidden divide-y divide-gray-100">
+                    {STYLES.map((style) => {
+                      const isChecked = selectedStyles.includes(style.value);
+                      return (
+                        <label
+                          key={style.value}
+                          className={`flex items-center justify-between p-5 cursor-pointer transition-all hover:bg-gray-50 ${
+                            isChecked ? "bg-[#F0F7F8] border-l-4 border-[#0B5563]" : ""
+                          }`}
+                        >
+                          <span className="font-bold text-gray-700">{t(`styles.${style.value}`)}</span>
+                          <input
+                            type="checkbox"
+                            checked={isChecked}
+                            onChange={() => toggleStyle(style.value)}
+                            className="w-5 h-5 rounded border-gray-300 accent-[#0B5563]"
+                          />
+                        </label>
+                      );
+                    })}
+                  </div>
+                </div>
+                <div className="hidden sm:block">
+                  <button
+                    onClick={handleSave}
+                    disabled={isSaving}
+                    className="w-full bg-[#0B5563] text-white py-4 rounded-xl font-bold hover:bg-[#09444F] transition-all flex items-center justify-center gap-2"
+                  >
+                    {isSaving ? t("common.saving") : t("preferences.updatePreferences")}
+                  </button>
+                  {saveMessage && (
+                    <p className={`text-center text-sm mt-2 font-medium ${saveMessage === t("common.saved") ? "text-green-600" : "text-red-500"}`}>
+                      {saveMessage}
+                    </p>
+                  )}
                 </div>
               </div>
-              <div className="hidden sm:block">
-                <button
-                  onClick={handleSave}
-                  disabled={isSaving}
-                  className="w-full bg-[#0B5563] text-white py-4 rounded-xl font-bold hover:bg-[#09444F] transition-all flex items-center justify-center gap-2"
-                >
-                  {isSaving ? t("common.saving") : t("preferences.updatePreferences")}
-                </button>
-                {saveMessage && (
-                <p className={`text-center text-sm mt-2 font-medium ${saveMessage === t("common.saved") ? "text-green-600" : "text-red-500"}`}>
-                    {saveMessage}
-                </p>
-                )}
-              </div>
-            </div>
 
-            {/* Right: Preview & Settings */}
-            <div className="lg:col-span-8 space-y-12">
-              {/* Preview */}
-              <section>
-                <h2 className="text-xs font-black uppercase tracking-[0.2em] text-gray-400 mb-6">
-                  {t("preferences.aestheticPreview")}
-                </h2>
-                <div className="grid grid-cols-3 gap-4">
-                  {PREVIEW_IMAGES.map((img) => (
-                    <div
-                      key={img.styleValue}
-                      className="aspect-[3/4] rounded-2xl overflow-hidden bg-gray-100 group relative"
-                    >
-                      <img
-                        src={img.src}
-                        alt={`${img.styleValue} Preview`}
-                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+              {/* Right: Style Cards & Settings */}
+              <div className="lg:col-span-8 space-y-12">
+                {/* Style Cards - All 9 styles */}
+                <section>
+                  <h2 className="text-xs font-black uppercase tracking-[0.2em] text-gray-400 mb-6">
+                    {t("preferences.aestheticPreview")}
+                  </h2>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                    {STYLE_CARDS.map((card) => {
+                      const isSelected = selectedStyles.includes(card.value);
+                      const isLight = card.bg !== "#1C1C1C";
+                      return (
+                        <button
+                          key={card.value}
+                          onClick={() => toggleStyle(card.value)}
+                          className={`relative rounded-2xl p-5 text-left transition-all duration-200 group border-2 ${
+                            isSelected
+                              ? "border-[#0B5563] shadow-md scale-[1.02]"
+                              : "border-transparent hover:border-gray-200 hover:shadow-sm"
+                          }`}
+                          style={{ backgroundColor: card.bg }}
+                        >
+                          {/* Selected checkmark */}
+                          {isSelected && (
+                            <div className="absolute top-3 right-3 w-5 h-5 rounded-full bg-[#0B5563] flex items-center justify-center">
+                              <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                              </svg>
+                            </div>
+                          )}
+
+                          {/* Emoji / icon */}
+                          <span
+                            className="text-2xl mb-3 block"
+                            style={{ color: card.accent }}
+                          >
+                            {card.emoji}
+                          </span>
+
+                          {/* Style name */}
+                          <h3
+                            className="font-black text-sm uppercase tracking-wider mb-1.5"
+                            style={{ color: isLight ? "#1a1a1a" : "#ffffff" }}
+                          >
+                            {t(`styles.${card.value}`)}
+                          </h3>
+
+                          {/* Description */}
+                          <p
+                            className="text-xs leading-relaxed"
+                            style={{ color: isLight ? "#666" : "rgba(255,255,255,0.6)" }}
+                          >
+                            {t(`styles.${card.value}_desc`)}
+                          </p>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </section>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-12 pt-8">
+                  {/* Budget Slider */}
+                  <div className="space-y-6">
+                    <div className="flex justify-between items-center">
+                      <h2 className="text-xs font-black uppercase tracking-[0.2em] text-gray-400">
+                        {t("preferences.budgetAlignment")}
+                      </h2>
+                      <span className="text-sm font-bold text-[#0B5563]">
+                        {budget === "BUDGET" ? t("preferences.budget") : budget === "LUXURY" ? t("preferences.luxury") : t("preferences.midRange")}
+                      </span>
+                    </div>
+                    <div className="px-2">
+                      <input
+                        type="range"
+                        min={0}
+                        max={2}
+                        step={1}
+                        value={budget === "BUDGET" ? 0 : budget === "LUXURY" ? 2 : 1}
+                        onChange={(e) => {
+                          const val = Number(e.target.value);
+                          if (val === 0) setBudget("BUDGET");
+                          else if (val === 2) setBudget("LUXURY");
+                          else setBudget("MID_RANGE");
+                        }}
+                        className="w-full accent-[#0B5563]"
+                        style={{
+                          WebkitAppearance: "none",
+                          height: "4px",
+                          background: "#e2e8f0",
+                          borderRadius: "2px",
+                          outline: "none",
+                        }}
                       />
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex items-end p-4">
-                        <span className="text-white text-sm font-bold">{img.styleValue}</span>
+                      <div className="flex justify-between mt-3">
+                        <span className="text-[10px] font-bold text-gray-400">{t("preferences.sliderBudget")}</span>
+                        <span className="text-[10px] font-bold text-gray-400">{t("preferences.sliderMidRange")}</span>
+                        <span className="text-[10px] font-bold text-gray-400">{t("preferences.sliderLuxury")}</span>
                       </div>
                     </div>
-                  ))}
-                </div>
-              </section>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-12 pt-8">
-                {/* Budget Slider */}
-                <div className="space-y-6">
-                  <div className="flex justify-between items-center">
-                    <h2 className="text-xs font-black uppercase tracking-[0.2em] text-gray-400">
-                      {t("preferences.budgetAlignment")}
-                    </h2>
-                    <span className="text-sm font-bold text-[#0B5563]">
-                      {budget === "BUDGET" ? t("preferences.budget") : budget === "LUXURY" ? t("preferences.luxury") : t("preferences.midRange")}
-                    </span>
                   </div>
-                  <div className="px-2">
-                    <input
-                      type="range"
-                      min={0}
-                      max={2}
-                      step={1}
-                      value={budget === "BUDGET" ? 0 : budget === "LUXURY" ? 2 : 1}
-                      onChange={(e) => {
-                        const val = Number(e.target.value);
-                        if (val === 0) setBudget("BUDGET");
-                        else if (val === 2) setBudget("LUXURY");
-                        else setBudget("MID_RANGE");
-                      }}
-                      className="w-full accent-[#0B5563]"
-                      style={{
-                        WebkitAppearance: "none",
-                        height: "4px",
-                        background: "#e2e8f0",
-                        borderRadius: "2px",
-                        outline: "none",
-                      }}
-                    />
-                    <div className="flex justify-between mt-3">
-                      <span className="text-[10px] font-bold text-gray-400">{t("preferences.sliderBudget")}</span>
-                      <span className="text-[10px] font-bold text-gray-400">{t("preferences.sliderMidRange")}</span>
-                      <span className="text-[10px] font-bold text-gray-400">{t("preferences.sliderLuxury")}</span>
+
+                  {/* Brand Affinities */}
+                  <div className="space-y-6">
+                    <h2 className="text-xs font-black uppercase tracking-[0.2em] text-gray-400">
+                      {t("preferences.brandAffinities")}
+                    </h2>
+                    <div className="flex flex-wrap gap-2">
+                      {brands.map((brand) => (
+                        <span
+                          key={brand}
+                          className="inline-flex items-center gap-2 px-4 py-2 bg-gray-50 rounded-full text-xs font-bold text-gray-600 border border-gray-100"
+                        >
+                          {brand}
+                          <button
+                            onClick={() => removeBrand(brand)}
+                            className="hover:text-red-500 transition-colors"
+                          >
+                            ✕
+                          </button>
+                        </span>
+                      ))}
+                      {showBrandInput ? (
+                        <div className="flex gap-2">
+                          <input
+                            autoFocus
+                            value={newBrand}
+                            onChange={(e) => setNewBrand(e.target.value)}
+                            onKeyDown={(e) => e.key === "Enter" && addBrand()}
+                            placeholder={t("preferences.brandPlaceholder")}
+                            className="px-3 py-1.5 text-xs border border-[#0B5563]/30 rounded-full outline-none focus:border-[#0B5563]"
+                          />
+                          <button onClick={addBrand} className="text-xs font-bold text-[#0B5563] hover:underline">
+                            {t("common.add")}
+                          </button>
+                          <button onClick={() => setShowBrandInput(false)} className="text-xs text-gray-400 hover:text-gray-600">
+                            {t("common.cancel")}
+                          </button>
+                        </div>
+                      ) : (
+                        <button
+                          onClick={() => setShowBrandInput(true)}
+                          className="inline-flex items-center gap-2 px-4 py-2 bg-white rounded-full text-xs font-bold text-[#0B5563] border border-[#0B5563]/20 hover:bg-[#0B5563]/5"
+                        >
+                          {t("preferences.addBrand")}
+                        </button>
+                      )}
                     </div>
                   </div>
                 </div>
 
-                {/* Brand Affinities */}
-                <div className="space-y-6">
-                  <h2 className="text-xs font-black uppercase tracking-[0.2em] text-gray-400">
-                    {t("preferences.brandAffinities")}
+                {/* Exclusions */}
+                <section className="pt-8">
+                  <h2 className="text-xs font-black uppercase tracking-[0.2em] text-gray-400 mb-6">
+                    {t("preferences.stylesToAvoid")}
                   </h2>
-                  <div className="flex flex-wrap gap-2">
-                    {brands.map((brand) => (
-                      <span
-                        key={brand}
-                        className="inline-flex items-center gap-2 px-4 py-2 bg-gray-50 rounded-full text-xs font-bold text-gray-600 border border-gray-100"
+                  <div className="flex flex-col gap-3 max-w-md">
+                    {exclusions.map((exclusion) => (
+                      <div
+                        key={exclusion}
+                        className="flex items-center justify-between p-4 bg-gray-50/50 rounded-xl border border-gray-100"
                       >
-                        {brand}
+                        <span className="text-sm font-medium text-gray-600">{exclusion}</span>
                         <button
-                          onClick={() => removeBrand(brand)}
-                          className="hover:text-red-500 transition-colors"
+                          onClick={() => removeExclusion(exclusion)}
+                          className="text-gray-300 hover:text-red-500 transition-colors"
                         >
-                          ✕
+                          ⊗
                         </button>
-                      </span>
+                      </div>
                     ))}
-                    {showBrandInput ? (
-                      <div className="flex gap-2">
+                    {showExclusionInput ? (
+                      <div className="flex gap-2 mt-1">
                         <input
                           autoFocus
-                          value={newBrand}
-                          onChange={(e) => setNewBrand(e.target.value)}
-                          onKeyDown={(e) => e.key === "Enter" && addBrand()}
-                          placeholder={t("preferences.brandPlaceholder")}
-                          className="px-3 py-1.5 text-xs border border-[#0B5563]/30 rounded-full outline-none focus:border-[#0B5563]"
+                          value={newExclusion}
+                          onChange={(e) => setNewExclusion(e.target.value)}
+                          onKeyDown={(e) => e.key === "Enter" && addExclusion()}
+                          placeholder={t("preferences.exclusionPlaceholder")}
+                          className="flex-1 px-3 py-2 text-sm border border-[#0B5563]/30 rounded-xl outline-none focus:border-[#0B5563]"
                         />
-                        <button onClick={addBrand} className="text-xs font-bold text-[#0B5563] hover:underline">
+                        <button onClick={addExclusion} className="text-sm font-bold text-[#0B5563] hover:underline">
                           {t("common.add")}
                         </button>
-                        <button onClick={() => setShowBrandInput(false)} className="text-xs text-gray-400 hover:text-gray-600">
+                        <button onClick={() => setShowExclusionInput(false)} className="text-sm text-gray-400 hover:text-gray-600">
                           {t("common.cancel")}
                         </button>
                       </div>
                     ) : (
                       <button
-                        onClick={() => setShowBrandInput(true)}
-                        className="inline-flex items-center gap-2 px-4 py-2 bg-white rounded-full text-xs font-bold text-[#0B5563] border border-[#0B5563]/20 hover:bg-[#0B5563]/5"
+                        onClick={() => setShowExclusionInput(true)}
+                        className="text-xs font-bold text-[#0B5563] hover:underline text-left mt-2 flex items-center gap-2"
                       >
-                        {t("preferences.addBrand")}
+                        {t("preferences.addExclusion")}
                       </button>
                     )}
                   </div>
-                </div>
+                </section>
               </div>
-
-              {/* Exclusions */}
-              <section className="pt-8">
-                <h2 className="text-xs font-black uppercase tracking-[0.2em] text-gray-400 mb-6">
-                  {t("preferences.stylesToAvoid")}
-                </h2>
-                <div className="flex flex-col gap-3 max-w-md">
-                  {exclusions.map((exclusion) => (
-                    <div
-                      key={exclusion}
-                      className="flex items-center justify-between p-4 bg-gray-50/50 rounded-xl border border-gray-100"
-                    >
-                      <span className="text-sm font-medium text-gray-600">{exclusion}</span>
-                      <button
-                        onClick={() => removeExclusion(exclusion)}
-                        className="text-gray-300 hover:text-red-500 transition-colors"
-                      >
-                        ⊗
-                      </button>
-                    </div>
-                  ))}
-                  {showExclusionInput ? (
-                    <div className="flex gap-2 mt-1">
-                      <input
-                        autoFocus
-                        value={newExclusion}
-                        onChange={(e) => setNewExclusion(e.target.value)}
-                        onKeyDown={(e) => e.key === "Enter" && addExclusion()}
-                        placeholder={t("preferences.exclusionPlaceholder")}
-                        className="flex-1 px-3 py-2 text-sm border border-[#0B5563]/30 rounded-xl outline-none focus:border-[#0B5563]"
-                      />
-                      <button onClick={addExclusion} className="text-sm font-bold text-[#0B5563] hover:underline">
-                        {t("common.add")}
-                      </button>
-                      <button onClick={() => setShowExclusionInput(false)} className="text-sm text-gray-400 hover:text-gray-600">
-                        {t("common.cancel")}
-                      </button>
-                    </div>
-                  ) : (
-                    <button
-                      onClick={() => setShowExclusionInput(true)}
-                      className="text-xs font-bold text-[#0B5563] hover:underline text-left mt-2 flex items-center gap-2"
-                    >
-                      {t("preferences.addExclusion")}
-                    </button>
-                  )}
-                </div>
-              </section>
             </div>
-          </div>
-        
-          {/* Bottom Save Bar */}
-          <div className="sm:hidden mt-12 pt-8 border-t border-gray-100">
-            {saveMessage ? (
-              <p className={`text-center text-sm mb-3 font-medium ${saveMessage === t("common.saved") ? "text-green-600" : "text-red-500"}`}>
-                {saveMessage}
-              </p>
-            ) : (
-              <div /> // Placeholder, keep button right-aligned
-            )}
-            <button
-              onClick={handleSave}
-              disabled={isSaving}
-              className="w-full bg-[#0B5563] text-white py-4 rounded-xl font-bold hover:bg-[#09444F] transition-all flex items-center justify-center gap-2 disabled:opacity-50"
-            >
-              {isSaving ? t("common.saving") : t("preferences.updatePreferences")}
-            </button>
-          </div>
+
+            {/* Bottom Save Bar */}
+            <div className="sm:hidden mt-12 pt-8 border-t border-gray-100">
+              {saveMessage ? (
+                <p className={`text-center text-sm mb-3 font-medium ${saveMessage === t("common.saved") ? "text-green-600" : "text-red-500"}`}>
+                  {saveMessage}
+                </p>
+              ) : (
+                <div />
+              )}
+              <button
+                onClick={handleSave}
+                disabled={isSaving}
+                className="w-full bg-[#0B5563] text-white py-4 rounded-xl font-bold hover:bg-[#09444F] transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+              >
+                {isSaving ? t("common.saving") : t("preferences.updatePreferences")}
+              </button>
+            </div>
           </>
         )}
       </main>

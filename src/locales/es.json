@@ -6,7 +6,7 @@
     "measurements": "Medidas",
     "colors": "Análisis de Color",
     "profile": "Perfil",
-    "preferences": "preferencias",
+    "preferences": "Preferencias",
     "signOut": "Cerrar sesión",
     "logIn": "Iniciar sesión",
     "signUp": "Registrarse",
@@ -268,16 +268,24 @@
   },
   "styles": {
     "minimalist": "Minimalista",
+    "minimalist_desc": "Líneas limpias, tonos neutros y simplicidad intencional.",
     "streetwear": "Streetwear",
+    "streetwear_desc": "Gráficos atrevidos, prendas oversize y energía urbana.",
     "classic": "Clásico",
+    "classic_desc": "Siluetas atemporales y prendas de calidad duradera.",
     "bohemian": "Bohemio",
+    "bohemian_desc": "Capas libres, tonos tierra y texturas naturales.",
     "preppy": "Preppy",
+    "preppy_desc": "Básicos universitarios con un estilo pulido y organizado.",
     "athleisure": "Athleisure",
+    "athleisure_desc": "Rendimiento y comodidad con un toque activo y moderno.",
     "vintage": "Vintage",
+    "vintage_desc": "Piezas retro seleccionadas con encanto nostálgico.",
     "elegant": "Elegante",
-    "casual": "Casual"
+    "elegant_desc": "Siluetas refinadas, telas lujosas y confianza discreta.",
+    "casual": "Casual",
+    "casual_desc": "Básicos relajados y sin esfuerzo para el día a día."
   },
-
   "common": {
     "loading": "Cargando...",
     "error": "Ocurrió un error",
