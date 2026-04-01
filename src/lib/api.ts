@@ -338,6 +338,7 @@ export interface OutfitRecommendationItemResponse {
   purchase_url: string | null;
   recommended_size: string | null;
   outfit_index: number | null;
+  stock_status: string | null;
 }
 
 export interface OutfitRecommendationResponse {
@@ -495,6 +496,7 @@ export interface AIRecommendationItem {
   recommended_size?: string | null;
   source_urls?: string[];
   outfit_index?: number | null;
+  stock_status?: string | null;
 }
 
 export interface AIRecommendationResponse {

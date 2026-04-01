@@ -664,14 +664,22 @@ export default function RecommendationsPage() {
               const reasoning = items[0]?.reasoning;
               const recId = result?.recommendation_ids?.[outfitIdx];
               const freshRating = recId ? freshRatings[recId] : undefined;
+              const outfitTotalPrice = items.reduce((sum, item) => sum + (typeof item.price === 'number' ? item.price : 0), 0);
               return (
                 <div key={outfitIdx} className="bg-white dark:bg-stone-900 rounded-xl shadow-sm border border-stone-200 dark:border-stone-800 overflow-hidden">
                   {/* Outfit header */}
                   <div className="px-6 py-4 border-b border-stone-100 dark:border-stone-800 flex items-start justify-between">
                     <div className="flex-1 min-w-0">
-                      <h3 className="text-lg font-bold text-stone-900 dark:text-white">
-                        Outfit {outfitIdx + 1}
-                      </h3>
+                      <div className="flex items-center gap-4 mb-1">
+                        <h3 className="text-lg font-bold text-stone-900 dark:text-white">
+                          Outfit {outfitIdx + 1}
+                        </h3>
+                        {outfitTotalPrice > 0 && (
+                          <span className="text-lg font-bold text-brand dark:text-brand-400">
+                            ${outfitTotalPrice.toFixed(0)}
+                          </span>
+                        )}
+                      </div>
                       {reasoning && (
                         <p className="text-sm text-stone-600 dark:text-stone-400 mt-1">{reasoning}</p>
                       )}
@@ -772,6 +780,19 @@ export default function RecommendationsPage() {
                                   </a>
                                 )}
                               </div>
+                              {it.stock_status && it.stock_status !== "UNKNOWN" && (
+                                <div className="mt-2">
+                                  <span className={`text-xs px-2 py-0.5 rounded-full font-semibold ${
+                                    it.stock_status === "IN_STOCK"
+                                      ? "bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400"
+                                      : it.stock_status === "LOW_STOCK"
+                                      ? "bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400"
+                                      : "bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400"
+                                  }`}>
+                                    {it.stock_status === "IN_STOCK" ? "✓ In Stock" : it.stock_status === "LOW_STOCK" ? "⚠ Low Stock" : "✕ Out of Stock"}
+                                  </span>
+                                </div>
+                              )}
                               {it.recommended_color && (
                                 <p className="text-xs text-stone-500 mt-1">Color: {it.recommended_color}</p>
                               )}
@@ -930,6 +951,11 @@ export default function RecommendationsPage() {
                                   <span className="text-lg">{CATEGORY_ICONS[(item.category || "").toUpperCase()] || "👔"}</span>
                                   <span className="flex-1 truncate text-gray-700 dark:text-gray-300">{item.name}</span>
                                   <div className="flex items-center gap-2">
+                                    {item.recommended_size && (
+                                      <span className="text-xs bg-stone-200 dark:bg-stone-700 px-2 py-0.5 rounded text-stone-600 dark:text-stone-300">
+                                        {item.recommended_size}
+                                      </span>
+                                    )}
                                     {typeof item.price === "number" && (
                                       <span className="font-semibold text-brand dark:text-brand-400">${item.price.toFixed(0)}</span>
                                     )}

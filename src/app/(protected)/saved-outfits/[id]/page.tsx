@@ -333,6 +333,19 @@ export default function SavedOutfitDetailPage() {
                         Color: {item.recommended_color}
                       </p>
                     )}
+                    {item.stock_status && item.stock_status !== "UNKNOWN" && (
+                      <div className="mb-3">
+                        <span className={`text-xs px-2 py-1 rounded-full font-semibold ${
+                          item.stock_status === "IN_STOCK"
+                            ? "bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400"
+                            : item.stock_status === "LOW_STOCK"
+                            ? "bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400"
+                            : "bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400"
+                        }`}>
+                          {item.stock_status === "IN_STOCK" ? "✓ In Stock" : item.stock_status === "LOW_STOCK" ? "⚠ Low Stock" : "✕ Out of Stock"}
+                        </span>
+                      </div>
+                    )}
                     {item.purchase_url && (
                       <a
                         href={item.purchase_url}

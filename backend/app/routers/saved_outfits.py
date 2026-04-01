@@ -237,6 +237,7 @@ def get_saved_outfits(
                         "recommended_size": item.recommended_size,
                         "recommended_color": item.colors,
                         "outfit_index": item.outfit_index,
+                        "stock_status": item.stock_status,
                     }
                     for item in recommendation.items
                 ]
@@ -305,6 +306,7 @@ def get_saved_outfit(
                     "recommended_size": item.recommended_size,
                     "recommended_color": item.colors,
                     "outfit_index": item.outfit_index,
+                    "stock_status": item.stock_status,
                 }
                 for item in recommendation.items
             ]

@@ -32,6 +32,7 @@ class RecommendationItemResponse(BaseModel):
     purchase_url: Optional[str] = None
     recommended_size: Optional[str] = None
     outfit_index: Optional[int] = None
+    stock_status: Optional[str] = "UNKNOWN"
 
     class Config:
         from_attributes = True

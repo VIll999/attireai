@@ -53,6 +53,7 @@ class CandidateItem(BaseModel):
     recommended_size: Optional[str] = None
     recommended_color: Optional[str] = None
     outfit_index: Optional[int] = None
+    stock_status: Optional[str] = "UNKNOWN"
 
 
 class AIWebCandidatesResponse(BaseModel):

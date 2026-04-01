@@ -170,6 +170,7 @@ class RecommendationItem(Base):
     colors = Column(JSON, nullable=True)
     material = Column(String(100), nullable=True)
     outfit_index = Column(Integer, nullable=True)
+    stock_status = Column(Enum("IN_STOCK", "LOW_STOCK", "OUT_OF_STOCK", "UNKNOWN"), default="UNKNOWN", nullable=True)
 
     recommendation = relationship("OutfitRecommendation", back_populates="items")
 
