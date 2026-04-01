@@ -4,185 +4,52 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import AppNav from "@/components/AppNav";
 import { useAuth } from "@/context/AuthContext";
+import { useLocale } from "@/context/LocaleContext";
 import { saveStylePreferences, PriceRange } from "@/lib/api";
 
 // Quiz questions with weighted scoring for each style
 const QUIZ_QUESTIONS = [
-  {
-    id: 1,
-    question: "Which color palette appeals to you most?",
-    options: [
-      {
-        label: "Neutral & Monochrome",
-        description: "Black, white, gray, beige",
-        image: "⬜",
-        scores: { minimalist: 3, classic: 2, elegant: 1 }
-      },
-      {
-        label: "Bold & Vibrant",
-        description: "Bright colors, neon, patterns",
-        image: "🌈",
-        scores: { streetwear: 3, bohemian: 2, casual: 1 }
-      },
-      {
-        label: "Earthy & Warm",
-        description: "Brown, terracotta, olive, cream",
-        image: "🍂",
-        scores: { bohemian: 3, vintage: 2, casual: 2 }
-      },
-      {
-        label: "Navy & Pastels",
-        description: "Blue, pink, mint, cream",
-        image: "🌸",
-        scores: { preppy: 3, elegant: 2, classic: 1 }
-      }
-    ]
-  },
-  {
-    id: 2,
-    question: "What's your ideal weekend outfit?",
-    options: [
-      {
-        label: "Clean & Simple",
-        description: "Basic tee + jeans",
-        image: "◻",
-        scores: { minimalist: 3, casual: 2 }
-      },
-      {
-        label: "Sporty & Comfortable",
-        description: "Hoodie + joggers + sneakers",
-        image: "⚡",
-        scores: { athleisure: 3, streetwear: 2, casual: 1 }
-      },
-      {
-        label: "Flowy & Relaxed",
-        description: "Maxi dress or loose shirt",
-        image: "✿",
-        scores: { bohemian: 3, casual: 1 }
-      },
-      {
-        label: "Polished & Put-Together",
-        description: "Button-down + chinos",
-        image: "◇",
-        scores: { preppy: 3, classic: 2, elegant: 1 }
-      }
-    ]
-  },
-  {
-    id: 3,
-    question: "Which accessories do you gravitate towards?",
-    options: [
-      {
-        label: "Minimal or None",
-        description: "Simple watch or no accessories",
-        image: "⌚",
-        scores: { minimalist: 3, athleisure: 1 }
-      },
-      {
-        label: "Statement Pieces",
-        description: "Bold jewelry, designer bags",
-        image: "💎",
-        scores: { elegant: 3, streetwear: 2 }
-      },
-      {
-        label: "Layered & Eclectic",
-        description: "Multiple rings, bracelets, scarves",
-        image: "✨",
-        scores: { bohemian: 3, vintage: 2 }
-      },
-      {
-        label: "Classic & Timeless",
-        description: "Leather belt, pearl earrings",
-        image: "◉",
-        scores: { classic: 3, preppy: 2, elegant: 1 }
-      }
-    ]
-  },
-  {
-    id: 4,
-    question: "How do you want people to perceive you?",
-    options: [
-      {
-        label: "Sophisticated & Elegant",
-        description: "Refined and polished",
-        image: "✦",
-        scores: { elegant: 3, classic: 2 }
-      },
-      {
-        label: "Cool & Edgy",
-        description: "Trendy and confident",
-        image: "◈",
-        scores: { streetwear: 3, vintage: 1 }
-      },
-      {
-        label: "Approachable & Friendly",
-        description: "Warm and easygoing",
-        image: "○",
-        scores: { casual: 3, preppy: 2, bohemian: 1 }
-      },
-      {
-        label: "Creative & Unique",
-        description: "Artistic and free-spirited",
-        image: "✿",
-        scores: { bohemian: 3, vintage: 2 }
-      }
-    ]
-  },
-  {
-    id: 5,
-    question: "What's your approach to fashion trends?",
-    options: [
-      {
-        label: "I ignore trends",
-        description: "Stick to what works for me",
-        image: "⊗",
-        scores: { classic: 3, minimalist: 2 }
-      },
-      {
-        label: "Early adopter",
-        description: "Love trying new trends first",
-        image: "🚀",
-        scores: { streetwear: 3, elegant: 1 }
-      },
-      {
-        label: "Selective follower",
-        description: "Pick trends that fit my style",
-        image: "✓",
-        scores: { preppy: 2, casual: 2, athleisure: 1 }
-      },
-      {
-        label: "Vintage lover",
-        description: "Prefer retro over current trends",
-        image: "◎",
-        scores: { vintage: 3, bohemian: 2 }
-      }
-    ]
-  },
-  {
-    id: 6,
-    question: "What's your typical shopping budget for an outfit?",
-    options: [
-      {
-        label: "Under $100",
-        description: "Budget-friendly finds",
-        image: "💵",
-        budget: "BUDGET"
-      },
-      {
-        label: "$100 - $500",
-        description: "Mid-range quality",
-        image: "💳",
-        budget: "MID_RANGE"
-      },
-      {
-        label: "$500+",
-        description: "Luxury and designer",
-        image: "💎",
-        budget: "LUXURY"
-      }
-    ]
-  }
+  { id: 1, options: 4, scores: true },
+  { id: 2, options: 4, scores: true },
+  { id: 3, options: 4, scores: true },
+  { id: 4, options: 4, scores: true },
+  { id: 5, options: 4, scores: true },
+  { id: 6, options: 3, scores: false },  // Budget question
 ];
+
+// Scoring system for each question
+const SCORING_MATRIX = {
+  1: [
+    { minimalist: 3, classic: 2, elegant: 1 },
+    { streetwear: 3, bohemian: 2, casual: 1 },
+    { bohemian: 3, vintage: 2, casual: 2 },
+    { preppy: 3, elegant: 2, classic: 1 },
+  ],
+  2: [
+    { minimalist: 3, casual: 2 },
+    { athleisure: 3, streetwear: 2, casual: 1 },
+    { bohemian: 3, casual: 1 },
+    { preppy: 3, classic: 2, elegant: 1 },
+  ],
+  3: [
+    { minimalist: 3, athleisure: 1 },
+    { elegant: 3, streetwear: 2 },
+    { bohemian: 3, vintage: 2 },
+    { classic: 3, preppy: 2, elegant: 1 },
+  ],
+  4: [
+    { elegant: 3, classic: 2 },
+    { streetwear: 3, vintage: 1 },
+    { casual: 3, preppy: 2, bohemian: 1 },
+    { bohemian: 3, vintage: 2 },
+  ],
+  5: [
+    { classic: 3, minimalist: 2 },
+    { streetwear: 3, elegant: 1 },
+    { preppy: 2, casual: 2, athleisure: 1 },
+    { vintage: 3, bohemian: 2 },
+  ],
+};
 
 const STYLE_INFO = {
   minimalist: { emoji: "◻", color: "#888", name: "Minimalist" },
@@ -199,6 +66,7 @@ const STYLE_INFO = {
 export default function StyleQuiz() {
   const router = useRouter();
   const { user } = useAuth();
+  const { t } = useLocale();
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [answers, setAnswers] = useState<number[]>([]);
   const [isComplete, setIsComplete] = useState(false);
@@ -210,11 +78,10 @@ export default function StyleQuiz() {
     const newAnswers = [...answers, optionIndex];
     setAnswers(newAnswers);
 
-    // Check if it's the budget question
-    const question = QUIZ_QUESTIONS[currentQuestion];
-    const option = question.options[optionIndex];
-    if (option.budget) {
-      setSelectedBudget(option.budget as PriceRange);
+    // Check if it's the budget question (question 6)
+    if (currentQuestion === 5) {
+      const budgets: PriceRange[] = ["BUDGET", "MID_RANGE", "LUXURY"];
+      setSelectedBudget(budgets[optionIndex]);
     }
 
     if (currentQuestion < QUIZ_QUESTIONS.length - 1) {
@@ -238,11 +105,10 @@ export default function StyleQuiz() {
     };
 
     finalAnswers.forEach((answerIndex, questionIndex) => {
-      const question = QUIZ_QUESTIONS[questionIndex];
-      const selectedOption = question.options[answerIndex];
-
-      if (selectedOption.scores) {
-        Object.entries(selectedOption.scores).forEach(([style, points]) => {
+      const questionId = questionIndex + 1;
+      if (questionId <= 5) {
+        const scoreMap = SCORING_MATRIX[questionId as keyof typeof SCORING_MATRIX][answerIndex];
+        Object.entries(scoreMap).forEach(([style, points]) => {
           scores[style] += points;
         });
       }
@@ -305,10 +171,17 @@ export default function StyleQuiz() {
         <main className="flex-1 max-w-4xl mx-auto w-full px-6 py-12">
           <div className="text-center mb-12">
             <h1 className="text-4xl font-black text-gray-900 dark:text-white mb-3">
-              Your Style Profile
+              {t("styleQuiz.title")}
             </h1>
             <p className="text-gray-600 dark:text-stone-400">
-              Based on your answers, here are your top style recommendations
+              {t("styleQuiz.subtitle")}
+            </p>
+          </div>
+
+          {/* Top 3 Save Note */}
+          <div className="mb-8 bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-xl p-4 text-center">
+            <p className="text-sm font-medium text-blue-900 dark:text-blue-300">
+              💡 {t("styleQuiz.saveNote")}
             </p>
           </div>
 
@@ -328,10 +201,10 @@ export default function StyleQuiz() {
                       <div>
                         <h3 className="text-xl font-black text-gray-900 dark:text-white">
                           {index === 0 && "🏆 "}
-                          {styleInfo.name}
+                          {t(`styles.${result.style}`)}
                         </h3>
                         <p className="text-sm text-gray-500 dark:text-stone-400">
-                          Score: {result.score} points
+                          {t("styleQuiz.scoreLabel")} {result.score} {t("styleQuiz.points")}
                         </p>
                       </div>
                     </div>
@@ -358,12 +231,12 @@ export default function StyleQuiz() {
 
           <div className="bg-stone-50 dark:bg-stone-900/50 border border-stone-200 dark:border-stone-800 rounded-2xl p-8 mb-8">
             <h3 className="text-lg font-black text-gray-900 dark:text-white mb-4">
-              Budget Preference
+              {t("styleQuiz.budgetPreference")}
             </h3>
             <p className="text-gray-600 dark:text-stone-400">
-              {selectedBudget === "BUDGET" && "Budget-Friendly ($0-$100 per outfit)"}
-              {selectedBudget === "MID_RANGE" && "Mid-Range ($100-$500 per outfit)"}
-              {selectedBudget === "LUXURY" && "Luxury ($500+ per outfit)"}
+              {selectedBudget === "BUDGET" && t("styleQuiz.budgetFriendly")}
+              {selectedBudget === "MID_RANGE" && t("styleQuiz.midRange")}
+              {selectedBudget === "LUXURY" && t("styleQuiz.luxury")}
             </p>
           </div>
 
@@ -373,13 +246,13 @@ export default function StyleQuiz() {
               disabled={isSaving}
               className="flex-1 bg-[#0B5563] text-white py-4 rounded-xl font-bold hover:bg-[#09444F] transition-all disabled:opacity-50"
             >
-              {isSaving ? "Saving..." : "Save to Preferences"}
+              {isSaving ? t("common.saving") : t("styleQuiz.saveToPreferences")}
             </button>
             <button
               onClick={handleRetake}
               className="px-6 py-4 border-2 border-gray-200 dark:border-stone-700 text-gray-700 dark:text-stone-300 rounded-xl font-bold hover:border-[#0B5563] hover:text-[#0B5563] dark:hover:border-[#4AABB8] dark:hover:text-[#4AABB8] transition-all"
             >
-              Retake Quiz
+              {t("styleQuiz.retakeQuiz")}
             </button>
           </div>
         </main>
@@ -388,6 +261,7 @@ export default function StyleQuiz() {
   }
 
   const question = QUIZ_QUESTIONS[currentQuestion];
+  const questionKey = `q${currentQuestion + 1}`;
 
   return (
     <div className="min-h-screen bg-white dark:bg-stone-950 flex flex-col">
@@ -398,7 +272,7 @@ export default function StyleQuiz() {
         <div className="mb-12">
           <div className="flex justify-between items-center mb-3">
             <span className="text-sm font-bold text-gray-500 dark:text-stone-400">
-              Question {currentQuestion + 1} of {QUIZ_QUESTIONS.length}
+              {t("styleQuiz.questionOf")} {currentQuestion + 1} {t("styleQuiz.of")} {QUIZ_QUESTIONS.length}
             </span>
             <span className="text-sm font-bold text-[#0B5563] dark:text-[#4AABB8]">
               {Math.round(progress)}%
@@ -415,41 +289,47 @@ export default function StyleQuiz() {
         {/* Question */}
         <div className="text-center mb-12">
           <h1 className="text-3xl md:text-4xl font-black text-gray-900 dark:text-white mb-4">
-            {question.question}
+            {t(`styleQuiz.${questionKey}`)}
           </h1>
           <p className="text-gray-600 dark:text-stone-400">
-            Choose the option that best describes you
+            {t("styleQuiz.chooseOption")}
           </p>
         </div>
 
         {/* Options */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {question.options.map((option, index) => (
-            <button
-              key={index}
-              onClick={() => handleAnswer(index)}
-              className="group relative bg-white dark:bg-stone-900 border-2 border-gray-200 dark:border-stone-800 rounded-2xl p-8 text-left hover:border-[#0B5563] dark:hover:border-[#4AABB8] hover:shadow-xl transition-all duration-200"
-            >
-              <div className="flex flex-col items-start gap-4">
-                <span className="text-5xl">{option.image}</span>
-                <div>
-                  <h3 className="text-xl font-black text-gray-900 dark:text-white mb-2 group-hover:text-[#0B5563] dark:group-hover:text-[#4AABB8] transition-colors">
-                    {option.label}
-                  </h3>
-                  <p className="text-sm text-gray-600 dark:text-stone-400">
-                    {option.description}
-                  </p>
-                </div>
-              </div>
+          {Array.from({ length: question.options }).map((_, index) => {
+            const optionKey = `${questionKey}o${index + 1}`;
+            const descKey = `${questionKey}o${index + 1}d`;
+            const emoji = ["⬜", "🌈", "🍂", "🌸", "◻", "⚡", "✿", "◇", "⌚", "💎", "✨", "◉", "✦", "◈", "○", "⊗", "🚀", "✓", "◎", "💵", "💳"][currentQuestion * 4 + index] || "●";
 
-              {/* Hover Arrow */}
-              <div className="absolute top-8 right-8 opacity-0 group-hover:opacity-100 transition-opacity">
-                <svg className="w-6 h-6 text-[#0B5563] dark:text-[#4AABB8]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                </svg>
-              </div>
-            </button>
-          ))}
+            return (
+              <button
+                key={index}
+                onClick={() => handleAnswer(index)}
+                className="group relative bg-white dark:bg-stone-900 border-2 border-gray-200 dark:border-stone-800 rounded-2xl p-8 text-left hover:border-[#0B5563] dark:hover:border-[#4AABB8] hover:shadow-xl transition-all duration-200"
+              >
+                <div className="flex flex-col items-start gap-4">
+                  <span className="text-5xl">{emoji}</span>
+                  <div>
+                    <h3 className="text-xl font-black text-gray-900 dark:text-white mb-2 group-hover:text-[#0B5563] dark:group-hover:text-[#4AABB8] transition-colors">
+                      {t(`styleQuiz.${optionKey}`)}
+                    </h3>
+                    <p className="text-sm text-gray-600 dark:text-stone-400">
+                      {t(`styleQuiz.${descKey}`)}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Hover Arrow */}
+                <div className="absolute top-8 right-8 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <svg className="w-6 h-6 text-[#0B5563] dark:text-[#4AABB8]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
+                </div>
+              </button>
+            );
+          })}
         </div>
 
         {/* Back Button */}
@@ -462,7 +342,7 @@ export default function StyleQuiz() {
               }}
               className="text-sm font-bold text-gray-500 dark:text-stone-400 hover:text-[#0B5563] dark:hover:text-[#4AABB8] transition-colors"
             >
-              ← Back to previous question
+              {t("styleQuiz.backToPrevious")}
             </button>
           </div>
         )}
