@@ -56,11 +56,11 @@ class VisionService:
             raise ValueError("Image too large (max 5MB)")
 
         image_part = Part.from_bytes(data=image_bytes, mime_type="image/jpeg")
-        text_part = Part.from_text(VISION_PROMPT)
+        text_part = Part.from_text(text=VISION_PROMPT)
 
         try:
             response = client.models.generate_content(
-                model="gemini-2.5-flash",
+                model="gemini-3-flash-preview",
                 contents=[Content(parts=[image_part, text_part])],
                 config=GenerateContentConfig(
                     response_mime_type="application/json",
