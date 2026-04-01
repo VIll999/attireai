@@ -6,7 +6,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { useLocale } from "@/context/LocaleContext";
 import Notification from "@/components/Notification";
-import { getMeasurements, MeasurementResponse, uploadColorAnalysisPhoto } from "@/lib/api";
+import { getMeasurements, MeasurementResponse, uploadColorAnalysisPhoto, analyzePhotoColors } from "@/lib/api";
 
 // Skin tone options with hex colors (updated to match design)
 const SKIN_TONES = [
@@ -74,6 +74,36 @@ export default function ColorAnalysisPage() {
 
   const [existingProfileId, setExistingProfileId] = useState<string | null>(null);
   const [showTransitionAnimation, setShowTransitionAnimation] = useState(false);
+  const [isAnalyzingColors, setIsAnalyzingColors] = useState(false);
+
+  // Analyze uploaded/captured photo with AI for skin tone + hair color
+  const analyzePhotoWithAI = async (file: File) => {
+    if (!user) return;
+    setIsAnalyzingColors(true);
+    try {
+      const base64 = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => {
+          const result = reader.result as string;
+          resolve(result.split(",")[1]);
+        };
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+
+      const result = await analyzePhotoColors(user.uid, base64);
+      setSelectedSkinTone(result.skin_tone);
+      setSelectedSkinToneHex(result.skin_tone_hex);
+      setSelectedHairColor(result.hair_color);
+      setSelectedHairColorHex(result.hair_color_hex);
+      setSuccessMessage("AI detected your skin tone and hair color! Adjust if needed.");
+    } catch (err) {
+      console.error("AI color analysis failed:", err);
+      setError("AI color detection failed. Please select manually.");
+    } finally {
+      setIsAnalyzingColors(false);
+    }
+  };
 
   // Fetch existing color profile data for a measurement
   const fetchColorProfile = useCallback(async (measurementId: string) => {
@@ -828,10 +858,29 @@ export default function ColorAnalysisPage() {
                 ) : photoPreview ? (
                   <>
                     <button
+                      onClick={() => uploadedPhoto && analyzePhotoWithAI(uploadedPhoto)}
+                      disabled={isAnalyzingColors || !uploadedPhoto}
+                      className="w-full bg-brand dark:bg-brand-400 text-white dark:text-gray-900 py-4 rounded-2xl font-bold flex items-center justify-center gap-2 hover:bg-brand-600 dark:hover:bg-brand-500 transition-all shadow-glow active:scale-[0.98] disabled:opacity-50"
+                    >
+                      {isAnalyzingColors ? (
+                        <>
+                          <div className="w-5 h-5 border-2 border-white/40 border-t-white rounded-full animate-spin" />
+                          Analyzing...
+                        </>
+                      ) : (
+                        <>
+                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                          </svg>
+                          Detect Colors with AI
+                        </>
+                      )}
+                    </button>
+                    <button
                       onClick={() => {
                         setUploadedPhoto(null);
                         setPhotoPreview(null);
-                        setExistingPhotoUrl(null); // Clear existing photo URL
+                        setExistingPhotoUrl(null);
                         if (fileInputRef.current) {
                           fileInputRef.current.value = "";
                         }
