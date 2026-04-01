@@ -35,13 +35,79 @@ export default function SavedOutfitsPage() {
   const [showShareToast, setShowShareToast] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string>("");
 
+  // Filter states
+  const [showFilters, setShowFilters] = useState(false);
+  const [brandFilters, setBrandFilters] = useState<string[]>([]);
+  const [styleFilters, setStyleFilters] = useState<string[]>([]);
+  const [weatherFilter, setWeatherFilter] = useState<string>("");
+  const [occasionFilter, setOccasionFilter] = useState<string>("");
+  const [dressCodeFilter, setDressCodeFilter] = useState<string>("");
+  const [priceRange, setPriceRange] = useState<[number, number]>([0, 1000]);
+  const [newBrand, setNewBrand] = useState("");
+  const [showBrandInput, setShowBrandInput] = useState(false);
+
+  // Available options
+  const AVAILABLE_STYLES = [
+    "Minimalist",
+    "Streetwear",
+    "Classic",
+    "Bohemian",
+    "Preppy",
+    "Athleisure",
+    "Vintage",
+    "Elegant",
+    "Casual",
+  ];
+
+  const AVAILABLE_WEATHER = ["Spring", "Summer", "Fall", "Winter", "All Season"];
+
+  const AVAILABLE_OCCASIONS = [
+    "Formal Dinner",
+    "Casual Outing",
+    "Business Meeting",
+    "Date Night",
+    "Wedding Guest",
+    "Job Interview",
+    "Everyday Casual",
+  ];
+
+  const AVAILABLE_DRESS_CODES = [
+    "Black Tie",
+    "Formal",
+    "Business",
+    "Smart Casual",
+    "Casual",
+  ];
+
+  // Helper to build filter query
+  const buildFilters = () => {
+    const filters: {
+      collectionName?: string;
+      brand?: string;
+      category?: string;
+      minPrice?: number;
+      maxPrice?: number;
+      weather?: string;
+    } = {};
+
+    if (selectedCollection) filters.collectionName = selectedCollection;
+    if (brandFilters.length > 0) filters.brand = brandFilters.join(",");
+    if (styleFilters.length > 0) filters.category = styleFilters.join(",");
+    if (weatherFilter) filters.weather = weatherFilter;
+    if (priceRange[0] > 0) filters.minPrice = priceRange[0];
+    if (priceRange[1] < 1000) filters.maxPrice = priceRange[1];
+
+    return Object.keys(filters).length > 0 ? filters : undefined;
+  };
+
   // Fetch saved outfits and collections
   useEffect(() => {
     if (!user) return;
 
     setLoading(true);
+
     Promise.all([
-      getSavedOutfits(user.uid, selectedCollection || undefined),
+      getSavedOutfits(user.uid, buildFilters()),
       getCollections(user.uid),
     ])
       .then(([outfits, cols]) => {
@@ -54,7 +120,7 @@ export default function SavedOutfitsPage() {
         setCollections([]);
       })
       .finally(() => setLoading(false));
-  }, [user, selectedCollection]);
+  }, [user, selectedCollection, brandFilters, styleFilters, weatherFilter, occasionFilter, dressCodeFilter, priceRange]);
 
   const handleDelete = async (savedOutfitId: string) => {
     if (!user) return;
@@ -66,7 +132,7 @@ export default function SavedOutfitsPage() {
     try {
       await deleteSavedOutfit(user.uid, savedOutfitId);
       // Refresh list
-      const updated = await getSavedOutfits(user.uid, selectedCollection || undefined);
+      const updated = await getSavedOutfits(user.uid, buildFilters());
       setSavedOutfits(updated);
     } catch (err: any) {
       console.error("Failed to delete outfit:", err);
@@ -88,7 +154,7 @@ export default function SavedOutfitsPage() {
         is_purchased: !currentStatus,
       });
       // Refresh list
-      const updated = await getSavedOutfits(user.uid, selectedCollection || undefined);
+      const updated = await getSavedOutfits(user.uid, buildFilters());
       setSavedOutfits(updated);
     } catch (err: any) {
       console.error("Failed to update outfit:", err);
@@ -110,7 +176,7 @@ export default function SavedOutfitsPage() {
         collection_name: newCollection,
       });
       // Refresh list
-      const updated = await getSavedOutfits(user.uid, selectedCollection || undefined);
+      const updated = await getSavedOutfits(user.uid, buildFilters());
       setSavedOutfits(updated);
       const updatedCollections = await getCollections(user.uid);
       setCollections(updatedCollections);
@@ -225,6 +291,279 @@ export default function SavedOutfitsPage() {
               {collection}
             </button>
           ))}
+        </div>
+
+        {/* Advanced Filters */}
+        <div className="mb-6">
+          <button
+            onClick={() => setShowFilters(!showFilters)}
+            className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-stone-900 rounded-lg border border-stone-200 dark:border-stone-800 text-stone-700 dark:text-stone-300 hover:bg-stone-50 dark:hover:bg-stone-800 transition-colors"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+            </svg>
+            <span className="font-semibold">Filters</span>
+            {(brandFilters.length > 0 || styleFilters.length > 0 || weatherFilter || occasionFilter || dressCodeFilter || priceRange[0] > 0 || priceRange[1] < 1000) && (
+              <span className="ml-1 px-2 py-0.5 bg-brand text-white text-xs rounded-full">Active</span>
+            )}
+          </button>
+
+          {showFilters && (
+            <div className="mt-4 p-6 bg-white dark:bg-stone-900 rounded-xl border border-stone-200 dark:border-stone-800 space-y-8">
+              {/* Target Occasion */}
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-xs font-black uppercase tracking-[0.2em] text-gray-400 dark:text-stone-500 flex items-center gap-2">
+                    <span>📅</span> Target Occasion
+                  </h3>
+                  <span className="text-xs text-gray-400 dark:text-stone-500">ONE CHOICE</span>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {AVAILABLE_OCCASIONS.map((occasion) => {
+                    const isSelected = occasionFilter === occasion;
+                    return (
+                      <button
+                        key={occasion}
+                        onClick={() => setOccasionFilter(isSelected ? "" : occasion)}
+                        className={`px-5 py-2.5 rounded-full text-sm font-semibold transition-all ${
+                          isSelected
+                            ? "bg-brand text-white shadow-md"
+                            : "bg-gray-50 dark:bg-stone-800 text-gray-700 dark:text-stone-300 hover:bg-gray-100 dark:hover:bg-stone-700"
+                        }`}
+                      >
+                        {occasion}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Weather & Dress Code - Side by Side */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                {/* Weather */}
+                <div className="space-y-4">
+                  <h3 className="text-xs font-black uppercase tracking-[0.2em] text-gray-400 dark:text-stone-500 flex items-center gap-2">
+                    <span>☁️</span> Weather
+                  </h3>
+                  <div className="flex flex-wrap gap-2">
+                    {AVAILABLE_WEATHER.map((weather) => {
+                      const isSelected = weatherFilter === weather;
+                      return (
+                        <button
+                          key={weather}
+                          onClick={() => setWeatherFilter(isSelected ? "" : weather)}
+                          className={`px-5 py-2.5 rounded-full text-sm font-semibold transition-all ${
+                            isSelected
+                              ? "bg-brand text-white shadow-md"
+                              : "bg-gray-50 dark:bg-stone-800 text-gray-700 dark:text-stone-300 hover:bg-gray-100 dark:hover:bg-stone-700"
+                          }`}
+                        >
+                          {weather}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Dress Code */}
+                <div className="space-y-4">
+                  <h3 className="text-xs font-black uppercase tracking-[0.2em] text-gray-400 dark:text-stone-500 flex items-center gap-2">
+                    <span>🛍️</span> Dress Code
+                  </h3>
+                  <div className="flex flex-wrap gap-2">
+                    {AVAILABLE_DRESS_CODES.map((code) => {
+                      const isSelected = dressCodeFilter === code;
+                      return (
+                        <button
+                          key={code}
+                          onClick={() => setDressCodeFilter(isSelected ? "" : code)}
+                          className={`px-5 py-2.5 rounded-full text-sm font-semibold transition-all ${
+                            isSelected
+                              ? "bg-brand text-white shadow-md"
+                              : "bg-gray-50 dark:bg-stone-800 text-gray-700 dark:text-stone-300 hover:bg-gray-100 dark:hover:bg-stone-700"
+                          }`}
+                        >
+                          {code}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+
+              {/* Preferred Styles */}
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-xs font-black uppercase tracking-[0.2em] text-gray-400 dark:text-stone-500 flex items-center gap-2">
+                    <span>💛</span> Preferred Styles
+                  </h3>
+                  <span className="text-xs text-gray-400 dark:text-stone-500">SELECT MULTIPLE</span>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {AVAILABLE_STYLES.map((style) => {
+                    const isSelected = styleFilters.includes(style);
+                    return (
+                      <button
+                        key={style}
+                        onClick={() => {
+                          if (isSelected) {
+                            setStyleFilters((prev) => prev.filter((s) => s !== style));
+                          } else {
+                            setStyleFilters((prev) => [...prev, style]);
+                          }
+                        }}
+                        className={`px-5 py-2.5 rounded-full text-sm font-semibold transition-all ${
+                          isSelected
+                            ? "bg-[#D4AF37] text-white shadow-md"
+                            : "bg-gray-50 dark:bg-stone-800 text-gray-700 dark:text-stone-300 hover:bg-gray-100 dark:hover:bg-stone-700"
+                        }`}
+                      >
+                        {style}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Price Range & Brands */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                {/* Price Range */}
+                <div className="space-y-4">
+                  <div className="flex justify-between items-center">
+                    <h3 className="text-xs font-black uppercase tracking-[0.2em] text-gray-400 dark:text-stone-500">
+                      Price Range
+                    </h3>
+                    <span className="text-sm font-bold text-brand dark:text-brand-400">
+                      ${priceRange[0]} - ${priceRange[1]}
+                    </span>
+                  </div>
+                  <div className="space-y-4">
+                    <div>
+                      <label className="text-xs text-gray-500 dark:text-stone-400 mb-2 block">Min: ${priceRange[0]}</label>
+                      <input
+                        type="range"
+                        min={0}
+                        max={1000}
+                        step={10}
+                        value={priceRange[0]}
+                        onChange={(e) => setPriceRange([Number(e.target.value), priceRange[1]])}
+                        className="w-full accent-brand"
+                        style={{
+                          WebkitAppearance: "none",
+                          height: "4px",
+                          background: "#e2e8f0",
+                          borderRadius: "2px",
+                          outline: "none",
+                        }}
+                      />
+                    </div>
+                    <div>
+                      <label className="text-xs text-gray-500 dark:text-stone-400 mb-2 block">Max: ${priceRange[1]}</label>
+                      <input
+                        type="range"
+                        min={0}
+                        max={1000}
+                        step={10}
+                        value={priceRange[1]}
+                        onChange={(e) => setPriceRange([priceRange[0], Number(e.target.value)])}
+                        className="w-full accent-brand"
+                        style={{
+                          WebkitAppearance: "none",
+                          height: "4px",
+                          background: "#e2e8f0",
+                          borderRadius: "2px",
+                          outline: "none",
+                        }}
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Brands */}
+                <div className="space-y-4">
+                  <h3 className="text-xs font-black uppercase tracking-[0.2em] text-gray-400 dark:text-stone-500">
+                    Brands
+                  </h3>
+                  <div className="flex flex-wrap gap-2">
+                    {brandFilters.map((brand) => (
+                      <span
+                        key={brand}
+                        className="inline-flex items-center gap-2 px-4 py-2 bg-gray-50 dark:bg-stone-800 rounded-full text-xs font-bold text-gray-600 dark:text-stone-300 border border-gray-100 dark:border-stone-700"
+                      >
+                        {brand}
+                        <button
+                          onClick={() => setBrandFilters((prev) => prev.filter((b) => b !== brand))}
+                          className="hover:text-red-500 transition-colors"
+                        >
+                          ✕
+                        </button>
+                      </span>
+                    ))}
+                    {showBrandInput ? (
+                      <div className="flex gap-2">
+                        <input
+                          autoFocus
+                          value={newBrand}
+                          onChange={(e) => setNewBrand(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter" && newBrand.trim()) {
+                              setBrandFilters((prev) => [...prev, newBrand.trim()]);
+                              setNewBrand("");
+                              setShowBrandInput(false);
+                            }
+                          }}
+                          placeholder="Brand name"
+                          className="px-3 py-1.5 text-xs border border-brand/30 dark:border-brand/50 rounded-full outline-none focus:border-brand bg-white dark:bg-stone-900 text-gray-700 dark:text-stone-300"
+                        />
+                        <button
+                          onClick={() => {
+                            if (newBrand.trim()) {
+                              setBrandFilters((prev) => [...prev, newBrand.trim()]);
+                              setNewBrand("");
+                              setShowBrandInput(false);
+                            }
+                          }}
+                          className="text-xs font-bold text-brand dark:text-brand-400 hover:underline"
+                        >
+                          Add
+                        </button>
+                        <button
+                          onClick={() => setShowBrandInput(false)}
+                          className="text-xs text-gray-400 dark:text-stone-500 hover:text-gray-600 dark:hover:text-stone-300"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    ) : (
+                      <button
+                        onClick={() => setShowBrandInput(true)}
+                        className="inline-flex items-center gap-2 px-4 py-2 bg-white dark:bg-stone-900 rounded-full text-xs font-bold text-brand dark:text-brand-400 border border-brand/20 dark:border-brand/30 hover:bg-brand/5 dark:hover:bg-brand/10"
+                      >
+                        + Add Brand
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Clear All Filters */}
+              <div className="pt-6 border-t border-stone-200 dark:border-stone-800 flex justify-end">
+                <button
+                  onClick={() => {
+                    setBrandFilters([]);
+                    setStyleFilters([]);
+                    setWeatherFilter("");
+                    setOccasionFilter("");
+                    setDressCodeFilter("");
+                    setPriceRange([0, 1000]);
+                  }}
+                  className="px-6 py-2 bg-stone-100 dark:bg-stone-800 text-stone-700 dark:text-stone-300 rounded-lg hover:bg-stone-200 dark:hover:bg-stone-700 font-semibold transition-colors"
+                >
+                  Clear All Filters
+                </button>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Loading State */}

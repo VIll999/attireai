@@ -129,13 +129,19 @@ def save_outfit(
 def get_saved_outfits(
     collection_name: Optional[str] = None,
     is_purchased: Optional[bool] = None,
+    brand: Optional[str] = None,
+    category: Optional[str] = None,
+    min_price: Optional[float] = None,
+    max_price: Optional[float] = None,
+    color: Optional[str] = None,
+    weather: Optional[str] = None,
     x_firebase_uid: Optional[str] = Header(None),
     db: Session = Depends(get_db),
 ):
     """
     Get all saved outfits for the current user.
 
-    - Optional filters: collection_name, is_purchased
+    - Optional filters: collection_name, is_purchased, brand, category, min_price, max_price, color, weather
     - Returns saved outfits with full recommendation details (items, occasion, etc.)
     - Ordered by created_at DESC (newest first)
     """
@@ -161,6 +167,53 @@ def get_saved_outfits(
 
         rec_dict = None
         if recommendation:
+            # Filter by weather at recommendation level
+            if weather:
+                weather_list = [w.strip() for w in weather.split(",")]
+                if recommendation.weather:
+                    # Check if any of the requested weather types match
+                    weather_match = any(w.lower() in recommendation.weather.lower() for w in weather_list)
+                    if not weather_match:
+                        continue
+                else:
+                    continue
+
+            # Apply item-level filters
+            filtered_items = recommendation.items
+
+            # Filter by brand
+            if brand:
+                filtered_items = [item for item in filtered_items if item.brand and brand.lower() in item.brand.lower()]
+
+            # Filter by category (used for style keywords)
+            if category:
+                category_list = [c.strip() for c in category.split(",")]
+                # For now, skip category filtering since we don't have style metadata on items
+                # This would need to be implemented based on how styles are stored
+                pass
+
+            # Filter by price range
+            if min_price is not None:
+                filtered_items = [item for item in filtered_items if item.price and float(item.price) >= min_price]
+
+            if max_price is not None:
+                filtered_items = [item for item in filtered_items if item.price and float(item.price) <= max_price]
+
+            # Filter by color (check if color exists in the colors JSON field)
+            if color:
+                filtered_items = [
+                    item for item in filtered_items
+                    if item.colors and (
+                        isinstance(item.colors, str) and color.lower() in item.colors.lower()
+                        or isinstance(item.colors, list) and any(color.lower() in str(c).lower() for c in item.colors)
+                        or isinstance(item.colors, dict) and color.lower() in str(item.colors).lower()
+                    )
+                ]
+
+            # Skip this outfit if no items match the filters
+            if not filtered_items and (brand or min_price is not None or max_price is not None or color):
+                continue
+
             # Convert recommendation to dict with items
             rec_dict = {
                 "id": recommendation.id,

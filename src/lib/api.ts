@@ -665,15 +665,42 @@ export async function saveOutfit(
  */
 export async function getSavedOutfits(
   firebaseUid: string,
-  collectionName?: string,
-  isPurchased?: boolean
+  filters?: {
+    collectionName?: string;
+    isPurchased?: boolean;
+    brand?: string;
+    category?: string;
+    minPrice?: number;
+    maxPrice?: number;
+    color?: string;
+    weather?: string;
+  }
 ): Promise<SavedOutfitWithDetailsResponse[]> {
   const params = new URLSearchParams();
-  if (collectionName) {
-    params.append("collection_name", collectionName);
+
+  if (filters?.collectionName) {
+    params.append("collection_name", filters.collectionName);
   }
-  if (isPurchased !== undefined) {
-    params.append("is_purchased", isPurchased.toString());
+  if (filters?.isPurchased !== undefined) {
+    params.append("is_purchased", filters.isPurchased.toString());
+  }
+  if (filters?.brand) {
+    params.append("brand", filters.brand);
+  }
+  if (filters?.category) {
+    params.append("category", filters.category);
+  }
+  if (filters?.minPrice !== undefined) {
+    params.append("min_price", filters.minPrice.toString());
+  }
+  if (filters?.maxPrice !== undefined) {
+    params.append("max_price", filters.maxPrice.toString());
+  }
+  if (filters?.color) {
+    params.append("color", filters.color);
+  }
+  if (filters?.weather) {
+    params.append("weather", filters.weather);
   }
 
   const url = `${API_URL}/saved-outfits${params.toString() ? `?${params.toString()}` : ""}`;
