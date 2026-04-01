@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import AppNav from "@/components/AppNav";
 import { useAuth } from "@/context/AuthContext";
 import { useLocale } from "@/context/LocaleContext";
@@ -279,71 +280,81 @@ export default function SavedOutfitsPage() {
                   key={saved.id}
                   className="bg-white dark:bg-stone-900 rounded-xl shadow-sm border border-stone-200 dark:border-stone-800 overflow-hidden"
                 >
-                  {/* Image */}
-                  <div className="relative aspect-[3/4] bg-stone-100 dark:bg-stone-800">
-                    {displayItem?.image_url ? (
-                      <img
-                        src={displayItem.image_url}
-                        alt={displayItem.name || "Outfit"}
-                        className="w-full h-full object-cover"
-                        onError={(e) => {
-                          e.currentTarget.style.display = "none";
-                          if (e.currentTarget.nextElementSibling) {
-                            (e.currentTarget.nextElementSibling as HTMLElement).classList.remove(
-                              "hidden"
-                            );
-                          }
-                        }}
-                      />
-                    ) : null}
-                    <div
-                      className={`absolute inset-0 flex items-center justify-center text-6xl ${
-                        displayItem?.image_url ? "hidden" : ""
-                      }`}
-                    >
-                      {CATEGORY_ICONS[(displayItem?.category || "").toUpperCase()] || "👔"}
-                    </div>
-
-                    {/* Purchased Badge */}
-                    {saved.is_purchased && (
-                      <div className="absolute top-3 left-3 bg-green-500 text-white px-3 py-1 rounded-full text-xs font-bold">
-                        Purchased
+                  <Link href={`/saved-outfits/${saved.id}`} className="block">
+                    {/* Image */}
+                    <div className="relative aspect-[3/4] bg-stone-100 dark:bg-stone-800 group cursor-pointer">
+                      {displayItem?.image_url ? (
+                        <img
+                          src={displayItem.image_url}
+                          alt={displayItem.name || "Outfit"}
+                          className="w-full h-full object-cover transition-transform group-hover:scale-105"
+                          onError={(e) => {
+                            e.currentTarget.style.display = "none";
+                            if (e.currentTarget.nextElementSibling) {
+                              (e.currentTarget.nextElementSibling as HTMLElement).classList.remove(
+                                "hidden"
+                              );
+                            }
+                          }}
+                        />
+                      ) : null}
+                      <div
+                        className={`absolute inset-0 flex items-center justify-center text-6xl ${
+                          displayItem?.image_url ? "hidden" : ""
+                        }`}
+                      >
+                        {CATEGORY_ICONS[(displayItem?.category || "").toUpperCase()] || "👔"}
                       </div>
-                    )}
-                  </div>
 
-                  {/* Details */}
-                  <div className="p-4">
-                    <div className="flex items-start justify-between mb-3">
-                      <div className="flex-1 min-w-0">
-                        <h3 className="text-lg font-bold text-stone-900 dark:text-white mb-1">
-                          {rec.occasion || "Outfit"}
-                        </h3>
-                        <p className="text-xs text-stone-500 dark:text-stone-400">
-                          Saved {formatDate(saved.created_at)}
-                        </p>
-                      </div>
-                      {totalPrice > 0 && (
-                        <div className="text-lg font-bold text-brand">
-                          ${totalPrice.toFixed(0)}
+                      {/* Purchased Badge */}
+                      {saved.is_purchased && (
+                        <div className="absolute top-3 left-3 bg-green-500 text-white px-3 py-1 rounded-full text-xs font-bold">
+                          Purchased
                         </div>
                       )}
                     </div>
 
-                    {/* Metadata */}
-                    <div className="flex flex-wrap gap-2 mb-3">
-                      {rec.weather && (
-                        <span className="text-xs bg-stone-100 dark:bg-stone-800 px-2 py-1 rounded text-stone-600 dark:text-stone-400">
-                          {rec.weather}
-                        </span>
-                      )}
-                      {rec.dress_code && (
-                        <span className="text-xs bg-stone-100 dark:bg-stone-800 px-2 py-1 rounded text-stone-600 dark:text-stone-400">
-                          {rec.dress_code}
-                        </span>
-                      )}
-                    </div>
+                    {/* Details */}
+                    <div className="p-4 pb-3">
+                      <div className="flex items-start justify-between mb-3">
+                        <div className="flex-1 min-w-0">
+                          <h3 className="text-lg font-bold text-stone-900 dark:text-white mb-1 group-hover:text-brand transition-colors">
+                            {rec.occasion || "Outfit"}
+                          </h3>
+                          <p className="text-xs text-stone-500 dark:text-stone-400">
+                            Saved {formatDate(saved.created_at)}
+                          </p>
+                        </div>
+                        {totalPrice > 0 && (
+                          <div className="text-lg font-bold text-brand">
+                            ${totalPrice.toFixed(0)}
+                          </div>
+                        )}
+                      </div>
 
+                      {/* Metadata */}
+                      <div className="flex flex-wrap gap-2 mb-3">
+                        {rec.weather && (
+                          <span className="text-xs bg-stone-100 dark:bg-stone-800 px-2 py-1 rounded text-stone-600 dark:text-stone-400">
+                            {rec.weather}
+                          </span>
+                        )}
+                        {rec.dress_code && (
+                          <span className="text-xs bg-stone-100 dark:bg-stone-800 px-2 py-1 rounded text-stone-600 dark:text-stone-400">
+                            {rec.dress_code}
+                          </span>
+                        )}
+                      </div>
+
+                      {/* Item Count */}
+                      <p className="text-xs text-stone-500 dark:text-stone-400 text-center">
+                        {rec.items?.length || 0} items • Click to view details
+                      </p>
+                    </div>
+                  </Link>
+
+                  {/* Interactive Controls (Outside Link) */}
+                  <div className="px-4 pb-4">
                     {/* Collection Selector */}
                     <div className="mb-3">
                       <label className="text-xs text-stone-600 dark:text-stone-400 mb-1 block">
@@ -420,11 +431,6 @@ export default function SavedOutfitsPage() {
                         </svg>
                       </button>
                     </div>
-
-                    {/* Item Count */}
-                    <p className="text-xs text-stone-500 dark:text-stone-400 mt-3 text-center">
-                      {rec.items?.length || 0} items in this outfit
-                    </p>
                   </div>
                 </div>
               );

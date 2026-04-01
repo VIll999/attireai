@@ -182,6 +182,7 @@ def get_saved_outfits(
                         "image_url": item.image_url,
                         "purchase_url": item.purchase_url,
                         "recommended_size": item.recommended_size,
+                        "recommended_color": item.colors,
                         "outfit_index": item.outfit_index,
                     }
                     for item in recommendation.items
@@ -209,7 +210,7 @@ def get_saved_outfit(
     db: Session = Depends(get_db),
 ):
     """Get a specific saved outfit with full details"""
-    user = _get_user_by_uid(db, x_firebase_uid)
+    user = get_user_by_uid(x_firebase_uid, db)
 
     saved_outfit = db.query(SavedOutfit).filter(
         SavedOutfit.id == saved_outfit_id,
@@ -249,6 +250,7 @@ def get_saved_outfit(
                     "image_url": item.image_url,
                     "purchase_url": item.purchase_url,
                     "recommended_size": item.recommended_size,
+                    "recommended_color": item.colors,
                     "outfit_index": item.outfit_index,
                 }
                 for item in recommendation.items
