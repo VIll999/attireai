@@ -548,6 +548,7 @@ export async function rateOutfitRecommendation(
   return response.json();
 }
 
+<<<<<<< HEAD
 /**
  * Get alternative items for a specific category in an outfit
  */
@@ -576,11 +577,21 @@ export async function getAlternativeItems(
   data: AlternativeItemsRequest
 ): Promise<AlternativeItemsResponse> {
   const response = await fetch(`${API_URL}/recommendations/alternatives`, {
+=======
+// ── Vision / Color Analysis ──
+
+export async function analyzePhotoColors(
+  firebaseUid: string,
+  photoBase64: string
+): Promise<{ skin_tone: string; skin_tone_hex: string; hair_color: string; hair_color_hex: string }> {
+  const response = await fetch(`${API_URL}/vision/analyze-colors`, {
+>>>>>>> main
     method: "POST",
     headers: {
       "Content-Type": "application/json",
       "X-Firebase-UID": firebaseUid,
     },
+<<<<<<< HEAD
     body: JSON.stringify(data),
   });
 
@@ -750,5 +761,10 @@ export async function getCollections(firebaseUid: string): Promise<string[]> {
     throw new Error("Failed to get collections");
   }
 
+=======
+    body: JSON.stringify({ photo_base64: photoBase64 }),
+  });
+  if (!response.ok) throw new Error("Color analysis failed");
+>>>>>>> main
   return response.json();
 }
