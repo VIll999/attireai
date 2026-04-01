@@ -19,7 +19,12 @@ from app.db.models import (
     OutfitRecommendation,
     RecommendationItem,
 )
-from app.models.recommendations_ai import AIWebCandidatesRequest, AIWebCandidatesResponse
+from app.models.recommendations_ai import (
+    AIWebCandidatesRequest,
+    AIWebCandidatesResponse,
+    AlternativeItemsRequest,
+    AlternativeItemsResponse,
+)
 
 settings = get_settings()
 
@@ -473,3 +478,251 @@ class RecommendationsAIService:
             "items": all_items,
             "debug": {"provider": "mock" if use_mock else settings.ai_provider},
         })
+
+    # ---- Alternative items generation ----
+
+    def generate_alternative_items(
+        self, db: Session, firebase_uid: str, req: AlternativeItemsRequest,
+    ) -> AlternativeItemsResponse:
+        """
+        Generate alternative items for a specific category within an outfit context.
+
+        This focuses on finding alternatives for ONE specific item category
+        while respecting the same outfit constraints (color palette, style, budget, etc.)
+        """
+        user = self._get_user_by_uid(db, firebase_uid)
+        measurement = self._get_measurement_profile(db, user.id, req.measurement_profile_id)
+        color = self._get_color_profile(db, user.id)
+        style = self._get_style_preference(db, user.id)
+
+        use_mock = not self._ai_available()
+
+        if use_mock:
+            # For mock mode, get items from the same category from mock data
+            result = self._get_mock_alternatives(req, measurement)
+        else:
+            # Build AI context focused on this specific category
+            context_payload = self._build_alternative_context(user, measurement, color, style, req)
+            result = self._call_ai_for_alternatives(context_payload, req)
+            result = self._post_process_alternative_items(result, measurement, req)
+
+        return AlternativeItemsResponse.model_validate({
+            "items": result.get("items", []),
+            "debug": {"provider": "mock" if use_mock else settings.ai_provider},
+        })
+
+    def _build_alternative_context(
+        self,
+        user: User,
+        measurement: Optional[MeasurementProfile],
+        color: Optional[ColorProfile],
+        style: Optional[StylePreferences],
+        req: AlternativeItemsRequest,
+    ) -> Dict[str, Any]:
+        """Build AI prompt context for finding alternative items."""
+        payload: Dict[str, Any] = {
+            "context": {
+                "occasion": req.occasion,
+                "weather": req.weather,
+                "location": req.location,
+                "dress_code": req.dress_code,
+                "budget": req.budget,
+                "currency": req.currency,
+                "styles": req.styles,
+            },
+            "category": req.category,
+            "num_items": req.num_alternatives,
+            "original_item": {
+                "name": req.original_item_name,
+                "brand": req.original_item_brand,
+            },
+        }
+
+        if measurement:
+            payload["measurements"] = {
+                "height": float(measurement.height) if measurement.height is not None else None,
+                "weight": float(measurement.weight) if measurement.weight is not None else None,
+                "chest": float(measurement.chest) if measurement.chest is not None else None,
+                "waist": float(measurement.waist) if measurement.waist is not None else None,
+                "hip": float(measurement.hip) if measurement.hip is not None else None,
+                "inseam": float(measurement.inseam) if measurement.inseam is not None else None,
+            }
+
+        if color:
+            payload["color_profile"] = {
+                "skin_tone": color.skin_tone,
+                "hair_color": color.hair_color,
+                "recommended_palette": color.recommended_palette,
+            }
+
+        if style:
+            payload["style_preferences"] = {
+                "preferred_styles": style.preferred_styles,
+                "avoided_styles": style.avoided_styles,
+                "price_range": style.price_range,
+                "preferred_brands": style.preferred_brands,
+            }
+
+        return payload
+
+    def _call_ai_for_alternatives(self, context_payload: Dict[str, Any], req: AlternativeItemsRequest) -> Dict[str, Any]:
+        """Call AI to generate alternative items for a specific category."""
+        from google.genai.types import Tool, GoogleSearch, GenerateContentConfig
+
+        # Custom prompt for finding alternatives
+        alt_system_prompt = (
+            f"You are a fashion product discovery assistant.\n"
+            f"Find {req.num_alternatives} REAL alternative {req.category} items that match the user's context and preferences.\n"
+            f"The user is looking for alternatives to: {req.original_item_name or 'their current item'}\n"
+            f"Return ONLY valid JSON with this structure:\n"
+            f"{{items: [{{name, brand, category, source_urls, price, currency, image_url, purchase_url, recommended_color}}]}}\n"
+            f"IMPORTANT:\n"
+            f"- All items MUST be in the {req.category} category\n"
+            f"- Find real products with real prices from real stores\n"
+            f"- category should be: {req.category}\n"
+            f"- If price is unknown, omit it\n"
+            f"- Include source_urls from search results\n"
+            f"- image_url and purchase_url should be real links when available\n"
+            f"- Each alternative should be stylistically different from the others\n"
+            f"- Respect the budget constraint if provided\n"
+        )
+
+        user_msg = json.dumps(context_payload, ensure_ascii=False)
+
+        provider = settings.ai_provider
+
+        if provider == "gemini":
+            client = self._get_gemini_client()
+            response = client.models.generate_content(
+                model=settings.gemini_model or "gemini-2.5-flash",
+                contents=f"{alt_system_prompt}\n\nUser context:\n{user_msg}",
+                config=GenerateContentConfig(
+                    tools=[Tool(google_search=GoogleSearch())],
+                ),
+            )
+
+            # Extract JSON from response text
+            text = response.text.strip()
+            if text.startswith("```"):
+                lines = text.split("\n")
+                lines = lines[1:] if lines[0].startswith("```") else lines
+                if lines and lines[-1].strip() == "```":
+                    lines = lines[:-1]
+                text = "\n".join(lines)
+            return json.loads(text)
+
+        elif provider == "openai":
+            client = self._get_openai_client()
+
+            schema = {
+                "name": "alternative_items",
+                "schema": {
+                    "type": "object",
+                    "properties": {
+                        "items": {
+                            "type": "array",
+                            "items": {
+                                "type": "object",
+                                "properties": {
+                                    "name": {"type": "string"},
+                                    "brand": {"type": "string"},
+                                    "category": {"type": "string"},
+                                    "source_urls": {"type": "array", "items": {"type": "string"}},
+                                    "price": {"type": "number"},
+                                    "currency": {"type": "string"},
+                                    "image_url": {"type": "string"},
+                                    "purchase_url": {"type": "string"},
+                                    "recommended_color": {"type": "string"},
+                                },
+                                "required": ["name", "category"],
+                            },
+                        }
+                    },
+                    "required": ["items"],
+                },
+                "strict": False,
+            }
+
+            resp = client.responses.create(
+                model=settings.openai_model or "gpt-4.1-mini",
+                input=[
+                    {"role": "system", "content": alt_system_prompt},
+                    {"role": "user", "content": user_msg},
+                ],
+                tools=[{"type": "web_search"}],
+                text={
+                    "format": {
+                        "type": "json_schema",
+                        "name": schema["name"],
+                        "schema": schema["schema"],
+                        "strict": schema["strict"],
+                    }
+                },
+            )
+
+            raw = getattr(resp, "output_text", None)
+            if not raw:
+                raw = ""
+                for item in getattr(resp, "output", []) or []:
+                    for c in getattr(item, "content", []) or []:
+                        if getattr(c, "type", None) in ("output_text", "text"):
+                            raw += getattr(c, "text", "")
+
+            return json.loads(raw)
+
+        else:
+            raise RuntimeError(f"Unknown AI provider: {provider}")
+
+    def _post_process_alternative_items(
+        self, result: Dict[str, Any], measurement: Optional[MeasurementProfile], req: AlternativeItemsRequest,
+    ) -> Dict[str, Any]:
+        """Post-process alternative items to ensure consistency."""
+        items = result.get("items", [])
+        processed_items = []
+
+        for it in items:
+            cat_norm = normalize_category(it.get("category"))
+            if cat_norm != req.category:
+                # Skip items that don't match the requested category
+                continue
+
+            it["category"] = cat_norm
+            if not it.get("currency"):
+                it["currency"] = req.currency
+            if not it.get("purchase_url"):
+                urls = it.get("source_urls") or []
+                it["purchase_url"] = urls[0] if urls else None
+            it["recommended_size"] = self._recommended_size(cat_norm, measurement)
+            processed_items.append(it)
+
+        return {"items": processed_items[:req.num_alternatives]}
+
+    def _get_mock_alternatives(self, req: AlternativeItemsRequest, measurement: Optional[MeasurementProfile]) -> Dict[str, Any]:
+        """Get mock alternative items for testing."""
+        occasion = (req.occasion or "casual").lower()
+        category_upper = req.category.upper()
+
+        # Get items from mock data
+        occasion_data = MOCK_PRODUCTS.get(occasion) or MOCK_PRODUCTS.get("casual", {})
+
+        all_items = []
+        if isinstance(occasion_data, dict) and "outfits" in occasion_data:
+            for outfit in occasion_data["outfits"]:
+                all_items.extend(outfit.get("items", []))
+        elif isinstance(occasion_data, list):
+            all_items = occasion_data
+
+        # Filter by category
+        matching_items = [
+            item for item in all_items
+            if normalize_category(item.get("category")) == req.category
+        ]
+
+        # Add recommended size
+        result_items = []
+        for it in matching_items[:req.num_alternatives]:
+            item = dict(it)
+            item["recommended_size"] = self._recommended_size(item.get("category"), measurement)
+            result_items.append(item)
+
+        return {"items": result_items}

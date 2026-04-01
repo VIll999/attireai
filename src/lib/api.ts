@@ -547,3 +547,208 @@ export async function rateOutfitRecommendation(
 
   return response.json();
 }
+
+/**
+ * Get alternative items for a specific category in an outfit
+ */
+export interface AlternativeItemsRequest {
+  measurement_profile_id?: string;
+  category: string;
+  occasion?: string;
+  weather?: string;
+  location?: string;
+  dress_code?: string;
+  budget?: number;
+  currency?: string;
+  styles?: string[];
+  original_item_name?: string;
+  original_item_brand?: string;
+  num_alternatives?: number;
+}
+
+export interface AlternativeItemsResponse {
+  items: AIRecommendationItem[];
+  debug?: Record<string, unknown>;
+}
+
+export async function getAlternativeItems(
+  firebaseUid: string,
+  data: AlternativeItemsRequest
+): Promise<AlternativeItemsResponse> {
+  const response = await fetch(`${API_URL}/recommendations/alternatives`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "X-Firebase-UID": firebaseUid,
+    },
+    body: JSON.stringify(data),
+  });
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({ detail: "Failed to get alternative items" }));
+    throw new Error(error.detail || "Failed to get alternative items");
+  }
+
+  return response.json();
+}
+
+// --- Saved Outfits API ---
+
+export interface SaveOutfitRequest {
+  recommendation_id: string;
+  collection_name?: string;
+}
+
+export interface UpdateSavedOutfitRequest {
+  collection_name?: string;
+  is_purchased?: boolean;
+}
+
+export interface SavedOutfitResponse {
+  id: string;
+  user_id: string;
+  recommendation_id: string;
+  collection_name: string;
+  is_purchased: boolean;
+  try_on_image_url: string | null;
+  created_at: string;
+}
+
+export interface SavedOutfitWithDetailsResponse extends SavedOutfitResponse {
+  recommendation: OutfitRecommendationResponse | null;
+}
+
+/**
+ * Save an outfit to favorites or a collection
+ */
+export async function saveOutfit(
+  firebaseUid: string,
+  data: SaveOutfitRequest
+): Promise<SavedOutfitResponse> {
+  const response = await fetch(`${API_URL}/saved-outfits`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "X-Firebase-UID": firebaseUid,
+    },
+    body: JSON.stringify(data),
+  });
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({ detail: "Failed to save outfit" }));
+    throw new Error(error.detail || "Failed to save outfit");
+  }
+
+  return response.json();
+}
+
+/**
+ * Get all saved outfits for current user
+ */
+export async function getSavedOutfits(
+  firebaseUid: string,
+  collectionName?: string,
+  isPurchased?: boolean
+): Promise<SavedOutfitWithDetailsResponse[]> {
+  const params = new URLSearchParams();
+  if (collectionName) {
+    params.append("collection_name", collectionName);
+  }
+  if (isPurchased !== undefined) {
+    params.append("is_purchased", isPurchased.toString());
+  }
+
+  const url = `${API_URL}/saved-outfits${params.toString() ? `?${params.toString()}` : ""}`;
+
+  const response = await fetch(url, {
+    headers: {
+      "X-Firebase-UID": firebaseUid,
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error("Failed to get saved outfits");
+  }
+
+  return response.json();
+}
+
+/**
+ * Get a specific saved outfit with details
+ */
+export async function getSavedOutfit(
+  firebaseUid: string,
+  savedOutfitId: string
+): Promise<SavedOutfitWithDetailsResponse> {
+  const response = await fetch(`${API_URL}/saved-outfits/${savedOutfitId}`, {
+    headers: {
+      "X-Firebase-UID": firebaseUid,
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error("Failed to get saved outfit");
+  }
+
+  return response.json();
+}
+
+/**
+ * Update a saved outfit (change collection or mark as purchased)
+ */
+export async function updateSavedOutfit(
+  firebaseUid: string,
+  savedOutfitId: string,
+  data: UpdateSavedOutfitRequest
+): Promise<SavedOutfitResponse> {
+  const response = await fetch(`${API_URL}/saved-outfits/${savedOutfitId}`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+      "X-Firebase-UID": firebaseUid,
+    },
+    body: JSON.stringify(data),
+  });
+
+  if (!response.ok) {
+    throw new Error("Failed to update saved outfit");
+  }
+
+  return response.json();
+}
+
+/**
+ * Delete a saved outfit
+ */
+export async function deleteSavedOutfit(
+  firebaseUid: string,
+  savedOutfitId: string
+): Promise<void> {
+  const response = await fetch(`${API_URL}/saved-outfits/${savedOutfitId}`, {
+    method: "DELETE",
+    headers: {
+      "X-Firebase-UID": firebaseUid,
+    },
+  });
+
+  if (!response.ok && response.status !== 204) {
+    throw new Error("Failed to delete saved outfit");
+  }
+}
+
+/**
+ * Get list of all collection names for current user
+ */
+export async function getCollections(firebaseUid: string): Promise<string[]> {
+  const response = await fetch(`${API_URL}/saved-outfits-collections`, {
+    headers: {
+      "X-Firebase-UID": firebaseUid,
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error("Failed to get collections");
+  }
+
+  return response.json();
+}

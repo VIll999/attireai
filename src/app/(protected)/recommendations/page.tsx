@@ -12,11 +12,17 @@ import {
   getAIRecommendations,
   getOutfitRecommendations,
   rateOutfitRecommendation,
+  getAlternativeItems,
+  AlternativeItemsRequest,
   MeasurementResponse,
   StylePreferencesData,
   AIRecommendationItem,
   AIRecommendationResponse,
   OutfitRecommendationResponse,
+  saveOutfit,
+  deleteSavedOutfit,
+  getSavedOutfits,
+  SavedOutfitWithDetailsResponse,
 } from "@/lib/api";
 
 /* ── helpers ── */
@@ -99,6 +105,17 @@ export default function RecommendationsPage() {
   const [pastLoading, setPastLoading] = useState(false);
   const [expandedRecId, setExpandedRecId] = useState<string | null>(null);
 
+  // Alternative items state
+  const [showAlternatives, setShowAlternatives] = useState(false);
+  const [alternativesLoading, setAlternativesLoading] = useState(false);
+  const [selectedItem, setSelectedItem] = useState<{outfitIdx: number; itemIdx: number; item: AIRecommendationItem} | null>(null);
+  const [alternatives, setAlternatives] = useState<AIRecommendationItem[]>([]);
+
+  // Saved outfits state
+  const [savedOutfits, setSavedOutfits] = useState<SavedOutfitWithDetailsResponse[]>([]);
+  const [savingOutfits, setSavingOutfits] = useState<Set<string>>(new Set());
+  const [saveError, setSaveError] = useState<string>("");
+
   const measurementIdFromUrl = searchParams.get("measurement_id");
 
   // Fetch all measurement profiles on mount
@@ -152,6 +169,14 @@ export default function RecommendationsPage() {
       .catch(() => setPastRecs([]))
       .finally(() => setPastLoading(false));
   }, [user, selectedProfileId, profiles]);
+
+  // Fetch saved outfits when user changes
+  useEffect(() => {
+    if (!user) return;
+    getSavedOutfits(user.uid)
+      .then((data) => setSavedOutfits(data))
+      .catch(() => setSavedOutfits([]));
+  }, [user]);
 
   const outfitGroups = useMemo(() => {
     if (!result?.items?.length) return null;
@@ -229,6 +254,136 @@ export default function RecommendationsPage() {
       setPastRecs((prev) =>
         prev.map((r) => (r.id === recId ? { ...r, user_rating: current ?? null } : r))
       );
+    }
+  };
+
+  const handleShowAlternatives = async (outfitIdx: number, itemIdx: number, item: AIRecommendationItem) => {
+    if (!user || !item.category) return;
+
+    setSelectedItem({outfitIdx, itemIdx, item});
+    setShowAlternatives(true);
+    setAlternativesLoading(true);
+    setAlternatives([]);
+
+    try {
+      const reqData: AlternativeItemsRequest = {
+        measurement_profile_id: selectedProfileId || undefined,
+        category: item.category,
+        occasion: stylePrefs?.occasion || undefined,
+        weather: stylePrefs?.weather || undefined,
+        dress_code: stylePrefs?.dress_code || undefined,
+        budget: budgetFromPriceRange(stylePrefs?.price_range),
+        currency: "USD",
+        styles: stylePrefs?.preferred_styles || [],
+        original_item_name: item.name,
+        original_item_brand: item.brand || undefined,
+        num_alternatives: 5,
+      };
+
+      const response = await getAlternativeItems(user.uid, reqData);
+      setAlternatives(response.items);
+    } catch (err: any) {
+      console.error("Failed to get alternatives:", err);
+      setAlternatives([]);
+    } finally {
+      setAlternativesLoading(false);
+    }
+  };
+
+  const handleSelectAlternative = (alternative: AIRecommendationItem) => {
+    if (!selectedItem || !result) return;
+
+    // Update the outfit with the selected alternative
+    setResult((prev) => {
+      if (!prev) return prev;
+
+      const newItems = [...prev.items];
+      const targetItemIndex = newItems.findIndex(
+        (it) => it.outfit_index === selectedItem.outfitIdx && it.category === selectedItem.item.category
+      );
+
+      if (targetItemIndex >= 0) {
+        newItems[targetItemIndex] = {
+          ...alternative,
+          outfit_index: selectedItem.outfitIdx,
+          reasoning: selectedItem.item.reasoning,
+        };
+      }
+
+      return { ...prev, items: newItems };
+    });
+
+    // Close the modal
+    setShowAlternatives(false);
+    setSelectedItem(null);
+    setAlternatives([]);
+  };
+
+  // Check if an outfit is saved
+  const isOutfitSaved = (recommendationId: string): boolean => {
+    return savedOutfits.some((saved) => saved.recommendation_id === recommendationId);
+  };
+
+  // Get saved outfit entry for a recommendation
+  const getSavedOutfitEntry = (recommendationId: string): SavedOutfitWithDetailsResponse | undefined => {
+    return savedOutfits.find((saved) => saved.recommendation_id === recommendationId);
+  };
+
+  // Handle save outfit
+  const handleSaveOutfit = async (recommendationId: string) => {
+    if (!user || !recommendationId) return;
+
+    setSavingOutfits((prev) => new Set(prev).add(recommendationId));
+    setSaveError("");
+
+    try {
+      await saveOutfit(user.uid, {
+        recommendation_id: recommendationId,
+        collection_name: "Favorites",
+      });
+
+      // Refresh saved outfits list
+      const updated = await getSavedOutfits(user.uid);
+      setSavedOutfits(updated);
+    } catch (err: any) {
+      console.error("Failed to save outfit:", err);
+      setSaveError(err?.message || "Failed to save outfit");
+      setTimeout(() => setSaveError(""), 5000);
+    } finally {
+      setSavingOutfits((prev) => {
+        const newSet = new Set(prev);
+        newSet.delete(recommendationId);
+        return newSet;
+      });
+    }
+  };
+
+  // Handle unsave outfit
+  const handleUnsaveOutfit = async (recommendationId: string) => {
+    if (!user || !recommendationId) return;
+
+    const savedEntry = getSavedOutfitEntry(recommendationId);
+    if (!savedEntry) return;
+
+    setSavingOutfits((prev) => new Set(prev).add(recommendationId));
+    setSaveError("");
+
+    try {
+      await deleteSavedOutfit(user.uid, savedEntry.id);
+
+      // Refresh saved outfits list
+      const updated = await getSavedOutfits(user.uid);
+      setSavedOutfits(updated);
+    } catch (err: any) {
+      console.error("Failed to unsave outfit:", err);
+      setSaveError(err?.message || "Failed to unsave outfit");
+      setTimeout(() => setSaveError(""), 5000);
+    } finally {
+      setSavingOutfits((prev) => {
+        const newSet = new Set(prev);
+        newSet.delete(recommendationId);
+        return newSet;
+      });
     }
   };
 
@@ -496,9 +651,12 @@ export default function RecommendationsPage() {
               <button
                 onClick={onGetRecommendations}
                 disabled={isLoading}
-                className="text-sm font-semibold text-amber-700 dark:text-amber-400 hover:underline disabled:opacity-50"
+                className="group relative bg-brand/10 hover:bg-brand dark:bg-brand/20 dark:hover:bg-brand text-brand hover:text-white dark:text-brand-400 dark:hover:text-white px-6 py-3 rounded-full font-bold text-sm transition-all shadow-sm hover:shadow-md flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                Request New Recommendations
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                </svg>
+                <span>Request New Recommendations</span>
               </button>
             </div>
 
@@ -541,6 +699,32 @@ export default function RecommendationsPage() {
                           title="Dislike this outfit"
                         >
                           <ThumbDown filled={freshRating === "DISLIKE"} />
+                        </button>
+                        <button
+                          onClick={() => {
+                            if (isOutfitSaved(recId)) {
+                              handleUnsaveOutfit(recId);
+                            } else {
+                              handleSaveOutfit(recId);
+                            }
+                          }}
+                          disabled={savingOutfits.has(recId)}
+                          className={`p-1.5 rounded-lg transition-colors ${
+                            isOutfitSaved(recId)
+                              ? "text-amber-600 bg-amber-50 dark:bg-amber-900/30"
+                              : "text-stone-400 hover:text-amber-600 hover:bg-stone-100 dark:hover:bg-stone-800"
+                          } disabled:opacity-50 disabled:cursor-not-allowed`}
+                          title={isOutfitSaved(recId) ? "Unsave outfit" : "Save outfit to favorites"}
+                        >
+                          {savingOutfits.has(recId) ? (
+                            <svg className="w-5 h-5 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                            </svg>
+                          ) : (
+                            <svg className="w-5 h-5" fill={isOutfitSaved(recId) ? "currentColor" : "none"} stroke="currentColor" strokeWidth={isOutfitSaved(recId) ? 0 : 1.5} viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M17.593 3.322c1.1.128 1.907 1.077 1.907 2.185V21L12 17.25 4.5 21V5.507c0-1.108.806-2.057 1.907-2.185a48.507 48.507 0 0111.186 0z" />
+                            </svg>
+                          )}
                         </button>
                       </div>
                     )}
@@ -591,6 +775,16 @@ export default function RecommendationsPage() {
                               {it.recommended_color && (
                                 <p className="text-xs text-stone-500 mt-1">Color: {it.recommended_color}</p>
                               )}
+                              {/* Show Alternatives Button */}
+                              <button
+                                onClick={() => handleShowAlternatives(outfitIdx, idx, it)}
+                                className="mt-3 w-full py-2 px-3 bg-brand/10 hover:bg-brand/20 dark:bg-brand/20 dark:hover:bg-brand/30 text-brand dark:text-brand-400 rounded-lg text-xs font-semibold transition-colors flex items-center justify-center gap-1.5"
+                              >
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                                </svg>
+                                Show Alternatives
+                              </button>
                             </div>
                           </div>
                         );
@@ -683,6 +877,33 @@ export default function RecommendationsPage() {
                           >
                             <ThumbDown filled={rec.user_rating === "DISLIKE"} />
                           </button>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (isOutfitSaved(rec.id)) {
+                                handleUnsaveOutfit(rec.id);
+                              } else {
+                                handleSaveOutfit(rec.id);
+                              }
+                            }}
+                            disabled={savingOutfits.has(rec.id)}
+                            className={`p-1.5 rounded-lg transition-colors ${
+                              isOutfitSaved(rec.id)
+                                ? "text-amber-600 bg-amber-50 dark:bg-amber-900/30"
+                                : "text-gray-400 dark:text-gray-500 hover:text-amber-600 dark:hover:text-amber-400"
+                            } disabled:opacity-50 disabled:cursor-not-allowed`}
+                            title={isOutfitSaved(rec.id) ? "Unsave outfit" : "Save outfit to favorites"}
+                          >
+                            {savingOutfits.has(rec.id) ? (
+                              <svg className="w-5 h-5 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                              </svg>
+                            ) : (
+                              <svg className="w-5 h-5" fill={isOutfitSaved(rec.id) ? "currentColor" : "none"} stroke="currentColor" strokeWidth={isOutfitSaved(rec.id) ? 0 : 1.5} viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M17.593 3.322c1.1.128 1.907 1.077 1.907 2.185V21L12 17.25 4.5 21V5.507c0-1.108.806-2.057 1.907-2.185a48.507 48.507 0 0111.186 0z" />
+                              </svg>
+                            )}
+                          </button>
                         </div>
                       </div>
                       <div className="px-2 pb-2">
@@ -737,7 +958,122 @@ export default function RecommendationsPage() {
             )}
           </div>
         )}
+
+        {/* Alternatives Modal */}
+        {showAlternatives && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" onClick={() => setShowAlternatives(false)}>
+            <div className="bg-white dark:bg-stone-900 rounded-2xl shadow-2xl max-w-4xl w-full max-h-[80vh] overflow-hidden border border-stone-200 dark:border-stone-800" onClick={(e) => e.stopPropagation()}>
+              {/* Modal Header */}
+              <div className="px-6 py-4 border-b border-stone-200 dark:border-stone-800 flex items-center justify-between">
+                <div>
+                  <h3 className="text-xl font-bold text-stone-900 dark:text-white">
+                    Alternative {selectedItem?.item.category} Items
+                  </h3>
+                  <p className="text-sm text-stone-600 dark:text-stone-400 mt-1">
+                    Replacing: {selectedItem?.item.name}
+                  </p>
+                </div>
+                <button
+                  onClick={() => setShowAlternatives(false)}
+                  className="p-2 rounded-lg hover:bg-stone-100 dark:hover:bg-stone-800 transition-colors"
+                >
+                  <svg className="w-5 h-5 text-stone-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+
+              {/* Modal Content */}
+              <div className="p-6 overflow-y-auto max-h-[calc(80vh-120px)]">
+                {alternativesLoading ? (
+                  <div className="flex items-center justify-center py-12">
+                    <div className="w-8 h-8 border-4 border-brand border-t-transparent rounded-full animate-spin" />
+                    <p className="ml-3 text-stone-600 dark:text-stone-400">Finding alternatives...</p>
+                  </div>
+                ) : alternatives.length === 0 ? (
+                  <div className="text-center py-12">
+                    <p className="text-stone-600 dark:text-stone-400">No alternative items found. Try different preferences.</p>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {alternatives.map((alt, idx) => {
+                      const altUrl = pickBestUrl(alt);
+                      const catUpper = (alt.category || "").toUpperCase();
+                      return (
+                        <div
+                          key={idx}
+                          className="rounded-lg border border-stone-200 dark:border-stone-700 overflow-hidden hover:shadow-lg hover:border-brand dark:hover:border-brand transition-all cursor-pointer group"
+                          onClick={() => handleSelectAlternative(alt)}
+                        >
+                          <div className="w-full h-48 bg-stone-100 dark:bg-stone-800 flex items-center justify-center overflow-hidden">
+                            {alt.image_url ? (
+                              <img
+                                src={alt.image_url}
+                                alt={alt.name}
+                                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                                onError={(e) => { e.currentTarget.style.display = "none"; e.currentTarget.nextElementSibling?.classList.remove("hidden"); }}
+                              />
+                            ) : null}
+                            <span className={`text-5xl ${alt.image_url ? "hidden" : ""}`}>{CATEGORY_ICONS[catUpper] || "👔"}</span>
+                          </div>
+                          <div className="p-4 bg-white dark:bg-stone-900">
+                            <p className="text-xs font-medium text-brand dark:text-brand-400 uppercase tracking-wider">
+                              {alt.category || "Item"}
+                            </p>
+                            <p className="font-semibold text-sm text-stone-900 dark:text-white mt-1 line-clamp-2">{alt.name}</p>
+                            <p className="text-xs text-stone-500 dark:text-stone-400 mt-1">{alt.brand || "Brand N/A"}</p>
+                            <div className="flex items-center justify-between mt-3">
+                              <div className="flex items-center gap-2">
+                                {typeof alt.price === "number" && (
+                                  <span className="text-base font-bold text-stone-900 dark:text-white">${alt.price.toFixed(0)}</span>
+                                )}
+                                {alt.recommended_size && (
+                                  <span className="text-xs bg-stone-200 dark:bg-stone-700 px-2 py-0.5 rounded text-stone-600 dark:text-stone-300">
+                                    {alt.recommended_size}
+                                  </span>
+                                )}
+                              </div>
+                              {altUrl && (
+                                <a
+                                  href={altUrl}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className="text-xs font-semibold text-brand dark:text-brand-400 hover:underline"
+                                  onClick={(e) => e.stopPropagation()}
+                                >
+                                  View
+                                </a>
+                              )}
+                            </div>
+                            {alt.recommended_color && (
+                              <p className="text-xs text-stone-500 dark:text-stone-400 mt-2">Color: {alt.recommended_color}</p>
+                            )}
+                            <div className="mt-3 pt-3 border-t border-stone-100 dark:border-stone-800">
+                              <button className="w-full py-2 bg-brand hover:bg-brand-600 text-white rounded-lg text-sm font-semibold transition-colors">
+                                Select This Item
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
       </main>
+
+      {/* Save Error Toast */}
+      {saveError && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 bg-red-600 text-white px-6 py-3 rounded-full shadow-lg flex items-center gap-2 z-50 animate-fade-in">
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          <span className="font-semibold">{saveError}</span>
+        </div>
+      )}
     </div>
   );
 }
