@@ -134,6 +134,27 @@ export default function ColorAnalysisPage() {
     }
   }, [measurementIdFromUrl, user, fetchColorProfile]);
 
+  // Auto-populate from camera scan color detection (if available)
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const scanResult = sessionStorage.getItem("scanColorResult");
+    if (scanResult) {
+      try {
+        const color = JSON.parse(scanResult);
+        if (color.skin_tone) {
+          setSelectedSkinTone(color.skin_tone);
+          setSelectedSkinToneHex(color.skin_tone_hex || null);
+        }
+        if (color.hair_color) {
+          setSelectedHairColor(color.hair_color);
+          setSelectedHairColorHex(color.hair_color_hex || null);
+        }
+        setSuccessMessage("Colors detected from your body scan! You can adjust if needed.");
+      } catch { /* ignore parse errors */ }
+      sessionStorage.removeItem("scanColorResult");
+    }
+  }, []);
+
   // Fetch measurement profiles only if NOT from measurement page
   const fetchMeasurements = useCallback(async () => {
     if (!user) return;

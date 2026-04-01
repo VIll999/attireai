@@ -7,6 +7,8 @@ import { useAuth } from "@/context/AuthContext";
 import { useProfile } from "@/context/ProfileContext";
 import { useLocale } from "@/context/LocaleContext";
 import Notification from "@/components/Notification";
+import BodyScannerModal from "@/components/BodyScanner/BodyScannerModal";
+import { DetectedMeasurements } from "@/components/BodyScanner/landmarkCalculations";
 import {
   getMeasurements,
   createMeasurement,
@@ -86,6 +88,10 @@ export default function MeasurementsPage() {
   const [userTier, setUserTier] = useState<"FREE" | "VIP">("FREE");
   const [showNewProfileInput, setShowNewProfileInput] = useState(false);
   const [newProfileName, setNewProfileName] = useState("");
+
+  // Body Scanner state
+  const [isScannerOpen, setIsScannerOpen] = useState(false);
+  const [scanSource, setScanSource] = useState(false); // true if last measurement came from camera
 
   // Sizing state
   const [sizingData, setSizingData] = useState<SizingResponse | null>(null);
@@ -319,7 +325,9 @@ export default function MeasurementsPage() {
         inseam: convertForStorage(form.inseam, "inseam", unit),
         shoulder_width: convertForStorage(form.shoulder_width, "shoulder_width", unit),
         arm_length: convertForStorage(form.arm_length, "arm_length", unit),
+        ...(scanSource ? { source: "CAMERA" as const } : {}),
       };
+      if (scanSource) setScanSource(false);
 
       let savedMeasurementId = editingId;
       if (editingId) {
@@ -361,6 +369,43 @@ export default function MeasurementsPage() {
     setForm(converted);
     setUnit(newUnit);
     localStorage.setItem("preferredUnit", newUnit);
+  };
+
+  // Body Scanner handlers
+  const handleStartScan = () => {
+    if (!form.height || form.height.trim() === "") {
+      setFieldErrors((prev) => ({ ...prev, height: "Please enter your height first — it's needed as a reference for camera measurements" }));
+      setError("Please enter your height before using the camera scan.");
+      return;
+    }
+    setIsScannerOpen(true);
+  };
+
+  const handleScanMeasurements = (detected: DetectedMeasurements) => {
+    setScanSource(true);
+    // Convert detected CM values to display units
+    setForm((prev) => ({
+      ...prev,
+      shoulder_width: convertForDisplay(detected.shoulder_width, "shoulder_width", unit),
+      arm_length: convertForDisplay(detected.arm_length, "arm_length", unit),
+      inseam: convertForDisplay(detected.inseam, "inseam", unit),
+      chest: convertForDisplay(detected.chest, "chest", unit),
+      waist: convertForDisplay(detected.waist, "waist", unit),
+      hip: convertForDisplay(detected.hip, "hip", unit),
+    }));
+    setSuccessMessage("Body measurements detected! Review the values and save.");
+  };
+
+  const handleScanColorDetected = (color: { skin_tone: string; skin_tone_hex: string; hair_color: string; hair_color_hex: string }) => {
+    // Store color results for the color-analysis page to pick up
+    if (typeof window !== "undefined") {
+      sessionStorage.setItem("scanColorResult", JSON.stringify(color));
+    }
+  };
+
+  const handleScanColorError = () => {
+    // Color detection failed — user will select manually on color-analysis page
+    console.warn("AI color detection failed — manual selection will be available on next page.");
   };
 
   if (!user) return null;
@@ -865,6 +910,7 @@ export default function MeasurementsPage() {
 
                 <button
                   type="button"
+                  onClick={handleStartScan}
                   className="w-full bg-white/10 hover:bg-white/20 backdrop-blur-md text-white border border-white/20 px-6 py-4 rounded-xl font-bold transition-all flex items-center justify-center gap-2"
                 >
                   <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -978,6 +1024,17 @@ export default function MeasurementsPage() {
           </div>
         </div>
       )}
+
+      {/* Body Scanner Modal */}
+      <BodyScannerModal
+        isOpen={isScannerOpen}
+        onClose={() => setIsScannerOpen(false)}
+        heightCm={convertForStorage(form.height, "height", unit) ?? 170}
+        onMeasurementsDetected={handleScanMeasurements}
+        onColorDetected={handleScanColorDetected}
+        onColorError={handleScanColorError}
+        firebaseUid={user.uid}
+      />
     </div>
   );
 }
