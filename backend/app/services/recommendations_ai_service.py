@@ -371,16 +371,9 @@ class RecommendationsAIService:
         rec_ids: List[str] = []
 
         for outfit in result.get("outfits", []):
-            rec = OutfitRecommendation(
-                user_id=user_id,
-                measurement_id=req.measurement_profile_id,
-                occasion=req.context_overrides.occasion,
-                weather=req.context_overrides.weather,
-                dress_code=req.context_overrides.dress_code,
-                reasoning=outfit.get("reasoning") or f"AI recommendations via {settings.ai_provider}",
-            )
-            db.add(rec)
-            db.flush()
+            # First pass: calculate total price for this outfit
+            total_price = Decimal("0.00")
+            items_data = []
 
             for it in outfit.get("items", []):
                 name = (it.get("name") or "").strip() or "Unknown Item"
@@ -389,19 +382,39 @@ class RecommendationsAIService:
                 try:
                     if price_val is not None:
                         price_dec = Decimal(str(price_val)).quantize(Decimal("0.01"))
+                        total_price += price_dec
                 except Exception:
                     price_dec = None
 
+                items_data.append({
+                    "name": name,
+                    "brand": it.get("brand") or None,
+                    "category": normalize_category(it.get("category")),
+                    "price": price_dec,
+                    "currency": (it.get("currency") or req.currency or "USD")[:3],
+                    "image_url": it.get("image_url") or None,
+                    "purchase_url": it.get("purchase_url") or None,
+                    "recommended_size": it.get("recommended_size") or None,
+                })
+
+            # Create recommendation with calculated total_price
+            rec = OutfitRecommendation(
+                user_id=user_id,
+                measurement_id=req.measurement_profile_id,
+                occasion=req.context_overrides.occasion,
+                weather=req.context_overrides.weather,
+                dress_code=req.context_overrides.dress_code,
+                reasoning=outfit.get("reasoning") or f"AI recommendations via {settings.ai_provider}",
+                total_price=total_price if total_price > 0 else None,
+            )
+            db.add(rec)
+            db.flush()
+
+            # Second pass: create all items
+            for item_data in items_data:
                 db.add(RecommendationItem(
                     recommendation_id=rec.id,
-                    name=name,
-                    brand=it.get("brand") or None,
-                    category=normalize_category(it.get("category")),
-                    price=price_dec,
-                    currency=(it.get("currency") or req.currency or "USD")[:3],
-                    image_url=it.get("image_url") or None,
-                    purchase_url=it.get("purchase_url") or None,
-                    recommended_size=it.get("recommended_size") or None,
+                    **item_data
                 ))
 
             rec_ids.append(rec.id)

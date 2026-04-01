@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
+import OnboardingTutorial from "@/components/OnboardingTutorial";
 
 export default function ProtectedLayout({
   children,
@@ -41,5 +42,10 @@ export default function ProtectedLayout({
   }
 
   // User is authenticated and verified - render protected content
-  return <>{children}</>;
+  return (
+    <>
+      {children}
+      <OnboardingTutorial />
+    </>
+  );
 }

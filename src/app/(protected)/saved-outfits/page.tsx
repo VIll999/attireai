@@ -6,6 +6,7 @@ import Link from "next/link";
 import AppNav from "@/components/AppNav";
 import { useAuth } from "@/context/AuthContext";
 import { useLocale } from "@/context/LocaleContext";
+import PriceDropBadge from "@/components/PriceDropBadge";
 import {
   getSavedOutfits,
   deleteSavedOutfit,
@@ -613,6 +614,7 @@ export default function SavedOutfitsPage() {
                   (sum, item) => sum + (typeof item.price === "number" ? item.price : 0),
                   0
                 ) || 0;
+              const originalTotalPrice = rec.total_price || 0;
 
               return (
                 <div
@@ -644,6 +646,13 @@ export default function SavedOutfitsPage() {
                       >
                         {CATEGORY_ICONS[(displayItem?.category || "").toUpperCase()] || "👔"}
                       </div>
+
+                      {/* Price Drop Badge */}
+                      {originalTotalPrice > 0 && totalPrice > 0 && totalPrice < originalTotalPrice && (
+                        <div className="absolute top-3 right-3">
+                          <PriceDropBadge originalPrice={originalTotalPrice} currentPrice={totalPrice} />
+                        </div>
+                      )}
 
                       {/* Purchased Badge */}
                       {saved.is_purchased && (

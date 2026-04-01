@@ -5,6 +5,7 @@ import { useRouter, useParams } from "next/navigation";
 import AppNav from "@/components/AppNav";
 import { useAuth } from "@/context/AuthContext";
 import { useLocale } from "@/context/LocaleContext";
+import PriceDropBadge from "@/components/PriceDropBadge";
 import {
   getSavedOutfit,
   deleteSavedOutfit,
@@ -154,6 +155,7 @@ export default function SavedOutfitDetailPage() {
 
   const rec = outfit.recommendation;
   const totalPrice = rec.items?.reduce((sum, item) => sum + (typeof item.price === "number" ? item.price : 0), 0) || 0;
+  const originalTotalPrice = rec.total_price || 0;
 
   return (
     <div className="min-h-screen relative overflow-x-hidden flex flex-col bg-[#FAFAFC] dark:bg-stone-950">
@@ -183,9 +185,14 @@ export default function SavedOutfitDetailPage() {
         <div className="bg-white dark:bg-stone-900 rounded-xl shadow-sm border border-stone-200 dark:border-stone-800 p-6 mb-6">
           <div className="flex items-start justify-between mb-4">
             <div className="flex-1">
-              <h1 className="text-3xl font-bold text-stone-900 dark:text-white mb-2">
-                {rec.occasion || "Outfit"}
-              </h1>
+              <div className="flex items-center gap-3 mb-2">
+                <h1 className="text-3xl font-bold text-stone-900 dark:text-white">
+                  {rec.occasion || "Outfit"}
+                </h1>
+                {originalTotalPrice > 0 && totalPrice > 0 && totalPrice < originalTotalPrice && (
+                  <PriceDropBadge originalPrice={originalTotalPrice} currentPrice={totalPrice} />
+                )}
+              </div>
               <p className="text-sm text-stone-500 dark:text-stone-400">
                 Saved {formatDate(outfit.created_at)}
               </p>
