@@ -7,7 +7,7 @@ import { useTheme } from "@/context/ThemeContext";
 import { useLocale } from "@/context/LocaleContext";
 
 interface AppNavProps {
-  activePage: "dashboard" | "recommendations" | "outfits" | "measurements" | "colors" | "profile" | "preferences";
+  activePage?: "dashboard" | "tutorial" | "style-quiz" | "help" | "saved-outfits" | "profile" | "preferences";
 }
 
 export default function AppNav({ activePage }: AppNavProps) {
@@ -22,10 +22,10 @@ export default function AppNav({ activePage }: AppNavProps) {
 
   const navLinks = [
     { key: "dashboard" as const, href: "/dashboard", label: t("nav.dashboard") },
-    { key: "recommendations" as const, href: "/recommendations", label: t("nav.recommendations") },
-    { key: "measurements" as const, href: "/measurements", label: t("nav.measurements") },
-    { key: "colors" as const, href: "/color-analysis", label: t("nav.colors") },
-    { key: "outfits" as const, href: "/outfits", label: t("nav.outfits") },
+    { key: "tutorial" as const, href: "/tutorial", label: "Tutorial" },
+    { key: "style-quiz" as const, href: "/style-quiz", label: "Style Quiz" },
+    { key: "saved-outfits" as const, href: "/saved-outfits", label: "Saved Outfits" },
+    { key: "help" as const, href: "/help", label: "Help & FAQ" },
     { key: "profile" as const, href: "/profile", label: t("nav.profile") },
     { key: "preferences" as const, href: "/preferences", label: t("nav.preferences") },
   ];

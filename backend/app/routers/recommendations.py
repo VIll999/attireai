@@ -5,7 +5,12 @@ import asyncio
 from functools import partial
 
 from app.db.database import get_db
-from app.models.recommendations_ai import AIWebCandidatesRequest, AIWebCandidatesResponse
+from app.models.recommendations_ai import (
+    AIWebCandidatesRequest,
+    AIWebCandidatesResponse,
+    AlternativeItemsRequest,
+    AlternativeItemsResponse,
+)
 from app.services.recommendations_ai_service import RecommendationsAIService
 
 router = APIRouter()
@@ -62,6 +67,39 @@ async def ai_products(
         result = await loop.run_in_executor(
             None,  # Use default executor
             partial(svc.generate_web_candidates, db=db, firebase_uid=x_firebase_uid or "", req=data)
+        )
+        return result
+    except ValueError as e:
+        msg = str(e)
+        if "Missing Firebase UID" in msg:
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=msg)
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=msg)
+    except RuntimeError as e:
+        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/recommendations/alternatives", response_model=AlternativeItemsResponse)
+async def get_alternative_items(
+    data: AlternativeItemsRequest,
+    x_firebase_uid: Optional[str] = Header(None),
+    db: Session = Depends(get_db),
+):
+    """
+    Get alternative items for a specific category within an outfit context.
+
+    This endpoint generates alternative product suggestions that match the
+    same constraints as the original outfit (occasion, weather, style preferences, etc.)
+    """
+    try:
+        svc = get_svc()
+
+        # Run the blocking AI generation in a thread pool
+        loop = asyncio.get_event_loop()
+        result = await loop.run_in_executor(
+            None,
+            partial(svc.generate_alternative_items, db=db, firebase_uid=x_firebase_uid or "", req=data)
         )
         return result
     except ValueError as e:

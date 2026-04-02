@@ -338,6 +338,7 @@ export interface OutfitRecommendationItemResponse {
   purchase_url: string | null;
   recommended_size: string | null;
   outfit_index: number | null;
+  stock_status: string | null;
 }
 
 export interface OutfitRecommendationResponse {
@@ -495,6 +496,7 @@ export interface AIRecommendationItem {
   recommended_size?: string | null;
   source_urls?: string[];
   outfit_index?: number | null;
+  stock_status?: string | null;
 }
 
 export interface AIRecommendationResponse {
@@ -548,6 +550,154 @@ export async function rateOutfitRecommendation(
   return response.json();
 }
 
+/**
+ * Get alternative items for a specific category in an outfit
+ */
+export interface AlternativeItemsRequest {
+  measurement_profile_id?: string;
+  category: string;
+  occasion?: string;
+  weather?: string;
+  location?: string;
+  dress_code?: string;
+  budget?: number;
+  currency?: string;
+  styles?: string[];
+  original_item_name?: string;
+  original_item_brand?: string;
+  num_alternatives?: number;
+}
+
+export interface AlternativeItemsResponse {
+  items: AIRecommendationItem[];
+  debug?: Record<string, unknown>;
+}
+
+export async function getAlternativeItems(
+  firebaseUid: string,
+  data: AlternativeItemsRequest
+): Promise<AlternativeItemsResponse> {
+  const response = await fetch(`${API_URL}/recommendations/alternatives`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "X-Firebase-UID": firebaseUid,
+    },
+    body: JSON.stringify(data),
+  });
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({ detail: "Failed to get alternative items" }));
+    throw new Error(error.detail || "Failed to get alternative items");
+  }
+
+  return response.json();
+}
+
+// ── Rating System (Learning) ──
+
+export interface RatingResponse {
+  id: string;
+  recommendation_id: string;
+  rating: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface LearningStatsResponse {
+  total_ratings: number;
+  likes: number;
+  dislikes: number;
+  learning_active: boolean;
+  min_ratings_needed: number;
+}
+
+/**
+ * Rate an outfit recommendation (new learning system)
+ */
+export async function rateRecommendation(
+  firebaseUid: string,
+  recommendationId: string,
+  rating: "LIKE" | "DISLIKE"
+): Promise<RatingResponse> {
+  const response = await fetch(`${API_URL}/recommendations/${recommendationId}/rate`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "X-Firebase-UID": firebaseUid,
+    },
+    body: JSON.stringify({ rating }),
+  });
+
+  if (!response.ok) {
+    throw new Error("Failed to rate recommendation");
+  }
+
+  return response.json();
+}
+
+/**
+ * Get user's rating for a specific recommendation
+ */
+export async function getRating(
+  firebaseUid: string,
+  recommendationId: string
+): Promise<RatingResponse | null> {
+  const response = await fetch(`${API_URL}/recommendations/${recommendationId}/rating`, {
+    method: "GET",
+    headers: {
+      "X-Firebase-UID": firebaseUid,
+    },
+  });
+
+  if (!response.ok) {
+    if (response.status === 404) return null;
+    throw new Error("Failed to get rating");
+  }
+
+  const data = await response.json();
+  return data || null;
+}
+
+/**
+ * Delete user's rating for a recommendation
+ */
+export async function deleteRating(
+  firebaseUid: string,
+  recommendationId: string
+): Promise<void> {
+  const response = await fetch(`${API_URL}/recommendations/${recommendationId}/rating`, {
+    method: "DELETE",
+    headers: {
+      "X-Firebase-UID": firebaseUid,
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error("Failed to delete rating");
+  }
+}
+
+/**
+ * Get learning statistics for the current user
+ */
+export async function getLearningStats(
+  firebaseUid: string
+): Promise<LearningStatsResponse> {
+  const response = await fetch(`${API_URL}/recommendations/learning/stats`, {
+    method: "GET",
+    headers: {
+      "X-Firebase-UID": firebaseUid,
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error("Failed to get learning stats");
+  }
+
+  return response.json();
+}
+
 // ── Vision / Color Analysis ──
 
 export async function analyzePhotoColors(
@@ -563,5 +713,193 @@ export async function analyzePhotoColors(
     body: JSON.stringify({ photo_base64: photoBase64 }),
   });
   if (!response.ok) throw new Error("Color analysis failed");
+  return response.json();
+}
+
+// --- Saved Outfits API ---
+
+export interface SaveOutfitRequest {
+  recommendation_id: string;
+  collection_name?: string;
+}
+
+export interface UpdateSavedOutfitRequest {
+  collection_name?: string;
+  is_purchased?: boolean;
+}
+
+export interface SavedOutfitResponse {
+  id: string;
+  user_id: string;
+  recommendation_id: string;
+  collection_name: string;
+  is_purchased: boolean;
+  try_on_image_url: string | null;
+  created_at: string;
+}
+
+export interface SavedOutfitWithDetailsResponse extends SavedOutfitResponse {
+  recommendation: OutfitRecommendationResponse | null;
+}
+
+/**
+ * Save an outfit to favorites or a collection
+ */
+export async function saveOutfit(
+  firebaseUid: string,
+  data: SaveOutfitRequest
+): Promise<SavedOutfitResponse> {
+  const response = await fetch(`${API_URL}/saved-outfits`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "X-Firebase-UID": firebaseUid,
+    },
+    body: JSON.stringify(data),
+  });
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({ detail: "Failed to save outfit" }));
+    throw new Error(error.detail || "Failed to save outfit");
+  }
+
+  return response.json();
+}
+
+/**
+ * Get all saved outfits for current user
+ */
+export async function getSavedOutfits(
+  firebaseUid: string,
+  filters?: {
+    collectionName?: string;
+    isPurchased?: boolean;
+    brand?: string;
+    category?: string;
+    minPrice?: number;
+    maxPrice?: number;
+    color?: string;
+    weather?: string;
+  }
+): Promise<SavedOutfitWithDetailsResponse[]> {
+  const params = new URLSearchParams();
+
+  if (filters?.collectionName) {
+    params.append("collection_name", filters.collectionName);
+  }
+  if (filters?.isPurchased !== undefined) {
+    params.append("is_purchased", filters.isPurchased.toString());
+  }
+  if (filters?.brand) {
+    params.append("brand", filters.brand);
+  }
+  if (filters?.category) {
+    params.append("category", filters.category);
+  }
+  if (filters?.minPrice !== undefined) {
+    params.append("min_price", filters.minPrice.toString());
+  }
+  if (filters?.maxPrice !== undefined) {
+    params.append("max_price", filters.maxPrice.toString());
+  }
+  if (filters?.color) {
+    params.append("color", filters.color);
+  }
+  if (filters?.weather) {
+    params.append("weather", filters.weather);
+  }
+
+  const url = `${API_URL}/saved-outfits${params.toString() ? `?${params.toString()}` : ""}`;
+
+  const response = await fetch(url, {
+    headers: {
+      "X-Firebase-UID": firebaseUid,
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error("Failed to get saved outfits");
+  }
+
+  return response.json();
+}
+
+/**
+ * Get a specific saved outfit with details
+ */
+export async function getSavedOutfit(
+  firebaseUid: string,
+  savedOutfitId: string
+): Promise<SavedOutfitWithDetailsResponse> {
+  const response = await fetch(`${API_URL}/saved-outfits/${savedOutfitId}`, {
+    headers: {
+      "X-Firebase-UID": firebaseUid,
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error("Failed to get saved outfit");
+  }
+
+  return response.json();
+}
+
+/**
+ * Update a saved outfit (change collection or mark as purchased)
+ */
+export async function updateSavedOutfit(
+  firebaseUid: string,
+  savedOutfitId: string,
+  data: UpdateSavedOutfitRequest
+): Promise<SavedOutfitResponse> {
+  const response = await fetch(`${API_URL}/saved-outfits/${savedOutfitId}`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+      "X-Firebase-UID": firebaseUid,
+    },
+    body: JSON.stringify(data),
+  });
+
+  if (!response.ok) {
+    throw new Error("Failed to update saved outfit");
+  }
+
+  return response.json();
+}
+
+/**
+ * Delete a saved outfit
+ */
+export async function deleteSavedOutfit(
+  firebaseUid: string,
+  savedOutfitId: string
+): Promise<void> {
+  const response = await fetch(`${API_URL}/saved-outfits/${savedOutfitId}`, {
+    method: "DELETE",
+    headers: {
+      "X-Firebase-UID": firebaseUid,
+    },
+  });
+
+  if (!response.ok && response.status !== 204) {
+    throw new Error("Failed to delete saved outfit");
+  }
+}
+
+/**
+ * Get list of all collection names for current user
+ */
+export async function getCollections(firebaseUid: string): Promise<string[]> {
+  const response = await fetch(`${API_URL}/saved-outfits-collections`, {
+    headers: {
+      "X-Firebase-UID": firebaseUid,
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error("Failed to get collections");
+  }
+
   return response.json();
 }

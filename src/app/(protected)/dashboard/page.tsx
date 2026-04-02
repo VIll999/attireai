@@ -7,7 +7,7 @@ import { useAuth } from "@/context/AuthContext";
 import { useProfile } from "@/context/ProfileContext";
 import { useLocale } from "@/context/LocaleContext";
 import { auth, deleteUser } from "@/lib/firebase";
-import { deleteUserFromBackend } from "@/lib/api";
+import { deleteUserFromBackend, getSavedOutfits, SavedOutfitWithDetailsResponse } from "@/lib/api";
 import AppNav from "@/components/AppNav";
 
 export default function DashboardPage() {
@@ -28,6 +28,22 @@ export default function DashboardPage() {
 
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [savedOutfits, setSavedOutfits] = useState<SavedOutfitWithDetailsResponse[]>([]);
+  const [savedOutfitsLoading, setSavedOutfitsLoading] = useState(true);
+
+  // Fetch saved outfits
+  useEffect(() => {
+    if (!user) return;
+
+    setSavedOutfitsLoading(true);
+    getSavedOutfits(user.uid)
+      .then((data) => setSavedOutfits(data))
+      .catch((err) => {
+        console.error("Failed to fetch saved outfits:", err);
+        setSavedOutfits([]);
+      })
+      .finally(() => setSavedOutfitsLoading(false));
+  }, [user]);
 
   const handleDeleteAccount = async () => {
     if (!auth.currentUser) return;
@@ -302,7 +318,7 @@ export default function DashboardPage() {
               <div className="grid grid-cols-2 gap-4 relative z-10">
                 <div className="space-y-1">
                   <p className="text-white/70 dark:text-gray-900/70 text-xs font-bold uppercase tracking-wider">Saved Outfits</p>
-                  <p className="text-2xl font-bold font-cabinet">0</p>
+                  <p className="text-2xl font-bold font-cabinet">{savedOutfits.length}</p>
                 </div>
                 <div className="space-y-1">
                   <p className="text-white/70 dark:text-gray-900/70 text-xs font-bold uppercase tracking-wider">Orders</p>
@@ -325,29 +341,88 @@ export default function DashboardPage() {
             {/* Recent Outfits */}
             <section>
               <div className="flex items-center justify-between mb-6">
-                <h3 className="text-2xl font-bold text-gray-900 dark:text-white font-cabinet">{t("dashboard.recentOutfits")}</h3>
-                <Link href="/outfits" className="text-sm font-bold text-brand dark:text-brand-400 hover:underline">View All</Link>
+                <h3 className="text-2xl font-bold text-gray-900 dark:text-white font-cabinet">Recently Saved Outfits</h3>
+                <Link href="/saved-outfits" className="text-sm font-bold text-brand dark:text-brand-400 hover:underline">View All</Link>
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {/* Empty State */}
-                <div className="md:col-span-2 glass-panel rounded-[2rem] p-12 text-center border border-stone-200/50 dark:border-stone-700/50">
+
+              {savedOutfitsLoading ? (
+                <div className="flex items-center justify-center py-12">
+                  <div className="w-8 h-8 border-4 border-brand border-t-transparent rounded-full animate-spin" />
+                </div>
+              ) : savedOutfits.length === 0 ? (
+                <div className="glass-panel rounded-[2rem] p-12 text-center border border-stone-200/50 dark:border-stone-700/50">
                   <div className="w-20 h-20 bg-brand/10 dark:bg-brand/20 rounded-2xl flex items-center justify-center mx-auto mb-6">
                     <svg className="w-10 h-10 text-brand dark:text-brand-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.75 10.5V6a3.75 3.75 0 10-7.5 0v4.5m11.356-1.993l1.263 12c.07.665-.45 1.243-1.119 1.243H4.25a1.125 1.125 0 01-1.12-1.243l1.264-12A1.125 1.125 0 015.513 7.5h12.974c.576 0 1.059.435 1.119 1.007zM8.625 10.5a.375.375 0 11-.75 0 .375.375 0 01.75 0zm7.5 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
                     </svg>
                   </div>
-                  <h3 className="font-cabinet text-xl font-bold text-gray-900 dark:text-white mb-2">{t("dashboard.noOutfitsYet")}</h3>
+                  <h3 className="font-cabinet text-xl font-bold text-gray-900 dark:text-white mb-2">No Saved Outfits Yet</h3>
                   <p className="text-gray-600 dark:text-gray-400 mb-8 max-w-md mx-auto">
-                    {t("dashboard.completeProfile")}
+                    Start generating outfit recommendations and save your favorites!
                   </p>
                   <Link
-                    href="/measurements"
+                    href="/recommendations"
                     className="inline-block px-8 py-3 bg-brand dark:bg-brand-400 text-white dark:text-gray-900 rounded-full font-bold hover:bg-brand-600 dark:hover:bg-brand-500 transition-all shadow-glow"
                   >
-                    {t("nav.getStarted")}
+                    Get Recommendations
                   </Link>
                 </div>
-              </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {savedOutfits.slice(0, 6).map((saved) => {
+                    const rec = saved.recommendation;
+                    if (!rec) return null;
+
+                    const displayItem = rec.items?.find((item) => item.image_url) || rec.items?.[0];
+                    const totalPrice = rec.items?.reduce((sum, item) => sum + (typeof item.price === "number" ? item.price : 0), 0) || 0;
+
+                    return (
+                      <Link
+                        key={saved.id}
+                        href={`/saved-outfits/${saved.id}`}
+                        className="group glass-panel rounded-[2rem] overflow-hidden border border-stone-200/50 dark:border-stone-700/50 hover:shadow-xl hover:-translate-y-1 transition-all"
+                      >
+                        <div className="relative aspect-[3/4] bg-stone-100 dark:bg-stone-800">
+                          {displayItem?.image_url ? (
+                            <img
+                              src={displayItem.image_url}
+                              alt={displayItem.name || "Outfit"}
+                              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                              onError={(e) => {
+                                e.currentTarget.style.display = "none";
+                                if (e.currentTarget.nextElementSibling) {
+                                  (e.currentTarget.nextElementSibling as HTMLElement).classList.remove("hidden");
+                                }
+                              }}
+                            />
+                          ) : null}
+                          <div className={`absolute inset-0 flex items-center justify-center text-6xl ${displayItem?.image_url ? "hidden" : ""}`}>
+                            👔
+                          </div>
+                          {saved.is_purchased && (
+                            <div className="absolute top-3 left-3 bg-green-500 text-white px-3 py-1 rounded-full text-xs font-bold">
+                              Purchased
+                            </div>
+                          )}
+                        </div>
+                        <div className="p-4">
+                          <h4 className="font-bold text-gray-900 dark:text-white line-clamp-1 mb-1">
+                            {rec.occasion || "Outfit"}
+                          </h4>
+                          <p className="text-xs text-stone-500 dark:text-stone-400 mb-2">
+                            {rec.items?.length || 0} items
+                          </p>
+                          {totalPrice > 0 && (
+                            <p className="text-lg font-bold text-brand dark:text-brand-400">
+                              ${totalPrice.toFixed(0)}
+                            </p>
+                          )}
+                        </div>
+                      </Link>
+                    );
+                  })}
+                </div>
+              )}
             </section>
 
             {/* Order History */}

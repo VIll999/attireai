@@ -11,12 +11,19 @@ import {
   getStylePreferences,
   getAIRecommendations,
   getOutfitRecommendations,
-  rateOutfitRecommendation,
+  rateRecommendation,
+  deleteRating,
+  getAlternativeItems,
+  AlternativeItemsRequest,
   MeasurementResponse,
   StylePreferencesData,
   AIRecommendationItem,
   AIRecommendationResponse,
   OutfitRecommendationResponse,
+  saveOutfit,
+  deleteSavedOutfit,
+  getSavedOutfits,
+  SavedOutfitWithDetailsResponse,
 } from "@/lib/api";
 
 /* ── helpers ── */
@@ -58,17 +65,31 @@ interface ColorProfileData {
 /* ── thumbs icons ── */
 
 function ThumbUp({ filled }: { filled: boolean }) {
+  if (filled) {
+    return (
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5">
+        <path d="M7.493 18.75c-.425 0-.82-.236-.975-.632A7.48 7.48 0 016 15.375c0-1.75.599-3.358 1.602-4.634.151-.192.373-.309.6-.397.473-.183.89-.514 1.212-.924a9.042 9.042 0 012.861-2.4c.723-.384 1.35-.956 1.653-1.715a4.498 4.498 0 00.322-1.672V3a.75.75 0 01.75-.75 2.25 2.25 0 012.25 2.25c0 1.152-.26 2.243-.723 3.218-.266.558.107 1.282.725 1.282h3.126c1.026 0 1.945.694 2.054 1.715.045.422.068.85.068 1.285a11.95 11.95 0 01-2.649 7.521c-.388.482-.987.729-1.605.729H13.48c-.483 0-.964-.078-1.423-.23l-3.114-1.04a4.501 4.501 0 00-1.423-.23h-.777zM2.331 10.977a11.969 11.969 0 00-.831 4.398 12 12 0 00.52 3.507c.26.85 1.084 1.368 1.973 1.368H4.9c.445 0 .72-.498.523-.898a8.963 8.963 0 01-.924-3.977c0-1.708.476-3.305 1.302-4.666.245-.403-.028-.959-.5-.959H4.25c-.832 0-1.612.453-1.918 1.227z" />
+      </svg>
+    );
+  }
   return (
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill={filled ? "currentColor" : "none"} stroke="currentColor" strokeWidth={filled ? 0 : 1.5} className="w-5 h-5">
-      <path strokeLinecap="round" strokeLinejoin="round" d="M6.633 10.25c.806 0 1.533-.446 2.031-1.08a9.041 9.041 0 0 1 2.861-2.4c.723-.384 1.35-.956 1.653-1.715a4.498 4.498 0 0 0 .322-1.672V3a.75.75 0 0 1 .75-.75 2.25 2.25 0 0 1 2.25 2.25c0 1.152-.26 2.243-.723 3.218-.266.558.107 1.282.725 1.282m0 0h3.126c1.026 0 1.945.694 2.054 1.715.045.422.068.85.068 1.285a11.95 11.95 0 0 1-2.649 7.521c-.388.482-.987.729-1.605.729H13.48c-.483 0-.964-.078-1.423-.23l-3.114-1.04a4.501 4.501 0 0 0-1.423-.23H5.904m10.598-9.75H14.25M5.904 18.5c.083.205.173.405.27.602.197.4-.078.898-.523.898h-.908c-.889 0-1.713-.518-1.972-1.368a12 12 0 0 1-.521-3.507c0-1.553.295-3.036.831-4.398C3.387 10.203 4.167 9.75 5 9.75h1.053c.472 0 .745.556.5.96a8.958 8.958 0 0 0-1.302 4.665c0 1.194.232 2.333.654 3.375Z" />
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} className="w-5 h-5">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M6.633 10.25c.806 0 1.533-.446 2.031-1.08a9.041 9.041 0 0 1 2.861-2.4c.723-.384 1.35-.956 1.653-1.715a4.498 4.498 0 0 0 .322-1.672V2.75a.75.75 0 0 1 .75-.75 2.25 2.25 0 0 1 2.25 2.25c0 1.152-.26 2.243-.723 3.218-.266.558.107 1.282.725 1.282m0 0h3.126c1.026 0 1.945.694 2.054 1.715.045.422.068.85.068 1.285a11.95 11.95 0 0 1-2.649 7.521c-.388.482-.987.729-1.605.729H13.48c-.483 0-.964-.078-1.423-.23l-3.114-1.04a4.501 4.501 0 0 0-1.423-.23H5.904m10.598-9.75H14.25M5.904 18.5c.083.205.173.405.27.602.197.4-.078.898-.523.898h-.908c-.889 0-1.713-.518-1.972-1.368a12 12 0 0 1-.521-3.507c0-1.553.295-3.036.831-4.398.306-.774 1.086-1.227 1.918-1.227h1.053c.472 0 .745.556.5.96a8.958 8.958 0 0 0-1.302 4.665c0 1.194.232 2.333.654 3.375z" />
     </svg>
   );
 }
 
 function ThumbDown({ filled }: { filled: boolean }) {
+  if (filled) {
+    return (
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5">
+        <path d="M15.73 5.25h1.035A7.465 7.465 0 0118 9.375a7.465 7.465 0 01-1.235 4.125h-.148c-.806 0-1.534.446-2.031 1.08a9.04 9.04 0 01-2.861 2.4c-.723.384-1.35.956-1.653 1.715a4.498 4.498 0 00-.322 1.672V21a.75.75 0 01-.75.75 2.25 2.25 0 01-2.25-2.25c0-1.152.26-2.243.723-3.218C7.74 15.724 7.366 15 6.748 15H3.622c-1.026 0-1.945-.694-2.054-1.715A12.134 12.134 0 011.5 12c0-2.848.992-5.464 2.649-7.521.388-.482.987-.729 1.605-.729H9.77a4.5 4.5 0 011.423.23l3.114 1.04a4.5 4.5 0 001.423.23zM21.669 13.773c.536-1.362.831-2.845.831-4.398 0-1.22-.182-2.398-.52-3.507-.26-.85-1.084-1.368-1.973-1.368H19.1c-.445 0-.72.498-.523.898.591 1.2.924 2.55.924 3.977a8.959 8.959 0 01-1.302 4.666c-.245.403.028.959.5.959h1.053c.832 0 1.612-.453 1.918-1.227z" />
+      </svg>
+    );
+  }
   return (
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill={filled ? "currentColor" : "none"} stroke="currentColor" strokeWidth={filled ? 0 : 1.5} className="w-5 h-5">
-      <path strokeLinecap="round" strokeLinejoin="round" d="M7.498 15.25H4.372c-1.026 0-1.945-.694-2.054-1.715a12.137 12.137 0 0 1-.068-1.285c0-2.848.992-5.464 2.649-7.521C5.287 4.247 5.886 4 6.504 4h4.016a4.5 4.5 0 0 1 1.423.23l3.114 1.04a4.5 4.5 0 0 0 1.423.23h1.294M7.498 15.25c.618 0 .991.724.725 1.282A7.471 7.471 0 0 0 7.5 19.75 2.25 2.25 0 0 0 9.75 22a.75.75 0 0 0 .75-.75v-.633c0-.573.11-1.14.322-1.672.304-.76.93-1.33 1.653-1.715a9.04 9.04 0 0 0 2.86-2.4c.498-.634 1.226-1.08 2.032-1.08h.384m-10.253 1.5H9.7m8.075-9.75c.01.05.027.1.05.148.593 1.2.925 2.55.925 3.977 0 1.31-.269 2.558-.754 3.692-.146.342.076.726.45.726h.908c.889 0 1.713-.518 1.972-1.368a12 12 0 0 0 .521-3.507c0-1.553-.295-3.036-.831-4.398-.306-.774-1.086-1.227-1.918-1.227h-1.053c-.472 0-.745.556-.5.96a8.95 8.95 0 0 1 .303.54" />
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} className="w-5 h-5">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M7.5 15h2.25m8.024-9.75c.011.05.028.1.052.148.591 1.2.924 2.55.924 3.977a8.96 8.96 0 01-.999 4.125m.023-8.25c-.076-.365.183-.75.575-.75h.908c.889 0 1.713.518 1.972 1.368.339 1.11.521 2.287.521 3.507 0 1.553-.295 3.036-.831 4.398-.306.774-1.086 1.227-1.918 1.227h-1.053c-.472 0-.745-.556-.5-.96a8.95 8.95 0 00.303-.54m.023-8.25H16.48a4.5 4.5 0 01-1.423-.23l-3.114-1.04a4.5 4.5 0 00-1.423-.23H6.504c-.618 0-1.217.247-1.605.729A11.95 11.95 0 002.25 12c0 .434.023.863.068 1.285C2.427 14.306 3.346 15 4.372 15h3.126c.618 0 .991.724.725 1.282A7.471 7.471 0 007.5 19.5a2.25 2.25 0 002.25 2.25.75.75 0 00.75-.75v-.633c0-.573.11-1.14.322-1.672.304-.76.93-1.33 1.653-1.715a9.04 9.04 0 002.86-2.4c.498-.634 1.226-1.08 2.032-1.08h.384m-10.253 1.5H9.7m8.075-9.75c.01.05.027.1.05.148.593 1.2.925 2.55.925 3.977 0 1.487-.36 2.89-.999 4.125m.023-8.25c-.076-.365.183-.75.575-.75h.908c.889 0 1.713.518 1.972 1.368.339 1.11.521 2.287.521 3.507 0 1.553-.295 3.036-.831 4.398-.306.774-1.086 1.227-1.918 1.227h-1.053c-.472 0-.745-.556-.5-.96a8.95 8.95 0 00.303-.54" />
     </svg>
   );
 }
@@ -98,6 +119,17 @@ export default function RecommendationsPage() {
   const [pastRecs, setPastRecs] = useState<OutfitRecommendationResponse[]>([]);
   const [pastLoading, setPastLoading] = useState(false);
   const [expandedRecId, setExpandedRecId] = useState<string | null>(null);
+
+  // Alternative items state
+  const [showAlternatives, setShowAlternatives] = useState(false);
+  const [alternativesLoading, setAlternativesLoading] = useState(false);
+  const [selectedItem, setSelectedItem] = useState<{outfitIdx: number; itemIdx: number; item: AIRecommendationItem} | null>(null);
+  const [alternatives, setAlternatives] = useState<AIRecommendationItem[]>([]);
+
+  // Saved outfits state
+  const [savedOutfits, setSavedOutfits] = useState<SavedOutfitWithDetailsResponse[]>([]);
+  const [savingOutfits, setSavingOutfits] = useState<Set<string>>(new Set());
+  const [saveError, setSaveError] = useState<string>("");
 
   const measurementIdFromUrl = searchParams.get("measurement_id");
 
@@ -153,6 +185,14 @@ export default function RecommendationsPage() {
       .finally(() => setPastLoading(false));
   }, [user, selectedProfileId, profiles]);
 
+  // Fetch saved outfits when user changes
+  useEffect(() => {
+    if (!user) return;
+    getSavedOutfits(user.uid)
+      .then((data) => setSavedOutfits(data))
+      .catch(() => setSavedOutfits([]));
+  }, [user]);
+
   const outfitGroups = useMemo(() => {
     if (!result?.items?.length) return null;
     return groupByOutfit(result.items);
@@ -192,9 +232,10 @@ export default function RecommendationsPage() {
 
   const handleRate = async (recId: string, rating: "LIKE" | "DISLIKE") => {
     if (!user) return;
-    // Toggle: if already rated with same value, set to NONE
+    // Toggle: if already rated with same value, remove rating
     const rec = pastRecs.find((r) => r.id === recId);
-    const newRating = rec?.user_rating === rating ? "NONE" : rating;
+    const isToggle = rec?.user_rating === rating;
+    const newRating = isToggle ? "NONE" : rating;
 
     // Optimistic update
     setPastRecs((prev) =>
@@ -202,7 +243,13 @@ export default function RecommendationsPage() {
     );
 
     try {
-      await rateOutfitRecommendation(user.uid, recId, newRating);
+      if (isToggle) {
+        // Delete rating
+        await deleteRating(user.uid, recId);
+      } else {
+        // Create/update rating
+        await rateRecommendation(user.uid, recId, rating);
+      }
     } catch {
       // Revert on failure
       setPastRecs((prev) =>
@@ -214,7 +261,8 @@ export default function RecommendationsPage() {
   const handleRateFresh = async (recId: string, rating: "LIKE" | "DISLIKE") => {
     if (!user) return;
     const current = freshRatings[recId];
-    const newRating = current === rating ? "NONE" : rating;
+    const isToggle = current === rating;
+    const newRating = isToggle ? "NONE" : rating;
 
     setFreshRatings((prev) => ({ ...prev, [recId]: newRating }));
     // Also update past recs optimistically (since the rec is in pastRecs too)
@@ -223,12 +271,148 @@ export default function RecommendationsPage() {
     );
 
     try {
-      await rateOutfitRecommendation(user.uid, recId, newRating as "LIKE" | "DISLIKE" | "NONE");
+      if (isToggle) {
+        // Delete rating
+        await deleteRating(user.uid, recId);
+      } else {
+        // Create/update rating
+        await rateRecommendation(user.uid, recId, rating);
+      }
     } catch {
       setFreshRatings((prev) => ({ ...prev, [recId]: current || "NONE" }));
       setPastRecs((prev) =>
         prev.map((r) => (r.id === recId ? { ...r, user_rating: current ?? null } : r))
       );
+    }
+  };
+
+  const handleShowAlternatives = async (outfitIdx: number, itemIdx: number, item: AIRecommendationItem) => {
+    if (!user || !item.category) return;
+
+    setSelectedItem({outfitIdx, itemIdx, item});
+    setShowAlternatives(true);
+    setAlternativesLoading(true);
+    setAlternatives([]);
+
+    try {
+      const reqData: AlternativeItemsRequest = {
+        measurement_profile_id: selectedProfileId || undefined,
+        category: item.category,
+        occasion: stylePrefs?.occasion || undefined,
+        weather: stylePrefs?.weather || undefined,
+        dress_code: stylePrefs?.dress_code || undefined,
+        budget: budgetFromPriceRange(stylePrefs?.price_range),
+        currency: "USD",
+        styles: stylePrefs?.preferred_styles || [],
+        original_item_name: item.name,
+        original_item_brand: item.brand || undefined,
+        num_alternatives: 5,
+      };
+
+      const response = await getAlternativeItems(user.uid, reqData);
+      setAlternatives(response.items);
+    } catch (err: any) {
+      console.error("Failed to get alternatives:", err);
+      setAlternatives([]);
+    } finally {
+      setAlternativesLoading(false);
+    }
+  };
+
+  const handleSelectAlternative = (alternative: AIRecommendationItem) => {
+    if (!selectedItem || !result) return;
+
+    // Update the outfit with the selected alternative
+    setResult((prev) => {
+      if (!prev) return prev;
+
+      const newItems = [...prev.items];
+      const targetItemIndex = newItems.findIndex(
+        (it) => it.outfit_index === selectedItem.outfitIdx && it.category === selectedItem.item.category
+      );
+
+      if (targetItemIndex >= 0) {
+        newItems[targetItemIndex] = {
+          ...alternative,
+          outfit_index: selectedItem.outfitIdx,
+          reasoning: selectedItem.item.reasoning,
+        };
+      }
+
+      return { ...prev, items: newItems };
+    });
+
+    // Close the modal
+    setShowAlternatives(false);
+    setSelectedItem(null);
+    setAlternatives([]);
+  };
+
+  // Check if an outfit is saved
+  const isOutfitSaved = (recommendationId: string): boolean => {
+    return savedOutfits.some((saved) => saved.recommendation_id === recommendationId);
+  };
+
+  // Get saved outfit entry for a recommendation
+  const getSavedOutfitEntry = (recommendationId: string): SavedOutfitWithDetailsResponse | undefined => {
+    return savedOutfits.find((saved) => saved.recommendation_id === recommendationId);
+  };
+
+  // Handle save outfit
+  const handleSaveOutfit = async (recommendationId: string) => {
+    if (!user || !recommendationId) return;
+
+    setSavingOutfits((prev) => new Set(prev).add(recommendationId));
+    setSaveError("");
+
+    try {
+      await saveOutfit(user.uid, {
+        recommendation_id: recommendationId,
+        collection_name: "Favorites",
+      });
+
+      // Refresh saved outfits list
+      const updated = await getSavedOutfits(user.uid);
+      setSavedOutfits(updated);
+    } catch (err: any) {
+      console.error("Failed to save outfit:", err);
+      setSaveError(err?.message || "Failed to save outfit");
+      setTimeout(() => setSaveError(""), 5000);
+    } finally {
+      setSavingOutfits((prev) => {
+        const newSet = new Set(prev);
+        newSet.delete(recommendationId);
+        return newSet;
+      });
+    }
+  };
+
+  // Handle unsave outfit
+  const handleUnsaveOutfit = async (recommendationId: string) => {
+    if (!user || !recommendationId) return;
+
+    const savedEntry = getSavedOutfitEntry(recommendationId);
+    if (!savedEntry) return;
+
+    setSavingOutfits((prev) => new Set(prev).add(recommendationId));
+    setSaveError("");
+
+    try {
+      await deleteSavedOutfit(user.uid, savedEntry.id);
+
+      // Refresh saved outfits list
+      const updated = await getSavedOutfits(user.uid);
+      setSavedOutfits(updated);
+    } catch (err: any) {
+      console.error("Failed to unsave outfit:", err);
+      setSaveError(err?.message || "Failed to unsave outfit");
+      setTimeout(() => setSaveError(""), 5000);
+    } finally {
+      setSavingOutfits((prev) => {
+        const newSet = new Set(prev);
+        newSet.delete(recommendationId);
+        return newSet;
+      });
     }
   };
 
@@ -257,7 +441,7 @@ export default function RecommendationsPage() {
         filter: "blur(100px)"
       }}></div>
 
-      <AppNav activePage="recommendations" />
+      <AppNav />
 
       <main className="flex-1 w-full max-w-[1440px] mx-auto px-6 lg:px-12 py-10 relative z-10">
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12">
@@ -496,9 +680,12 @@ export default function RecommendationsPage() {
               <button
                 onClick={onGetRecommendations}
                 disabled={isLoading}
-                className="text-sm font-semibold text-amber-700 dark:text-amber-400 hover:underline disabled:opacity-50"
+                className="group relative bg-brand/10 hover:bg-brand dark:bg-brand/20 dark:hover:bg-brand text-brand hover:text-white dark:text-brand-400 dark:hover:text-white px-6 py-3 rounded-full font-bold text-sm transition-all shadow-sm hover:shadow-md flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                Request New Recommendations
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                </svg>
+                <span>Request New Recommendations</span>
               </button>
             </div>
 
@@ -506,14 +693,22 @@ export default function RecommendationsPage() {
               const reasoning = items[0]?.reasoning;
               const recId = result?.recommendation_ids?.[outfitIdx];
               const freshRating = recId ? freshRatings[recId] : undefined;
+              const outfitTotalPrice = items.reduce((sum, item) => sum + (typeof item.price === 'number' ? item.price : 0), 0);
               return (
                 <div key={outfitIdx} className="bg-white dark:bg-stone-900 rounded-xl shadow-sm border border-stone-200 dark:border-stone-800 overflow-hidden">
                   {/* Outfit header */}
                   <div className="px-6 py-4 border-b border-stone-100 dark:border-stone-800 flex items-start justify-between">
                     <div className="flex-1 min-w-0">
-                      <h3 className="text-lg font-bold text-stone-900 dark:text-white">
-                        Outfit {outfitIdx + 1}
-                      </h3>
+                      <div className="flex items-center gap-4 mb-1">
+                        <h3 className="text-lg font-bold text-stone-900 dark:text-white">
+                          Outfit {outfitIdx + 1}
+                        </h3>
+                        {outfitTotalPrice > 0 && (
+                          <span className="text-lg font-bold text-brand dark:text-brand-400">
+                            ${outfitTotalPrice.toFixed(0)}
+                          </span>
+                        )}
+                      </div>
                       {reasoning && (
                         <p className="text-sm text-stone-600 dark:text-stone-400 mt-1">{reasoning}</p>
                       )}
@@ -541,6 +736,32 @@ export default function RecommendationsPage() {
                           title="Dislike this outfit"
                         >
                           <ThumbDown filled={freshRating === "DISLIKE"} />
+                        </button>
+                        <button
+                          onClick={() => {
+                            if (isOutfitSaved(recId)) {
+                              handleUnsaveOutfit(recId);
+                            } else {
+                              handleSaveOutfit(recId);
+                            }
+                          }}
+                          disabled={savingOutfits.has(recId)}
+                          className={`p-1.5 rounded-lg transition-colors ${
+                            isOutfitSaved(recId)
+                              ? "text-amber-600 bg-amber-50 dark:bg-amber-900/30"
+                              : "text-stone-400 hover:text-amber-600 hover:bg-stone-100 dark:hover:bg-stone-800"
+                          } disabled:opacity-50 disabled:cursor-not-allowed`}
+                          title={isOutfitSaved(recId) ? "Unsave outfit" : "Save outfit to favorites"}
+                        >
+                          {savingOutfits.has(recId) ? (
+                            <svg className="w-5 h-5 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                            </svg>
+                          ) : (
+                            <svg className="w-5 h-5" fill={isOutfitSaved(recId) ? "currentColor" : "none"} stroke="currentColor" strokeWidth={isOutfitSaved(recId) ? 0 : 1.5} viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M17.593 3.322c1.1.128 1.907 1.077 1.907 2.185V21L12 17.25 4.5 21V5.507c0-1.108.806-2.057 1.907-2.185a48.507 48.507 0 0111.186 0z" />
+                            </svg>
+                          )}
                         </button>
                       </div>
                     )}
@@ -588,9 +809,32 @@ export default function RecommendationsPage() {
                                   </a>
                                 )}
                               </div>
+                              {it.stock_status && it.stock_status !== "UNKNOWN" && (
+                                <div className="mt-2">
+                                  <span className={`text-xs px-2 py-0.5 rounded-full font-semibold ${
+                                    it.stock_status === "IN_STOCK"
+                                      ? "bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400"
+                                      : it.stock_status === "LOW_STOCK"
+                                      ? "bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400"
+                                      : "bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400"
+                                  }`}>
+                                    {it.stock_status === "IN_STOCK" ? "✓ In Stock" : it.stock_status === "LOW_STOCK" ? "⚠ Low Stock" : "✕ Out of Stock"}
+                                  </span>
+                                </div>
+                              )}
                               {it.recommended_color && (
                                 <p className="text-xs text-stone-500 mt-1">Color: {it.recommended_color}</p>
                               )}
+                              {/* Show Alternatives Button */}
+                              <button
+                                onClick={() => handleShowAlternatives(outfitIdx, idx, it)}
+                                className="mt-3 w-full py-2 px-3 bg-brand/10 hover:bg-brand/20 dark:bg-brand/20 dark:hover:bg-brand/30 text-brand dark:text-brand-400 rounded-lg text-xs font-semibold transition-colors flex items-center justify-center gap-1.5"
+                              >
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                                </svg>
+                                Show Alternatives
+                              </button>
                             </div>
                           </div>
                         );
@@ -683,6 +927,33 @@ export default function RecommendationsPage() {
                           >
                             <ThumbDown filled={rec.user_rating === "DISLIKE"} />
                           </button>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (isOutfitSaved(rec.id)) {
+                                handleUnsaveOutfit(rec.id);
+                              } else {
+                                handleSaveOutfit(rec.id);
+                              }
+                            }}
+                            disabled={savingOutfits.has(rec.id)}
+                            className={`p-1.5 rounded-lg transition-colors ${
+                              isOutfitSaved(rec.id)
+                                ? "text-amber-600 bg-amber-50 dark:bg-amber-900/30"
+                                : "text-gray-400 dark:text-gray-500 hover:text-amber-600 dark:hover:text-amber-400"
+                            } disabled:opacity-50 disabled:cursor-not-allowed`}
+                            title={isOutfitSaved(rec.id) ? "Unsave outfit" : "Save outfit to favorites"}
+                          >
+                            {savingOutfits.has(rec.id) ? (
+                              <svg className="w-5 h-5 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                              </svg>
+                            ) : (
+                              <svg className="w-5 h-5" fill={isOutfitSaved(rec.id) ? "currentColor" : "none"} stroke="currentColor" strokeWidth={isOutfitSaved(rec.id) ? 0 : 1.5} viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M17.593 3.322c1.1.128 1.907 1.077 1.907 2.185V21L12 17.25 4.5 21V5.507c0-1.108.806-2.057 1.907-2.185a48.507 48.507 0 0111.186 0z" />
+                              </svg>
+                            )}
+                          </button>
                         </div>
                       </div>
                       <div className="px-2 pb-2">
@@ -709,6 +980,11 @@ export default function RecommendationsPage() {
                                   <span className="text-lg">{CATEGORY_ICONS[(item.category || "").toUpperCase()] || "👔"}</span>
                                   <span className="flex-1 truncate text-gray-700 dark:text-gray-300">{item.name}</span>
                                   <div className="flex items-center gap-2">
+                                    {item.recommended_size && (
+                                      <span className="text-xs bg-stone-200 dark:bg-stone-700 px-2 py-0.5 rounded text-stone-600 dark:text-stone-300">
+                                        {item.recommended_size}
+                                      </span>
+                                    )}
                                     {typeof item.price === "number" && (
                                       <span className="font-semibold text-brand dark:text-brand-400">${item.price.toFixed(0)}</span>
                                     )}
@@ -737,7 +1013,122 @@ export default function RecommendationsPage() {
             )}
           </div>
         )}
+
+        {/* Alternatives Modal */}
+        {showAlternatives && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" onClick={() => setShowAlternatives(false)}>
+            <div className="bg-white dark:bg-stone-900 rounded-2xl shadow-2xl max-w-4xl w-full max-h-[80vh] overflow-hidden border border-stone-200 dark:border-stone-800" onClick={(e) => e.stopPropagation()}>
+              {/* Modal Header */}
+              <div className="px-6 py-4 border-b border-stone-200 dark:border-stone-800 flex items-center justify-between">
+                <div>
+                  <h3 className="text-xl font-bold text-stone-900 dark:text-white">
+                    Alternative {selectedItem?.item.category} Items
+                  </h3>
+                  <p className="text-sm text-stone-600 dark:text-stone-400 mt-1">
+                    Replacing: {selectedItem?.item.name}
+                  </p>
+                </div>
+                <button
+                  onClick={() => setShowAlternatives(false)}
+                  className="p-2 rounded-lg hover:bg-stone-100 dark:hover:bg-stone-800 transition-colors"
+                >
+                  <svg className="w-5 h-5 text-stone-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+
+              {/* Modal Content */}
+              <div className="p-6 overflow-y-auto max-h-[calc(80vh-120px)]">
+                {alternativesLoading ? (
+                  <div className="flex items-center justify-center py-12">
+                    <div className="w-8 h-8 border-4 border-brand border-t-transparent rounded-full animate-spin" />
+                    <p className="ml-3 text-stone-600 dark:text-stone-400">Finding alternatives...</p>
+                  </div>
+                ) : alternatives.length === 0 ? (
+                  <div className="text-center py-12">
+                    <p className="text-stone-600 dark:text-stone-400">No alternative items found. Try different preferences.</p>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {alternatives.map((alt, idx) => {
+                      const altUrl = pickBestUrl(alt);
+                      const catUpper = (alt.category || "").toUpperCase();
+                      return (
+                        <div
+                          key={idx}
+                          className="rounded-lg border border-stone-200 dark:border-stone-700 overflow-hidden hover:shadow-lg hover:border-brand dark:hover:border-brand transition-all cursor-pointer group"
+                          onClick={() => handleSelectAlternative(alt)}
+                        >
+                          <div className="w-full h-48 bg-stone-100 dark:bg-stone-800 flex items-center justify-center overflow-hidden">
+                            {alt.image_url ? (
+                              <img
+                                src={alt.image_url}
+                                alt={alt.name}
+                                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                                onError={(e) => { e.currentTarget.style.display = "none"; e.currentTarget.nextElementSibling?.classList.remove("hidden"); }}
+                              />
+                            ) : null}
+                            <span className={`text-5xl ${alt.image_url ? "hidden" : ""}`}>{CATEGORY_ICONS[catUpper] || "👔"}</span>
+                          </div>
+                          <div className="p-4 bg-white dark:bg-stone-900">
+                            <p className="text-xs font-medium text-brand dark:text-brand-400 uppercase tracking-wider">
+                              {alt.category || "Item"}
+                            </p>
+                            <p className="font-semibold text-sm text-stone-900 dark:text-white mt-1 line-clamp-2">{alt.name}</p>
+                            <p className="text-xs text-stone-500 dark:text-stone-400 mt-1">{alt.brand || "Brand N/A"}</p>
+                            <div className="flex items-center justify-between mt-3">
+                              <div className="flex items-center gap-2">
+                                {typeof alt.price === "number" && (
+                                  <span className="text-base font-bold text-stone-900 dark:text-white">${alt.price.toFixed(0)}</span>
+                                )}
+                                {alt.recommended_size && (
+                                  <span className="text-xs bg-stone-200 dark:bg-stone-700 px-2 py-0.5 rounded text-stone-600 dark:text-stone-300">
+                                    {alt.recommended_size}
+                                  </span>
+                                )}
+                              </div>
+                              {altUrl && (
+                                <a
+                                  href={altUrl}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className="text-xs font-semibold text-brand dark:text-brand-400 hover:underline"
+                                  onClick={(e) => e.stopPropagation()}
+                                >
+                                  View
+                                </a>
+                              )}
+                            </div>
+                            {alt.recommended_color && (
+                              <p className="text-xs text-stone-500 dark:text-stone-400 mt-2">Color: {alt.recommended_color}</p>
+                            )}
+                            <div className="mt-3 pt-3 border-t border-stone-100 dark:border-stone-800">
+                              <button className="w-full py-2 bg-brand hover:bg-brand-600 text-white rounded-lg text-sm font-semibold transition-colors">
+                                Select This Item
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
       </main>
+
+      {/* Save Error Toast */}
+      {saveError && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 bg-red-600 text-white px-6 py-3 rounded-full shadow-lg flex items-center gap-2 z-50 animate-fade-in">
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          <span className="font-semibold">{saveError}</span>
+        </div>
+      )}
     </div>
   );
 }

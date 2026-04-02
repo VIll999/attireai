@@ -53,9 +53,44 @@ class CandidateItem(BaseModel):
     recommended_size: Optional[str] = None
     recommended_color: Optional[str] = None
     outfit_index: Optional[int] = None
+    stock_status: Optional[str] = "UNKNOWN"
 
 
 class AIWebCandidatesResponse(BaseModel):
     recommendation_ids: List[str] = Field(default_factory=list)
+    items: List[CandidateItem] = Field(default_factory=list)
+    debug: Dict[str, Any] = Field(default_factory=dict)
+
+
+class AlternativeItemsRequest(BaseModel):
+    """Request alternative items for a specific category in an outfit context."""
+    measurement_profile_id: Optional[str] = Field(
+        default=None,
+        description="If omitted, backend will use user's primary measurement profile.",
+    )
+
+    category: Category = Field(..., description="Category of item to find alternatives for")
+
+    # Context from the original outfit
+    occasion: Optional[str] = None
+    weather: Optional[str] = None
+    location: Optional[str] = None
+    dress_code: Optional[str] = None
+
+    # Constraints to match
+    budget: Optional[confloat(gt=0)] = None
+    currency: str = Field(default="USD", min_length=3, max_length=3)
+    styles: List[str] = Field(default_factory=list)
+
+    # Original item being replaced (for context)
+    original_item_name: Optional[str] = None
+    original_item_brand: Optional[str] = None
+
+    # How many alternatives to return
+    num_alternatives: conint(ge=1, le=10) = 5
+
+
+class AlternativeItemsResponse(BaseModel):
+    """Response containing alternative items."""
     items: List[CandidateItem] = Field(default_factory=list)
     debug: Dict[str, Any] = Field(default_factory=dict)
