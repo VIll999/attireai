@@ -96,7 +96,11 @@ export default function ColorAnalysisPage() {
       setSelectedSkinToneHex(result.skin_tone_hex);
       setSelectedHairColor(result.hair_color);
       setSelectedHairColorHex(result.hair_color_hex);
-      setSuccessMessage("AI detected your skin tone and hair color! Adjust if needed.");
+      if (result.confidence != null && result.confidence < 0.6) {
+        setSuccessMessage("AI detection confidence is low — lighting may be poor. Please review and adjust the selections below.");
+      } else {
+        setSuccessMessage("AI detected your skin tone and hair color! Adjust if needed.");
+      }
     } catch (err) {
       console.error("AI color analysis failed:", err);
       setError("AI color detection failed. Please select manually.");
@@ -179,7 +183,11 @@ export default function ColorAnalysisPage() {
           setSelectedHairColor(color.hair_color);
           setSelectedHairColorHex(color.hair_color_hex || null);
         }
-        setSuccessMessage("Colors detected from your body scan! You can adjust if needed.");
+        if (color.confidence != null && color.confidence < 0.6) {
+          setSuccessMessage("Colors detected but confidence is low — lighting may have been poor. Please review and adjust below.");
+        } else {
+          setSuccessMessage("Colors detected from your body scan! You can adjust if needed.");
+        }
       } catch { /* ignore parse errors */ }
       sessionStorage.removeItem("scanColorResult");
     }
