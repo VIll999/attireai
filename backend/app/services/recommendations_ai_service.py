@@ -19,6 +19,7 @@ from app.db.models import (
     OutfitRecommendation,
     RecommendationItem,
 )
+from app.services.learning_service import RecommendationLearningService
 from app.models.recommendations_ai import (
     AIWebCandidatesRequest,
     AIWebCandidatesResponse,
@@ -477,6 +478,44 @@ class RecommendationsAIService:
         recommendation_ids: List[str] = []
         if req.save_to_db:
             recommendation_ids = self._persist(db, user.id, req, result)
+
+            # Apply learning-based re-ranking if recommendations were saved
+            if recommendation_ids:
+                # Reload recommendations from DB with all items
+                recommendations = (
+                    db.query(OutfitRecommendation)
+                    .filter(OutfitRecommendation.id.in_(recommendation_ids))
+                    .all()
+                )
+
+                # Apply learning service to re-rank
+                learning_service = RecommendationLearningService()
+                ranked_recommendations = learning_service.rank_recommendations(
+                    db, user.id, recommendations, return_debug_info=False
+                )
+
+                # Rebuild result from ranked recommendations
+                result = {"outfits": []}
+                for rec in ranked_recommendations:
+                    outfit = {
+                        "reasoning": rec.reasoning,
+                        "items": []
+                    }
+                    for item in rec.items:
+                        outfit["items"].append({
+                            "name": item.name,
+                            "brand": item.brand,
+                            "category": item.category,
+                            "price": float(item.price) if item.price else None,
+                            "currency": item.currency,
+                            "image_url": item.image_url,
+                            "purchase_url": item.purchase_url,
+                            "recommended_size": item.recommended_size,
+                        })
+                    result["outfits"].append(outfit)
+
+                # Update recommendation_ids to match new order
+                recommendation_ids = [rec.id for rec in ranked_recommendations]
 
         # Flatten outfits into items for the response
         all_items: List[Dict[str, Any]] = []

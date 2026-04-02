@@ -594,6 +594,110 @@ export async function getAlternativeItems(
   return response.json();
 }
 
+// ── Rating System (Learning) ──
+
+export interface RatingResponse {
+  id: string;
+  recommendation_id: string;
+  rating: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface LearningStatsResponse {
+  total_ratings: number;
+  likes: number;
+  dislikes: number;
+  learning_active: boolean;
+  min_ratings_needed: number;
+}
+
+/**
+ * Rate an outfit recommendation (new learning system)
+ */
+export async function rateRecommendation(
+  firebaseUid: string,
+  recommendationId: string,
+  rating: "LIKE" | "DISLIKE"
+): Promise<RatingResponse> {
+  const response = await fetch(`${API_URL}/recommendations/${recommendationId}/rate`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "X-Firebase-UID": firebaseUid,
+    },
+    body: JSON.stringify({ rating }),
+  });
+
+  if (!response.ok) {
+    throw new Error("Failed to rate recommendation");
+  }
+
+  return response.json();
+}
+
+/**
+ * Get user's rating for a specific recommendation
+ */
+export async function getRating(
+  firebaseUid: string,
+  recommendationId: string
+): Promise<RatingResponse | null> {
+  const response = await fetch(`${API_URL}/recommendations/${recommendationId}/rating`, {
+    method: "GET",
+    headers: {
+      "X-Firebase-UID": firebaseUid,
+    },
+  });
+
+  if (!response.ok) {
+    if (response.status === 404) return null;
+    throw new Error("Failed to get rating");
+  }
+
+  const data = await response.json();
+  return data || null;
+}
+
+/**
+ * Delete user's rating for a recommendation
+ */
+export async function deleteRating(
+  firebaseUid: string,
+  recommendationId: string
+): Promise<void> {
+  const response = await fetch(`${API_URL}/recommendations/${recommendationId}/rating`, {
+    method: "DELETE",
+    headers: {
+      "X-Firebase-UID": firebaseUid,
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error("Failed to delete rating");
+  }
+}
+
+/**
+ * Get learning statistics for the current user
+ */
+export async function getLearningStats(
+  firebaseUid: string
+): Promise<LearningStatsResponse> {
+  const response = await fetch(`${API_URL}/recommendations/learning/stats`, {
+    method: "GET",
+    headers: {
+      "X-Firebase-UID": firebaseUid,
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error("Failed to get learning stats");
+  }
+
+  return response.json();
+}
+
 // ── Vision / Color Analysis ──
 
 export async function analyzePhotoColors(

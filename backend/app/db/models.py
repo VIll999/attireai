@@ -33,6 +33,11 @@ class User(Base):
         back_populates="user",
         cascade="all, delete-orphan",
     )
+    outfit_ratings = relationship(
+        "OutfitRating",
+        back_populates="user",
+        cascade="all, delete-orphan",
+    )
     saved_outfits = relationship(
         "SavedOutfit",
         back_populates="user",
@@ -128,6 +133,7 @@ class OutfitRecommendation(Base):
     total_price = Column(Numeric(10, 2), nullable=True)
     reasoning = Column(Text, nullable=True)
     user_rating = Column(Enum("LIKE", "DISLIKE", "NONE"), default="NONE")
+    feature_vector = Column(JSON, nullable=True)
     created_at = Column(TIMESTAMP, server_default=text("CURRENT_TIMESTAMP"))
 
     user = relationship("User", back_populates="outfit_recommendations")
@@ -145,6 +151,11 @@ class OutfitRecommendation(Base):
     try_ons = relationship(
         "VirtualTryOn",
         back_populates="outfit",
+        cascade="all, delete-orphan",
+    )
+    ratings = relationship(
+        "OutfitRating",
+        back_populates="recommendation",
         cascade="all, delete-orphan",
     )
 
@@ -173,6 +184,23 @@ class RecommendationItem(Base):
     stock_status = Column(Enum("IN_STOCK", "LOW_STOCK", "OUT_OF_STOCK", "UNKNOWN"), default="UNKNOWN", nullable=True)
 
     recommendation = relationship("OutfitRecommendation", back_populates="items")
+
+
+class OutfitRating(Base):
+    __tablename__ = "outfit_ratings"
+
+    id = Column(CHAR(36), primary_key=True, default=generate_uuid)
+    user_id = Column(CHAR(36), ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    recommendation_id = Column(CHAR(36), ForeignKey("outfit_recommendations.id", ondelete="CASCADE"), nullable=False)
+    rating = Column(Enum("LIKE", "DISLIKE"), nullable=False)
+    created_at = Column(TIMESTAMP, server_default=text("CURRENT_TIMESTAMP"))
+    updated_at = Column(
+        TIMESTAMP,
+        server_default=text("CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP"),
+    )
+
+    user = relationship("User", back_populates="outfit_ratings")
+    recommendation = relationship("OutfitRecommendation", back_populates="ratings")
 
 
 class SavedOutfit(Base):
