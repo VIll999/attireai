@@ -734,12 +734,15 @@ export interface SavedOutfitResponse {
   recommendation_id: string;
   collection_name: string;
   is_purchased: boolean;
+  original_total_price: number | null;
   try_on_image_url: string | null;
   created_at: string;
 }
 
 export interface SavedOutfitWithDetailsResponse extends SavedOutfitResponse {
   recommendation: OutfitRecommendationResponse | null;
+  price_dropped: boolean;
+  current_total_price: number | null;
 }
 
 /**
@@ -899,6 +902,69 @@ export async function getCollections(firebaseUid: string): Promise<string[]> {
 
   if (!response.ok) {
     throw new Error("Failed to get collections");
+  }
+
+  return response.json();
+}
+
+export interface MockPriceDropResponse {
+  success: boolean;
+  message: string;
+  item_name: string;
+  original_price: number;
+  new_price: number;
+  saved_outfit_id: string;
+}
+
+/**
+ * Mock a price drop for demo purposes
+ */
+export async function mockPriceDrop(
+  firebaseUid: string
+): Promise<MockPriceDropResponse> {
+  const response = await fetch(`${API_URL}/saved-outfits/mock-price-drop`, {
+    method: "POST",
+    headers: {
+      "X-Firebase-UID": firebaseUid,
+    },
+  });
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({ detail: "Failed to mock price drop" }));
+    throw new Error(error.detail || "Failed to mock price drop");
+  }
+
+  return response.json();
+}
+
+export interface UpdateItemPriceResponse {
+  success: boolean;
+  item_id: string;
+  item_name: string;
+  old_price: number;
+  new_price: number;
+}
+
+/**
+ * Update the price of a recommendation item
+ */
+export async function updateItemPrice(
+  firebaseUid: string,
+  itemId: string,
+  newPrice: number
+): Promise<UpdateItemPriceResponse> {
+  const response = await fetch(`${API_URL}/recommendation-items/${itemId}/price`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+      "X-Firebase-UID": firebaseUid,
+    },
+    body: JSON.stringify({ new_price: newPrice }),
+  });
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({ detail: "Failed to update item price" }));
+    throw new Error(error.detail || "Failed to update item price");
   }
 
   return response.json();

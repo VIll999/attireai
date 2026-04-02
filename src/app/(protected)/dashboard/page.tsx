@@ -7,8 +7,9 @@ import { useAuth } from "@/context/AuthContext";
 import { useProfile } from "@/context/ProfileContext";
 import { useLocale } from "@/context/LocaleContext";
 import { auth, deleteUser } from "@/lib/firebase";
-import { deleteUserFromBackend, getSavedOutfits, SavedOutfitWithDetailsResponse } from "@/lib/api";
+import { deleteUserFromBackend, getSavedOutfits, SavedOutfitWithDetailsResponse, updateItemPrice } from "@/lib/api";
 import AppNav from "@/components/AppNav";
+import PriceEditModal from "@/components/PriceEditModal";
 
 export default function DashboardPage() {
   const { user, dbUser, signOut } = useAuth();
@@ -30,6 +31,7 @@ export default function DashboardPage() {
   const [isDeleting, setIsDeleting] = useState(false);
   const [savedOutfits, setSavedOutfits] = useState<SavedOutfitWithDetailsResponse[]>([]);
   const [savedOutfitsLoading, setSavedOutfitsLoading] = useState(true);
+  const [showPriceEditModal, setShowPriceEditModal] = useState(false);
 
   // Fetch saved outfits
   useEffect(() => {
@@ -64,6 +66,16 @@ export default function DashboardPage() {
       setIsDeleting(false);
       setShowDeleteConfirm(false);
     }
+  };
+
+  const handlePriceUpdate = async (itemId: string, newPrice: number) => {
+    if (!user) return;
+
+    await updateItemPrice(user.uid, itemId, newPrice);
+
+    // Refresh saved outfits to show the price change
+    const data = await getSavedOutfits(user.uid);
+    setSavedOutfits(data);
   };
 
   const firstName = dbUser?.name ? dbUser.name.split(" ")[0] : "Guest";
@@ -342,7 +354,16 @@ export default function DashboardPage() {
             <section>
               <div className="flex items-center justify-between mb-6">
                 <h3 className="text-2xl font-bold text-gray-900 dark:text-white font-cabinet">Recently Saved Outfits</h3>
-                <Link href="/saved-outfits" className="text-sm font-bold text-brand dark:text-brand-400 hover:underline">View All</Link>
+                <div className="flex items-center gap-3">
+                  <button
+                    onClick={() => setShowPriceEditModal(true)}
+                    disabled={savedOutfits.length === 0}
+                    className="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white text-sm font-bold rounded-full transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
+                  >
+                    ✏️ Edit Prices
+                  </button>
+                  <Link href="/saved-outfits" className="text-sm font-bold text-brand dark:text-brand-400 hover:underline">View All</Link>
+                </div>
               </div>
 
               {savedOutfitsLoading ? (
@@ -404,6 +425,11 @@ export default function DashboardPage() {
                               Purchased
                             </div>
                           )}
+                          {saved.price_dropped && !saved.is_purchased && (
+                            <div className="absolute top-3 left-3 bg-red-500 text-white px-3 py-1 rounded-full text-xs font-bold shadow-lg animate-pulse">
+                              Price Drop!
+                            </div>
+                          )}
                         </div>
                         <div className="p-4">
                           <h4 className="font-bold text-gray-900 dark:text-white line-clamp-1 mb-1">
@@ -412,11 +438,23 @@ export default function DashboardPage() {
                           <p className="text-xs text-stone-500 dark:text-stone-400 mb-2">
                             {rec.items?.length || 0} items
                           </p>
-                          {totalPrice > 0 && (
+                          {saved.price_dropped && saved.current_total_price && saved.original_total_price ? (
+                            <div className="space-y-1">
+                              <p className="text-xs text-gray-500 dark:text-gray-400 line-through">
+                                ${saved.original_total_price.toFixed(0)}
+                              </p>
+                              <p className="text-lg font-bold text-red-500 dark:text-red-400">
+                                ${saved.current_total_price.toFixed(0)}
+                              </p>
+                              <p className="text-xs text-red-600 dark:text-red-400 font-semibold">
+                                Save ${(saved.original_total_price - saved.current_total_price).toFixed(0)}
+                              </p>
+                            </div>
+                          ) : totalPrice > 0 ? (
                             <p className="text-lg font-bold text-brand dark:text-brand-400">
                               ${totalPrice.toFixed(0)}
                             </p>
-                          )}
+                          ) : null}
                         </div>
                       </Link>
                     );
@@ -521,6 +559,14 @@ export default function DashboardPage() {
           </div>
         </div>
       )}
+
+      {/* Price Edit Modal */}
+      <PriceEditModal
+        isOpen={showPriceEditModal}
+        onClose={() => setShowPriceEditModal(false)}
+        savedOutfits={savedOutfits}
+        onPriceUpdate={handlePriceUpdate}
+      />
     </div>
   );
 }
