@@ -34,7 +34,7 @@ export default function PriceEditModal({
 
   const handleItemSelect = (item: OutfitRecommendationItemResponse) => {
     setSelectedItem(item);
-    setNewPrice(item.price ? item.price.toString() : "");
+    setNewPrice(item.price ? String(item.price) : "");
   };
 
   const handleSubmit = async () => {
@@ -142,7 +142,7 @@ export default function PriceEditModal({
                           {item.brand} • {item.category}
                         </p>
                         <p className="text-sm font-bold text-brand dark:text-brand-400 mt-1">
-                          Current: ${item.price?.toFixed(2) || "N/A"}
+                          Current: ${item.price ? Number(item.price).toFixed(2) : "N/A"}
                         </p>
                       </div>
                     </div>
@@ -177,19 +177,30 @@ export default function PriceEditModal({
                 </div>
                 {selectedItem.price && parseFloat(newPrice) > 0 && (
                   <div className="text-sm">
-                    {parseFloat(newPrice) < selectedItem.price ? (
-                      <span className="text-green-600 dark:text-green-400 font-bold">
-                        ↓ ${(selectedItem.price - parseFloat(newPrice)).toFixed(2)} off
-                      </span>
-                    ) : parseFloat(newPrice) > selectedItem.price ? (
-                      <span className="text-red-600 dark:text-red-400 font-bold">
-                        ↑ ${(parseFloat(newPrice) - selectedItem.price).toFixed(2)} increase
-                      </span>
-                    ) : (
-                      <span className="text-gray-500 dark:text-gray-400">
-                        No change
-                      </span>
-                    )}
+                    {(() => {
+                      const currentPrice = Number(selectedItem.price);
+                      const newPriceNum = parseFloat(newPrice);
+
+                      if (newPriceNum < currentPrice) {
+                        return (
+                          <span className="text-green-600 dark:text-green-400 font-bold">
+                            ↓ ${(currentPrice - newPriceNum).toFixed(2)} off
+                          </span>
+                        );
+                      } else if (newPriceNum > currentPrice) {
+                        return (
+                          <span className="text-red-600 dark:text-red-400 font-bold">
+                            ↑ ${(newPriceNum - currentPrice).toFixed(2)} increase
+                          </span>
+                        );
+                      } else {
+                        return (
+                          <span className="text-gray-500 dark:text-gray-400">
+                            No change
+                          </span>
+                        );
+                      }
+                    })()}
                   </div>
                 )}
               </div>
