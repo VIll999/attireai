@@ -397,6 +397,15 @@ export default function DashboardPage() {
                     const displayItem = rec.items?.find((item) => item.image_url) || rec.items?.[0];
                     const totalPrice = rec.items?.reduce((sum, item) => sum + (typeof item.price === "number" ? item.price : 0), 0) || 0;
 
+                    // Calculate stock status summary
+                    const stockSummary = rec.items?.reduce((acc, item) => {
+                      if (item.stock_status === "IN_STOCK") acc.inStock++;
+                      else if (item.stock_status === "LOW_STOCK") acc.lowStock++;
+                      else if (item.stock_status === "OUT_OF_STOCK") acc.outOfStock++;
+                      else acc.unknown++;
+                      return acc;
+                    }, { inStock: 0, lowStock: 0, outOfStock: 0, unknown: 0 }) || { inStock: 0, lowStock: 0, outOfStock: 0, unknown: 0 };
+
                     return (
                       <Link
                         key={saved.id}
@@ -455,6 +464,30 @@ export default function DashboardPage() {
                               ${totalPrice.toFixed(0)}
                             </p>
                           ) : null}
+
+                          {/* Stock Status Summary */}
+                          <div className="mt-3 flex flex-wrap gap-1">
+                            {stockSummary.outOfStock > 0 && (
+                              <span className="text-xs px-2 py-0.5 rounded-full font-semibold bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400">
+                                {stockSummary.outOfStock} Out of Stock
+                              </span>
+                            )}
+                            {stockSummary.lowStock > 0 && (
+                              <span className="text-xs px-2 py-0.5 rounded-full font-semibold bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400">
+                                {stockSummary.lowStock} Low Stock
+                              </span>
+                            )}
+                            {stockSummary.unknown > 0 && (
+                              <span className="text-xs px-2 py-0.5 rounded-full font-semibold bg-gray-100 dark:bg-gray-700/30 text-gray-600 dark:text-gray-400">
+                                {stockSummary.unknown} Unknown Stock
+                              </span>
+                            )}
+                            {stockSummary.inStock > 0 && stockSummary.outOfStock === 0 && stockSummary.lowStock === 0 && stockSummary.unknown === 0 && (
+                              <span className="text-xs px-2 py-0.5 rounded-full font-semibold bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400">
+                                All In Stock
+                              </span>
+                            )}
+                          </div>
                         </div>
                       </Link>
                     );
