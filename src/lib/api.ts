@@ -703,7 +703,7 @@ export async function getLearningStats(
 export async function analyzePhotoColors(
   firebaseUid: string,
   photoBase64: string
-): Promise<{ skin_tone: string; skin_tone_hex: string; hair_color: string; hair_color_hex: string }> {
+): Promise<{ skin_tone: string; skin_tone_hex: string; hair_color: string; hair_color_hex: string; confidence?: number }> {
   const response = await fetch(`${API_URL}/vision/analyze-colors`, {
     method: "POST",
     headers: {

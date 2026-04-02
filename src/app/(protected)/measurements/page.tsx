@@ -13,6 +13,7 @@ import {
   getMeasurements,
   createMeasurement,
   updateMeasurement,
+  deleteMeasurement,
   getCurrentUser,
   getSizeRecommendations,
   MeasurementResponse,
@@ -203,6 +204,29 @@ export default function MeasurementsPage() {
       } else {
         setError("Failed to create new profile");
       }
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleDeleteProfile = async () => {
+    if (!user || !editingId) return;
+    if (measurements.length <= 1) {
+      setError("You must have at least one measurement profile.");
+      return;
+    }
+    if (!window.confirm("Are you sure you want to delete this profile? This cannot be undone.")) return;
+
+    setIsSaving(true);
+    setError("");
+    try {
+      await deleteMeasurement(user.uid, editingId);
+      setEditingId("");
+      await fetchMeasurements();
+      refreshProfileMeasurements();
+      setSuccessMessage("Profile deleted successfully!");
+    } catch {
+      setError("Failed to delete profile");
     } finally {
       setIsSaving(false);
     }
@@ -627,6 +651,21 @@ export default function MeasurementsPage() {
                               <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
                             </svg>
                           </button>
+
+                          {/* Delete Profile Button — only when multiple profiles exist */}
+                          {measurements.length > 1 && (
+                            <button
+                              type="button"
+                              onClick={handleDeleteProfile}
+                              disabled={isSaving}
+                              className="w-12 h-12 rounded-full flex items-center justify-center transition-all shadow-sm bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 hover:bg-red-200 dark:hover:bg-red-900/50 hover:scale-110 active:scale-95"
+                              title="Delete this profile"
+                            >
+                              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                              </svg>
+                            </button>
+                          )}
                         </div>
                       </div>
 
