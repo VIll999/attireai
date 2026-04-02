@@ -441,7 +441,7 @@ export default function RecommendationsPage() {
         filter: "blur(100px)"
       }}></div>
 
-      <AppNav activePage="recommendations" />
+      <AppNav />
 
       <main className="flex-1 w-full max-w-[1440px] mx-auto px-6 lg:px-12 py-10 relative z-10">
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12">

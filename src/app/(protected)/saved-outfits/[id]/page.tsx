@@ -335,11 +335,6 @@ export default function SavedOutfitDetailPage() {
                         </span>
                       )}
                     </div>
-                    {item.recommended_color && (
-                      <p className="text-xs text-stone-500 dark:text-stone-400 mb-2">
-                        Color: {item.recommended_color}
-                      </p>
-                    )}
                     {item.stock_status && item.stock_status !== "UNKNOWN" && (
                       <div className="mb-3">
                         <span className={`text-xs px-2 py-1 rounded-full font-semibold ${

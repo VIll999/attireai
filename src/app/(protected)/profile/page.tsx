@@ -10,7 +10,7 @@ import AppNav from "@/components/AppNav";
 
 export default function ProfilePage() {
   const router = useRouter();
-  const { user, dbUser, updateDbUser, logout } = useAuth();
+  const { user, dbUser, updateDbUser, signOut } = useAuth();
   const { t } = useLocale();
   const [isEditing, setIsEditing] = useState(false);
   const [name, setName] = useState("");
@@ -132,7 +132,7 @@ export default function ProfilePage() {
       await deleteUser(user);
 
       // 3. Logout and redirect
-      await logout();
+      await signOut();
       router.push("/");
     } catch (err: any) {
       console.error("Failed to delete account:", err);
