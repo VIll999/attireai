@@ -80,7 +80,8 @@ async def stripe_webhook(request: Request, db: Session = Depends(get_db)):
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"Invalid signature: {exc}")
 
     event_type = event["type"]
-    data = event["data"]["object"]
+    # Stripe SDK 15.x StripeObjects no longer subclass dict; convert to plain dict.
+    data = dict(event["data"]["object"])
 
     if event_type == "checkout.session.completed":
         customer_id = data.get("customer")
