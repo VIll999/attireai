@@ -5,6 +5,22 @@ from typing import Optional
 from app.db.database import get_db
 from app.db.models import User
 from app.models.user import UserCreate, UserResponse, UserUpdate
+from app.utils.auth import is_admin_email
+
+
+def _to_response(user: User) -> dict:
+    return {
+        "id": user.id,
+        "email": user.email,
+        "firebase_uid": user.firebase_uid,
+        "name": user.name,
+        "profile_picture_url": user.profile_picture_url,
+        "subscription_tier": user.subscription_tier,
+        "vip_trial_used": user.vip_trial_used,
+        "is_admin": is_admin_email(user.email),
+        "created_at": user.created_at,
+        "updated_at": user.updated_at,
+    }
 
 router = APIRouter()
 
@@ -25,7 +41,7 @@ async def sync_user(user_data: UserCreate, db: Session = Depends(get_db)):
         existing_user.email = user_data.email
         db.commit()
         db.refresh(existing_user)
-        return existing_user
+        return _to_response(existing_user)
 
     # Check if user exists by email (handles case where Firebase account was deleted and recreated)
     existing_by_email = db.query(User).filter(User.email == user_data.email).first()
@@ -36,7 +52,7 @@ async def sync_user(user_data: UserCreate, db: Session = Depends(get_db)):
         existing_by_email.firebase_uid = user_data.firebase_uid
         db.commit()
         db.refresh(existing_by_email)
-        return existing_by_email
+        return _to_response(existing_by_email)
 
     # Create new user
     new_user = User(
@@ -49,7 +65,7 @@ async def sync_user(user_data: UserCreate, db: Session = Depends(get_db)):
     db.commit()
     db.refresh(new_user)
 
-    return new_user
+    return _to_response(new_user)
 
 
 @router.get("/me", response_model=UserResponse)
@@ -74,7 +90,7 @@ async def get_current_user(
             detail="User not found",
         )
 
-    return user
+    return _to_response(user)
 
 
 @router.put("/me", response_model=UserResponse)
@@ -109,7 +125,7 @@ async def update_current_user(
     db.commit()
     db.refresh(user)
 
-    return user
+    return _to_response(user)
 
 
 @router.delete("/me", status_code=status.HTTP_204_NO_CONTENT)

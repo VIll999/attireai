@@ -19,6 +19,7 @@ class User(Base):
     name = Column(String(100), nullable=False)
     profile_picture_url = Column(String(500), nullable=True)
     subscription_tier = Column(Enum("FREE", "VIP"), default="FREE")
+    vip_trial_used = Column(Boolean, default=False, nullable=False)
     created_at = Column(TIMESTAMP, server_default=text("CURRENT_TIMESTAMP"))
     updated_at = Column(
         TIMESTAMP,
@@ -52,6 +53,11 @@ class User(Base):
         "Subscription",
         back_populates="user",
         uselist=False,
+        cascade="all, delete-orphan",
+    )
+    notifications = relationship(
+        "Notification",
+        back_populates="user",
         cascade="all, delete-orphan",
     )
 
@@ -236,6 +242,22 @@ class VirtualTryOn(Base):
 
     user = relationship("User", back_populates="virtual_try_ons")
     outfit = relationship("OutfitRecommendation", back_populates="try_ons")
+
+
+class Notification(Base):
+    __tablename__ = "notifications"
+
+    id = Column(CHAR(36), primary_key=True, default=generate_uuid)
+    user_id = Column(CHAR(36), ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    type = Column(String(50), nullable=False)
+    title = Column(String(200), nullable=False)
+    body = Column(Text, nullable=True)
+    link = Column(String(500), nullable=True)
+    notification_metadata = Column("metadata", JSON, nullable=True)
+    read_at = Column(TIMESTAMP, nullable=True)
+    created_at = Column(TIMESTAMP, server_default=text("CURRENT_TIMESTAMP"))
+
+    user = relationship("User", back_populates="notifications")
 
 
 class Subscription(Base):

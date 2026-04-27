@@ -24,6 +24,8 @@ class UserResponse(BaseModel):
     name: str
     profile_picture_url: Optional[str] = None
     subscription_tier: str = "FREE"
+    vip_trial_used: bool = False
+    is_admin: bool = False
     created_at: datetime
     updated_at: datetime
 
