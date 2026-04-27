@@ -34,7 +34,7 @@ async def get_status(
     cancel_at_period_end = False
     if sub and sub.stripe_subscription_id:
         try:
-            stripe_sub = stripe_service.get_subscription(sub.stripe_subscription_id)
+            stripe_sub = stripe_service.get_subscription(sub.stripe_subscription_id).to_dict()
             cancel_at_period_end = bool(stripe_sub.get("cancel_at_period_end", False))
         except Exception:
             pass

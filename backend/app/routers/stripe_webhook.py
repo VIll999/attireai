@@ -80,15 +80,15 @@ async def stripe_webhook(request: Request, db: Session = Depends(get_db)):
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"Invalid signature: {exc}")
 
     event_type = event["type"]
-    # Stripe SDK 15.x StripeObjects no longer subclass dict; convert to plain dict.
-    data = dict(event["data"]["object"])
+    # Stripe SDK 15.x StripeObjects no longer subclass dict; use to_dict() (recursive).
+    data = event["data"]["object"].to_dict()
 
     if event_type == "checkout.session.completed":
         customer_id = data.get("customer")
         sub_id = data.get("subscription")
         if customer_id and sub_id:
             stripe_sub = stripe_service.get_subscription(sub_id)
-            _apply_subscription(db, customer_id, dict(stripe_sub))
+            _apply_subscription(db, customer_id, stripe_sub.to_dict())
 
     elif event_type in ("customer.subscription.created", "customer.subscription.updated"):
         customer_id = data.get("customer")
