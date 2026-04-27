@@ -7,7 +7,7 @@ import { useTheme } from "@/context/ThemeContext";
 import { useLocale } from "@/context/LocaleContext";
 
 interface AppNavProps {
-  activePage?: "dashboard" | "tutorial" | "style-quiz" | "help" | "saved-outfits" | "profile" | "preferences";
+  activePage?: "dashboard" | "tutorial" | "style-quiz" | "help" | "saved-outfits" | "profile" | "preferences" | "vip";
 }
 
 export default function AppNav({ activePage }: AppNavProps) {
@@ -25,6 +25,7 @@ export default function AppNav({ activePage }: AppNavProps) {
     { key: "tutorial" as const, href: "/tutorial", label: "Tutorial" },
     { key: "style-quiz" as const, href: "/style-quiz", label: "Style Quiz" },
     { key: "saved-outfits" as const, href: "/saved-outfits", label: "Saved Outfits" },
+    { key: "vip" as const, href: "/vip", label: "VIP" },
     { key: "help" as const, href: "/help", label: "Help & FAQ" },
     { key: "profile" as const, href: "/profile", label: t("nav.profile") },
     { key: "preferences" as const, href: "/preferences", label: t("nav.preferences") },

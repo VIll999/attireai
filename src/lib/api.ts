@@ -14,8 +14,25 @@ interface UserResponse {
   name: string;
   profile_picture_url: string | null;
   subscription_tier: string;
+  vip_trial_used?: boolean;
+  is_admin?: boolean;
   created_at: string;
   updated_at: string;
+}
+
+export interface SubscriptionStatus {
+  tier: string;
+  status: string | null;
+  current_period_end: string | null;
+  cancel_at_period_end: boolean;
+  vip_trial_used: boolean;
+  is_admin: boolean;
+  monthly_price_usd: number;
+}
+
+export interface StripeConfig {
+  publishable_key: string;
+  monthly_price_usd: number;
 }
 
 /**
@@ -901,5 +918,60 @@ export async function getCollections(firebaseUid: string): Promise<string[]> {
     throw new Error("Failed to get collections");
   }
 
+  return response.json();
+}
+
+/**
+ * Subscription / Stripe APIs
+ */
+export async function getStripeConfig(): Promise<StripeConfig> {
+  const response = await fetch(`${API_URL}/subscriptions/config`);
+  if (!response.ok) throw new Error("Failed to get Stripe config");
+  return response.json();
+}
+
+export async function getSubscriptionStatus(firebaseUid: string): Promise<SubscriptionStatus> {
+  const response = await fetch(`${API_URL}/subscriptions/status`, {
+    headers: { "X-Firebase-UID": firebaseUid },
+  });
+  if (!response.ok) throw new Error("Failed to get subscription status");
+  return response.json();
+}
+
+export async function createCheckoutSession(
+  firebaseUid: string,
+  successUrl: string,
+  cancelUrl: string,
+): Promise<{ checkout_url: string }> {
+  const response = await fetch(`${API_URL}/subscriptions/checkout`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "X-Firebase-UID": firebaseUid,
+    },
+    body: JSON.stringify({ success_url: successUrl, cancel_url: cancelUrl }),
+  });
+  if (!response.ok) {
+    const text = await response.text();
+    throw new Error(`Failed to start checkout: ${text}`);
+  }
+  return response.json();
+}
+
+export async function cancelSubscription(firebaseUid: string): Promise<SubscriptionStatus> {
+  const response = await fetch(`${API_URL}/subscriptions/cancel`, {
+    method: "POST",
+    headers: { "X-Firebase-UID": firebaseUid },
+  });
+  if (!response.ok) throw new Error("Failed to cancel subscription");
+  return response.json();
+}
+
+export async function reactivateSubscription(firebaseUid: string): Promise<SubscriptionStatus> {
+  const response = await fetch(`${API_URL}/subscriptions/reactivate`, {
+    method: "POST",
+    headers: { "X-Firebase-UID": firebaseUid },
+  });
+  if (!response.ok) throw new Error("Failed to reactivate subscription");
   return response.json();
 }
