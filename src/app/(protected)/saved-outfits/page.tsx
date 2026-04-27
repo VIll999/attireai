@@ -726,6 +726,16 @@ export default function SavedOutfitsPage() {
                       </select>
                     </div>
 
+                    {/* Try-On (Sprint 3) */}
+                    {saved.recommendation_id && (
+                      <button
+                        onClick={() => router.push(`/virtual-try-on/${saved.recommendation_id}`)}
+                        className="w-full mb-2 py-2 px-3 rounded-lg text-xs font-semibold bg-gradient-to-r from-brand to-brand-600 text-white hover:opacity-90 transition-opacity flex items-center justify-center gap-1"
+                      >
+                        ✨ Virtual Try-On
+                      </button>
+                    )}
+
                     {/* Actions */}
                     <div className="flex items-center gap-2">
                       <button

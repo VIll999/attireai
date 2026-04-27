@@ -975,3 +975,65 @@ export async function reactivateSubscription(firebaseUid: string): Promise<Subsc
   if (!response.ok) throw new Error("Failed to reactivate subscription");
   return response.json();
 }
+
+/**
+ * Virtual Try-On (Sprint 3 Story #1)
+ */
+export interface TryOnResponse {
+  id: string;
+  outfit_id: string;
+  user_photo_url: string;
+  result_image_url: string | null;
+  status: "PENDING" | "PROCESSING" | "COMPLETED" | "FAILED";
+  created_at: string;
+  completed_at: string | null;
+}
+
+export async function uploadTryOnPhoto(
+  firebaseUid: string,
+  file: File,
+): Promise<{ url: string }> {
+  const fd = new FormData();
+  fd.append("file", file);
+  const response = await fetch(`${API_URL}/virtual-try-on/upload-photo`, {
+    method: "POST",
+    headers: { "X-Firebase-UID": firebaseUid },
+    body: fd,
+  });
+  if (!response.ok) {
+    const text = await response.text();
+    throw new Error(text || "Upload failed");
+  }
+  return response.json();
+}
+
+export async function generateTryOn(
+  firebaseUid: string,
+  outfitId: string,
+  userPhotoUrl: string,
+): Promise<TryOnResponse> {
+  const response = await fetch(`${API_URL}/virtual-try-on/generate`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "X-Firebase-UID": firebaseUid,
+    },
+    body: JSON.stringify({ outfit_id: outfitId, user_photo_url: userPhotoUrl }),
+  });
+  if (response.status === 402) {
+    throw new Error("VIP_REQUIRED");
+  }
+  if (!response.ok) {
+    const text = await response.text();
+    throw new Error(text || "Try-on failed");
+  }
+  return response.json();
+}
+
+export async function listTryOns(firebaseUid: string): Promise<TryOnResponse[]> {
+  const response = await fetch(`${API_URL}/virtual-try-on`, {
+    headers: { "X-Firebase-UID": firebaseUid },
+  });
+  if (!response.ok) throw new Error("Failed to list try-ons");
+  return response.json();
+}
