@@ -258,13 +258,21 @@ export default function SavedOutfitsPage() {
 
       <main className="flex-1 container mx-auto px-4 sm:px-6 lg:px-8 py-8 max-w-7xl">
         {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-4xl font-cabinet font-extrabold text-gray-900 dark:text-white mb-2">
-            Saved Outfits
-          </h1>
-          <p className="text-gray-600 dark:text-gray-400">
-            View and manage your favorite outfit recommendations
-          </p>
+        <div className="mb-8 flex flex-wrap items-start justify-between gap-4">
+          <div>
+            <h1 className="text-4xl font-cabinet font-extrabold text-gray-900 dark:text-white mb-2">
+              Saved Outfits
+            </h1>
+            <p className="text-gray-600 dark:text-gray-400">
+              View and manage your favorite outfit recommendations
+            </p>
+          </div>
+          <Link
+            href="/virtual-try-on"
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-stone-300 dark:border-stone-700 text-sm font-medium text-stone-700 dark:text-stone-200 hover:bg-stone-50 dark:hover:bg-stone-800"
+          >
+            ✨ My Try-Ons
+          </Link>
         </div>
 
         {/* Collection Filter */}

@@ -91,12 +91,20 @@ export default function VirtualTryOnPage() {
               Upload a full-body photo and we&apos;ll generate a preview of this outfit on you.
             </p>
           </div>
-          <button
-            onClick={() => router.back()}
-            className="text-sm text-stone-600 dark:text-stone-400 hover:underline"
-          >
-            ← Back
-          </button>
+          <div className="flex items-center gap-3">
+            <Link
+              href="/virtual-try-on"
+              className="text-sm text-stone-600 dark:text-stone-400 hover:underline"
+            >
+              My Try-Ons
+            </Link>
+            <button
+              onClick={() => router.back()}
+              className="text-sm text-stone-600 dark:text-stone-400 hover:underline"
+            >
+              ← Back
+            </button>
+          </div>
         </div>
 
         {vipRequired && (

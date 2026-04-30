@@ -158,3 +158,21 @@ async def get_try_on(
     if not record:
         raise HTTPException(status_code=404, detail="Try-on not found")
     return record
+
+
+@router.delete("/{try_on_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_try_on(
+    try_on_id: str,
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    record = (
+        db.query(VirtualTryOn)
+        .filter(VirtualTryOn.id == try_on_id, VirtualTryOn.user_id == user.id)
+        .first()
+    )
+    if not record:
+        raise HTTPException(status_code=404, detail="Try-on not found")
+    db.delete(record)
+    db.commit()
+    return None

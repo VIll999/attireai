@@ -1059,3 +1059,13 @@ export async function listTryOns(firebaseUid: string): Promise<TryOnResponse[]> 
   if (!response.ok) throw new Error("Failed to list try-ons");
   return response.json();
 }
+
+export async function deleteTryOn(firebaseUid: string, tryOnId: string): Promise<void> {
+  const response = await fetch(`${API_URL}/virtual-try-on/${tryOnId}`, {
+    method: "DELETE",
+    headers: { "X-Firebase-UID": firebaseUid },
+  });
+  if (!response.ok && response.status !== 204) {
+    throw new Error("Failed to delete try-on");
+  }
+}
