@@ -484,6 +484,59 @@ export async function saveStylePreferences(
   return res.json();
 }
 
+// --- Style Presets (Sprint 3 Story #7) ---
+
+export interface StylePreset {
+  id: string;
+  name: string;
+  occasion: string | null;
+  weather: string | null;
+  dress_code: string | null;
+  preferred_styles: string[];
+  created_at: string;
+}
+
+export interface StylePresetCreate {
+  name: string;
+  occasion?: string | null;
+  weather?: string | null;
+  dress_code?: string | null;
+  preferred_styles?: string[];
+}
+
+export async function listStylePresets(firebaseUid: string): Promise<StylePreset[]> {
+  const res = await fetch(`${API_URL}/style-preferences/presets`, {
+    headers: { "X-Firebase-UID": firebaseUid },
+  });
+  if (!res.ok) throw new Error("Failed to load presets");
+  return res.json();
+}
+
+export async function createStylePreset(
+  firebaseUid: string,
+  data: StylePresetCreate,
+): Promise<StylePreset> {
+  const res = await fetch(`${API_URL}/style-preferences/presets`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "X-Firebase-UID": firebaseUid },
+    body: JSON.stringify(data),
+  });
+  if (res.status === 409) throw new Error("DUPLICATE_NAME");
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || "Failed to save preset");
+  }
+  return res.json();
+}
+
+export async function deleteStylePreset(firebaseUid: string, presetId: string): Promise<void> {
+  const res = await fetch(`${API_URL}/style-preferences/presets/${presetId}`, {
+    method: "DELETE",
+    headers: { "X-Firebase-UID": firebaseUid },
+  });
+  if (!res.ok && res.status !== 204) throw new Error("Failed to delete preset");
+}
+
 // --- AI Recommendations API ---
 
 export interface AIRecommendationRequest {

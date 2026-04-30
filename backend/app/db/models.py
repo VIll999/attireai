@@ -57,6 +57,11 @@ class User(Base):
         uselist=False,
         cascade="all, delete-orphan",
     )
+    style_presets = relationship(
+        "StylePreset",
+        back_populates="user",
+        cascade="all, delete-orphan",
+    )
     notifications = relationship(
         "Notification",
         back_populates="user",
@@ -127,6 +132,21 @@ class StylePreferences(Base):
     updated_at = Column(TIMESTAMP, server_default=text("CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP"))
 
     user = relationship("User", back_populates="style_preferences")
+
+
+class StylePreset(Base):
+    __tablename__ = "style_presets"
+
+    id = Column(CHAR(36), primary_key=True, default=generate_uuid)
+    user_id = Column(CHAR(36), ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    name = Column(String(100), nullable=False)
+    occasion = Column(String(100), nullable=True)
+    weather = Column(String(50), nullable=True)
+    dress_code = Column(String(50), nullable=True)
+    preferred_styles = Column(JSON, nullable=True)
+    created_at = Column(TIMESTAMP, server_default=text("CURRENT_TIMESTAMP"))
+
+    user = relationship("User", back_populates="style_presets")
 
 
 class OutfitRecommendation(Base):
