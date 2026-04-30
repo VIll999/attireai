@@ -51,27 +51,6 @@ const CATEGORY_ICONS: Record<string, string> = {
   TOP: "👕", BOTTOM: "👖", SHOES: "👟", ACCESSORY: "⌚", OUTERWEAR: "🧥",
 };
 
-interface OccasionPreset {
-  id: string;
-  label: string;
-  icon: string;
-  occasion: string;
-  dress_code: string;
-  weather?: string;
-  styles: string[];
-}
-
-const OCCASION_PRESETS: OccasionPreset[] = [
-  { id: "wedding", label: "Wedding Guest", icon: "💍", occasion: "Wedding", dress_code: "Formal", styles: ["classic", "elegant"] },
-  { id: "interview", label: "Job Interview", icon: "💼", occasion: "Job Interview", dress_code: "Business Professional", styles: ["classic", "minimalist"] },
-  { id: "date", label: "First Date", icon: "💕", occasion: "Date", dress_code: "Smart Casual", styles: ["modern", "elegant"] },
-  { id: "office", label: "Casual Friday", icon: "🏢", occasion: "Office", dress_code: "Business Casual", styles: ["casual", "modern"] },
-  { id: "workout", label: "Workout", icon: "🏃", occasion: "Athletic", dress_code: "Athleisure", styles: ["athletic", "casual"] },
-  { id: "beach", label: "Beach Vacation", icon: "🏖️", occasion: "Beach Vacation", dress_code: "Resort Casual", weather: "hot", styles: ["casual", "summer"] },
-  { id: "night", label: "Night Out", icon: "🎉", occasion: "Nightclub", dress_code: "Cocktail", styles: ["modern", "edgy"] },
-  { id: "brunch", label: "Brunch", icon: "🥐", occasion: "Brunch", dress_code: "Smart Casual", styles: ["casual", "elegant"] },
-];
-
 function budgetFromPriceRange(range?: string | null): number | undefined {
   if (!range) return undefined;
   const map: Record<string, number> = { BUDGET: 50, MID_RANGE: 150, LUXURY: 500 };
@@ -157,8 +136,6 @@ export default function RecommendationsPage() {
 
   const [usage, setUsage] = useState<UsageStatus | null>(null);
   const [limitReached, setLimitReached] = useState(false);
-
-  const [activePreset, setActivePreset] = useState<OccasionPreset | null>(null);
 
   const measurementIdFromUrl = searchParams.get("measurement_id");
 
@@ -255,10 +232,10 @@ export default function RecommendationsPage() {
     try {
       const data = await getAIRecommendations(user.uid, {
         measurement_profile_id: selectedProfileId,
-        occasion: activePreset?.occasion || stylePrefs?.occasion || undefined,
-        weather: activePreset?.weather || stylePrefs?.weather || undefined,
-        dress_code: activePreset?.dress_code || stylePrefs?.dress_code || undefined,
-        styles: activePreset?.styles || stylePrefs?.preferred_styles || [],
+        occasion: stylePrefs?.occasion || undefined,
+        weather: stylePrefs?.weather || undefined,
+        dress_code: stylePrefs?.dress_code || undefined,
+        styles: stylePrefs?.preferred_styles || [],
         budget: budgetFromPriceRange(stylePrefs?.price_range),
         currency: "USD",
       });
@@ -697,53 +674,6 @@ export default function RecommendationsPage() {
                 </div>
               </div>
             )}
-
-            {/* Occasion Presets */}
-            <div className="mb-8">
-              <div className="flex items-center justify-between mb-3 max-w-5xl mx-auto">
-                <div>
-                  <h3 className="font-cabinet font-bold text-lg text-gray-900 dark:text-white">Quick presets</h3>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">
-                    Override your saved style for one quick recommendation
-                  </p>
-                </div>
-                {activePreset && (
-                  <button
-                    onClick={() => setActivePreset(null)}
-                    className="text-xs text-stone-500 hover:text-stone-900 dark:hover:text-stone-100 hover:underline"
-                  >
-                    Clear preset
-                  </button>
-                )}
-              </div>
-              <div className="flex flex-wrap gap-2 max-w-5xl mx-auto">
-                {OCCASION_PRESETS.map((p) => {
-                  const isActive = activePreset?.id === p.id;
-                  return (
-                    <button
-                      key={p.id}
-                      onClick={() => setActivePreset(isActive ? null : p)}
-                      className={
-                        "flex items-center gap-2 px-4 py-2 rounded-full border text-sm font-medium transition " +
-                        (isActive
-                          ? "bg-brand text-white border-brand shadow-md"
-                          : "bg-white dark:bg-stone-900 text-gray-700 dark:text-gray-200 border-gray-200 dark:border-stone-700 hover:border-brand hover:text-brand")
-                      }
-                    >
-                      <span>{p.icon}</span>
-                      <span>{p.label}</span>
-                    </button>
-                  );
-                })}
-              </div>
-              {activePreset && (
-                <div className="max-w-5xl mx-auto mt-3 text-xs text-stone-500 dark:text-stone-400">
-                  Using <span className="font-semibold text-brand">{activePreset.label}</span> ·
-                  <span className="ml-1">{activePreset.dress_code}</span> ·
-                  <span className="ml-1">{activePreset.styles.join(", ")}</span>
-                </div>
-              )}
-            </div>
 
             {/* Usage / Limit banner */}
             {usage && !usage.is_vip && (
