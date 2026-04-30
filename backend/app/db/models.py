@@ -202,6 +202,8 @@ class RecommendationItem(Base):
     brand = Column(String(100), nullable=True)
     category = Column(Enum("TOP", "BOTTOM", "SHOES", "ACCESSORY", "OUTERWEAR"), nullable=True)
     price = Column(Numeric(10, 2), nullable=True)
+    previous_price = Column(Numeric(10, 2), nullable=True)
+    price_changed_at = Column(TIMESTAMP, nullable=True)
     currency = Column(String(3), default="USD")
     image_url = Column(String(500), nullable=True)
     purchase_url = Column(String(500), nullable=True)

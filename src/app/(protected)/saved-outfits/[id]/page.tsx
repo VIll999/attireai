@@ -325,9 +325,16 @@ export default function SavedOutfitDetailPage() {
                     </p>
                     <div className="flex items-center justify-between mb-3">
                       {typeof item.price === "number" && (
-                        <p className="text-lg font-bold text-brand dark:text-brand-400">
-                          ${item.price.toFixed(0)}
-                        </p>
+                        <div className="flex items-baseline gap-2">
+                          <p className="text-lg font-bold text-brand dark:text-brand-400">
+                            ${item.price.toFixed(0)}
+                          </p>
+                          {typeof item.previous_price === "number" && item.previous_price > item.price && (
+                            <span className="text-xs text-stone-400 line-through">
+                              ${item.previous_price.toFixed(0)}
+                            </span>
+                          )}
+                        </div>
                       )}
                       {item.recommended_size && (
                         <span className="text-xs bg-stone-200 dark:bg-stone-700 px-2 py-1 rounded text-stone-600 dark:text-stone-300">
@@ -335,6 +342,11 @@ export default function SavedOutfitDetailPage() {
                         </span>
                       )}
                     </div>
+                    {typeof item.price === "number" && typeof item.previous_price === "number" && item.previous_price > item.price && (
+                      <div className="mb-3">
+                        <PriceDropBadge originalPrice={item.previous_price} currentPrice={item.price} />
+                      </div>
+                    )}
                     {item.stock_status && item.stock_status !== "UNKNOWN" && (
                       <div className="mb-3">
                         <span className={`text-xs px-2 py-1 rounded-full font-semibold ${

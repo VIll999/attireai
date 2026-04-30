@@ -350,6 +350,8 @@ export interface OutfitRecommendationItemResponse {
   brand: string | null;
   category: string | null;
   price: number | null;
+  previous_price: number | null;
+  price_changed_at: string | null;
   currency: string | null;
   image_url: string | null;
   purchase_url: string | null;
@@ -1121,4 +1123,76 @@ export async function deleteTryOn(firebaseUid: string, tryOnId: string): Promise
   if (!response.ok && response.status !== 204) {
     throw new Error("Failed to delete try-on");
   }
+}
+
+// --- Notifications (Sprint 3 Story #5) ---
+
+export interface NotificationItem {
+  id: string;
+  type: string;
+  title: string;
+  body: string | null;
+  link: string | null;
+  metadata: Record<string, unknown> | null;
+  read_at: string | null;
+  created_at: string;
+}
+
+export async function listNotifications(
+  firebaseUid: string,
+  unreadOnly = false,
+): Promise<NotificationItem[]> {
+  const url = `${API_URL}/notifications${unreadOnly ? "?unread_only=true" : ""}`;
+  const res = await fetch(url, { headers: { "X-Firebase-UID": firebaseUid } });
+  if (!res.ok) throw new Error("Failed to load notifications");
+  return res.json();
+}
+
+export async function getUnreadNotificationCount(firebaseUid: string): Promise<number> {
+  const res = await fetch(`${API_URL}/notifications/unread-count`, {
+    headers: { "X-Firebase-UID": firebaseUid },
+  });
+  if (!res.ok) return 0;
+  const data = await res.json();
+  return data.count ?? 0;
+}
+
+export async function markNotificationRead(firebaseUid: string, id: string): Promise<void> {
+  const res = await fetch(`${API_URL}/notifications/${id}/read`, {
+    method: "POST",
+    headers: { "X-Firebase-UID": firebaseUid },
+  });
+  if (!res.ok) throw new Error("Failed to mark read");
+}
+
+export async function markAllNotificationsRead(firebaseUid: string): Promise<void> {
+  const res = await fetch(`${API_URL}/notifications/read-all`, {
+    method: "POST",
+    headers: { "X-Firebase-UID": firebaseUid },
+  });
+  if (!res.ok) throw new Error("Failed to mark all read");
+}
+
+export async function deleteNotification(firebaseUid: string, id: string): Promise<void> {
+  const res = await fetch(`${API_URL}/notifications/${id}`, {
+    method: "DELETE",
+    headers: { "X-Firebase-UID": firebaseUid },
+  });
+  if (!res.ok && res.status !== 204) throw new Error("Failed to delete");
+}
+
+export async function simulateSale(
+  firebaseUid: string,
+  opts: { item_id?: string; drop_percent?: number } = {},
+): Promise<NotificationItem> {
+  const res = await fetch(`${API_URL}/notifications/simulate-sale`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "X-Firebase-UID": firebaseUid },
+    body: JSON.stringify({ drop_percent: 25, ...opts }),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || "Failed to simulate sale");
+  }
+  return res.json();
 }

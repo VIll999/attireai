@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect, useRef } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import AppNav from "@/components/AppNav";
 import { useAuth } from "@/context/AuthContext";
@@ -13,6 +13,7 @@ import {
   updateSavedOutfit,
   getCollections,
   SavedOutfitWithDetailsResponse,
+  simulateSale,
 } from "@/lib/api";
 
 const CATEGORY_ICONS: Record<string, string> = {
@@ -26,6 +27,9 @@ const CATEGORY_ICONS: Record<string, string> = {
 export default function SavedOutfitsPage() {
   const { user } = useAuth();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const highlightItemId = searchParams.get("highlight");
+  const highlightedRef = useRef<HTMLDivElement | null>(null);
   useLocale();
 
   const [savedOutfits, setSavedOutfits] = useState<SavedOutfitWithDetailsResponse[]>([]);
@@ -122,6 +126,13 @@ export default function SavedOutfitsPage() {
       })
       .finally(() => setLoading(false));
   }, [user, selectedCollection, brandFilters, styleFilters, weatherFilter, occasionFilter, dressCodeFilter, priceRange]);
+
+  // Scroll the highlighted card into view when notifications send the user here
+  useEffect(() => {
+    if (highlightItemId && highlightedRef.current) {
+      highlightedRef.current.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+  }, [highlightItemId, savedOutfits]);
 
   const handleDelete = async (savedOutfitId: string) => {
     if (!user) return;
@@ -267,12 +278,31 @@ export default function SavedOutfitsPage() {
               View and manage your favorite outfit recommendations
             </p>
           </div>
-          <Link
-            href="/virtual-try-on"
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-stone-300 dark:border-stone-700 text-sm font-medium text-stone-700 dark:text-stone-200 hover:bg-stone-50 dark:hover:bg-stone-800"
-          >
-            ✨ My Try-Ons
-          </Link>
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              onClick={async () => {
+                if (!user) return;
+                try {
+                  await simulateSale(user.uid, { drop_percent: 25 });
+                  const updated = await getSavedOutfits(user.uid, buildFilters());
+                  setSavedOutfits(updated);
+                  alert("A sale was simulated on a random saved item — check the bell.");
+                } catch (err: any) {
+                  alert(err?.message || "Failed to simulate sale");
+                }
+              }}
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-rose-300 dark:border-rose-800 bg-rose-50 dark:bg-rose-900/20 text-sm font-medium text-rose-700 dark:text-rose-300 hover:bg-rose-100 dark:hover:bg-rose-900/30"
+              title="Demo: drop a random saved item's price 25% and create a notification"
+            >
+              🏷️ Simulate Sale
+            </button>
+            <Link
+              href="/virtual-try-on"
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-stone-300 dark:border-stone-700 text-sm font-medium text-stone-700 dark:text-stone-200 hover:bg-stone-50 dark:hover:bg-stone-800"
+            >
+              ✨ My Try-Ons
+            </Link>
+          </div>
         </div>
 
         {/* Collection Filter */}
@@ -622,12 +652,39 @@ export default function SavedOutfitsPage() {
                   (sum, item) => sum + (typeof item.price === "number" ? item.price : 0),
                   0
                 ) || 0;
-              const originalTotalPrice = rec.total_price || 0;
+              // Original = sum of (previous_price if available, else current price)
+              const originalTotalPrice =
+                rec.items?.reduce(
+                  (sum, item) =>
+                    sum +
+                    (typeof item.previous_price === "number"
+                      ? item.previous_price
+                      : typeof item.price === "number"
+                        ? item.price
+                        : 0),
+                  0
+                ) || rec.total_price || 0;
+              const hasDroppedItem = rec.items?.some(
+                (item) =>
+                  typeof item.previous_price === "number" &&
+                  typeof item.price === "number" &&
+                  item.previous_price > item.price
+              );
+
+              const isHighlighted =
+                !!highlightItemId &&
+                rec.items?.some((item) => item.id === highlightItemId);
 
               return (
                 <div
                   key={saved.id}
-                  className="bg-white dark:bg-stone-900 rounded-xl shadow-sm border border-stone-200 dark:border-stone-800 overflow-hidden"
+                  ref={isHighlighted ? highlightedRef : undefined}
+                  className={
+                    "bg-white dark:bg-stone-900 rounded-xl shadow-sm border overflow-hidden transition " +
+                    (isHighlighted
+                      ? "border-rose-400 dark:border-rose-500 ring-2 ring-rose-300 dark:ring-rose-700"
+                      : "border-stone-200 dark:border-stone-800")
+                  }
                 >
                   <Link href={`/saved-outfits/${saved.id}`} className="block">
                     {/* Image */}
@@ -656,7 +713,7 @@ export default function SavedOutfitsPage() {
                       </div>
 
                       {/* Price Drop Badge */}
-                      {originalTotalPrice > 0 && totalPrice > 0 && totalPrice < originalTotalPrice && (
+                      {hasDroppedItem && originalTotalPrice > totalPrice && (
                         <div className="absolute top-3 right-3">
                           <PriceDropBadge originalPrice={originalTotalPrice} currentPrice={totalPrice} />
                         </div>

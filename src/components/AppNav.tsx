@@ -5,6 +5,7 @@ import { useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useTheme } from "@/context/ThemeContext";
 import { useLocale } from "@/context/LocaleContext";
+import NotificationBell from "@/components/NotificationBell";
 
 interface AppNavProps {
   activePage?: "dashboard" | "tutorial" | "style-quiz" | "help" | "saved-outfits" | "profile" | "preferences" | "vip";
@@ -115,6 +116,9 @@ export default function AppNav({ activePage }: AppNavProps) {
               {themeToggleIcon}
             </button>
 
+            {/* Notifications */}
+            <NotificationBell />
+
             {/* Profile Link */}
             <Link href="/profile" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
               {profileAvatar}
@@ -134,6 +138,7 @@ export default function AppNav({ activePage }: AppNavProps) {
 
           {/* Mobile/Tablet: Theme Toggle + Hamburger — visible below lg (1024px) */}
           <div className="flex lg:hidden items-center gap-1">
+            <NotificationBell />
             <button onClick={toggleTheme} className="p-2.5 hover:bg-stone-100 dark:hover:bg-stone-800 rounded-lg transition-colors" aria-label="Toggle theme">
               {themeToggleIcon}
             </button>

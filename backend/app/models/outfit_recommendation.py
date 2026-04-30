@@ -27,6 +27,8 @@ class RecommendationItemResponse(BaseModel):
     brand: Optional[str] = None
     category: Optional[str] = None
     price: Optional[float] = None
+    previous_price: Optional[float] = None
+    price_changed_at: Optional[datetime] = None
     currency: Optional[str] = "USD"
     image_url: Optional[str] = None
     purchase_url: Optional[str] = None
