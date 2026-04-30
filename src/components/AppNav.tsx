@@ -8,7 +8,7 @@ import { useLocale } from "@/context/LocaleContext";
 import NotificationBell from "@/components/NotificationBell";
 
 interface AppNavProps {
-  activePage?: "dashboard" | "tutorial" | "style-quiz" | "help" | "saved-outfits" | "profile" | "preferences" | "vip";
+  activePage?: "dashboard" | "tutorial" | "style-quiz" | "help" | "saved-outfits" | "profile" | "preferences" | "vip" | "admin";
 }
 
 export default function AppNav({ activePage }: AppNavProps) {
@@ -30,6 +30,7 @@ export default function AppNav({ activePage }: AppNavProps) {
     { key: "help" as const, href: "/help", label: "Help & FAQ" },
     { key: "profile" as const, href: "/profile", label: t("nav.profile") },
     { key: "preferences" as const, href: "/preferences", label: t("nav.preferences") },
+    ...(dbUser?.is_admin ? [{ key: "admin" as const, href: "/admin", label: "Admin" }] : []),
   ];
 
   const themeToggleIcon = theme === "dark" ? (

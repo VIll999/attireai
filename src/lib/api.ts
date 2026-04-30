@@ -1196,3 +1196,105 @@ export async function simulateSale(
   }
   return res.json();
 }
+
+// --- Admin (Sprint 3 Story #9) ---
+
+export interface AdminStats {
+  total_users: number;
+  users_free: number;
+  users_vip: number;
+  new_users_7d: number;
+  total_recommendations: number;
+  recommendations_7d: number;
+  total_saved_outfits: number;
+  total_try_ons: number;
+  try_ons_completed: number;
+  try_ons_failed: number;
+  total_notifications: number;
+  unread_notifications: number;
+  subs_active: number;
+  subs_trialing: number;
+  subs_cancelled: number;
+}
+
+export interface AdminProduct {
+  id: string;
+  name: string;
+  brand: string | null;
+  category: string | null;
+  price: number | null;
+  previous_price: number | null;
+  currency: string | null;
+  image_url: string | null;
+  purchase_url: string | null;
+  stock_status: string | null;
+  recommendation_id: string;
+}
+
+export interface AdminProductsList {
+  items: AdminProduct[];
+  total: number;
+  page: number;
+  per_page: number;
+}
+
+export interface AdminProductPatch {
+  name?: string;
+  brand?: string | null;
+  category?: string | null;
+  price?: number;
+  stock_status?: string;
+  purchase_url?: string | null;
+}
+
+async function adminFetch(firebaseUid: string, path: string, init: RequestInit = {}) {
+  const res = await fetch(`${API_URL}/admin${path}`, {
+    ...init,
+    headers: {
+      ...(init.body ? { "Content-Type": "application/json" } : {}),
+      ...init.headers,
+      "X-Firebase-UID": firebaseUid,
+    },
+  });
+  if (res.status === 403) throw new Error("ADMIN_REQUIRED");
+  if (!res.ok && res.status !== 204) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || `Request failed (${res.status})`);
+  }
+  return res;
+}
+
+export async function getAdminStats(firebaseUid: string): Promise<AdminStats> {
+  const res = await adminFetch(firebaseUid, "/stats");
+  return res.json();
+}
+
+export async function listAdminProducts(
+  firebaseUid: string,
+  opts: { q?: string; category?: string; page?: number; per_page?: number } = {},
+): Promise<AdminProductsList> {
+  const params = new URLSearchParams();
+  if (opts.q) params.set("q", opts.q);
+  if (opts.category) params.set("category", opts.category);
+  if (opts.page) params.set("page", String(opts.page));
+  if (opts.per_page) params.set("per_page", String(opts.per_page));
+  const qs = params.toString();
+  const res = await adminFetch(firebaseUid, `/products${qs ? `?${qs}` : ""}`);
+  return res.json();
+}
+
+export async function updateAdminProduct(
+  firebaseUid: string,
+  id: string,
+  patch: AdminProductPatch,
+): Promise<AdminProduct> {
+  const res = await adminFetch(firebaseUid, `/products/${id}`, {
+    method: "PATCH",
+    body: JSON.stringify(patch),
+  });
+  return res.json();
+}
+
+export async function deleteAdminProduct(firebaseUid: string, id: string): Promise<void> {
+  await adminFetch(firebaseUid, `/products/${id}`, { method: "DELETE" });
+}
