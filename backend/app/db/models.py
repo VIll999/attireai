@@ -1,4 +1,4 @@
-from sqlalchemy import Column, String, Enum, TIMESTAMP, text, Boolean, ForeignKey, Numeric, JSON, Text, Integer
+from sqlalchemy import Column, String, Enum, TIMESTAMP, text, Boolean, ForeignKey, Numeric, JSON, Text, Integer, Date
 from sqlalchemy.dialects.mysql import CHAR
 from sqlalchemy.orm import relationship
 
@@ -20,6 +20,8 @@ class User(Base):
     profile_picture_url = Column(String(500), nullable=True)
     subscription_tier = Column(Enum("FREE", "VIP"), default="FREE")
     vip_trial_used = Column(Boolean, default=False, nullable=False)
+    daily_recommendation_count = Column(Integer, default=0, nullable=False)
+    daily_recommendation_date = Column(Date, nullable=True)
     created_at = Column(TIMESTAMP, server_default=text("CURRENT_TIMESTAMP"))
     updated_at = Column(
         TIMESTAMP,

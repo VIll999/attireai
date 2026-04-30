@@ -5,6 +5,7 @@ import asyncio
 from functools import partial
 
 from app.db.database import get_db
+from app.db.models import User
 from app.models.recommendations_ai import (
     AIWebCandidatesRequest,
     AIWebCandidatesResponse,
@@ -12,6 +13,7 @@ from app.models.recommendations_ai import (
     AlternativeItemsResponse,
 )
 from app.services.recommendations_ai_service import RecommendationsAIService
+from app.utils.auth import check_daily_recommendation_limit, consume_daily_recommendation
 
 router = APIRouter()
 
@@ -58,6 +60,13 @@ async def ai_products(
     x_firebase_uid: Optional[str] = Header(None),
     db: Session = Depends(get_db),
 ):
+    if not x_firebase_uid:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Missing Firebase UID")
+    user = db.query(User).filter(User.firebase_uid == x_firebase_uid).first()
+    if not user:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+    check_daily_recommendation_limit(user, db)
+
     try:
         svc = get_svc()
         data = _merge_frontend_fields(data)
@@ -68,6 +77,7 @@ async def ai_products(
             None,  # Use default executor
             partial(svc.generate_web_candidates, db=db, firebase_uid=x_firebase_uid or "", req=data)
         )
+        consume_daily_recommendation(user, db)
         return result
     except ValueError as e:
         msg = str(e)

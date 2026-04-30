@@ -1,3 +1,4 @@
+from datetime import date
 from fastapi import Depends, HTTPException, Header, status
 from sqlalchemy.orm import Session
 from typing import Optional
@@ -58,3 +59,34 @@ def consume_vip_trial_if_free(user: User, db: Session) -> None:
     if user.subscription_tier != "VIP" and not user.vip_trial_used:
         user.vip_trial_used = True
         db.commit()
+
+
+def _reset_daily_if_new_day(user: User) -> None:
+    today = date.today()
+    if user.daily_recommendation_date != today:
+        user.daily_recommendation_count = 0
+        user.daily_recommendation_date = today
+
+
+def check_daily_recommendation_limit(user: User, db: Session) -> None:
+    """Raise 429 if free user has hit the daily AI recommendation cap.
+    VIP users are unlimited. Resets at calendar-day boundary."""
+    if user.subscription_tier == "VIP":
+        return
+    _reset_daily_if_new_day(user)
+    settings = get_settings()
+    if user.daily_recommendation_count >= settings.free_daily_recommendations:
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail="DAILY_LIMIT_REACHED",
+        )
+    db.commit()
+
+
+def consume_daily_recommendation(user: User, db: Session) -> None:
+    """Increment daily counter. Call AFTER a successful AI recommendation."""
+    if user.subscription_tier == "VIP":
+        return
+    _reset_daily_if_new_day(user)
+    user.daily_recommendation_count += 1
+    db.commit()

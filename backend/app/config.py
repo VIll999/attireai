@@ -26,7 +26,7 @@ class Settings(BaseSettings):
     openai_model: str = "gpt-4.1-mini"
     google_api_key: str = ""
     gemini_model: str = "gemini-2.5-flash"
-    gemini_image_model: str = "gemini-2.5-flash-image-preview"
+    gemini_image_model: str = "gemini-2.5-flash-image"
     ai_provider: str = "gemini"  # "gemini" or "openai"
 
     # Stripe

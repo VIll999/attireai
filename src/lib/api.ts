@@ -536,10 +536,32 @@ export async function getAIRecommendations(
   });
 
   if (!response.ok) {
+    if (response.status === 429) {
+      throw new Error("DAILY_LIMIT_REACHED");
+    }
     const error = await response.json().catch(() => ({ detail: "Failed to get recommendations" }));
     throw new Error(error.detail || "Failed to get AI recommendations");
   }
 
+  return response.json();
+}
+
+export interface UsageStatus {
+  is_vip: boolean;
+  daily_used: number;
+  daily_limit: number;
+  daily_remaining: number | null;
+  vip_trial_used: boolean;
+  vip_trial_available: boolean;
+}
+
+export async function getMyUsage(firebaseUid: string): Promise<UsageStatus> {
+  const response = await fetch(`${API_URL}/users/me/usage`, {
+    headers: { "X-Firebase-UID": firebaseUid },
+  });
+  if (!response.ok) {
+    throw new Error("Failed to load usage");
+  }
   return response.json();
 }
 

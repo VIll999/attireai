@@ -2,10 +2,13 @@ from fastapi import APIRouter, Depends, HTTPException, status, Header
 from sqlalchemy.orm import Session
 from typing import Optional
 
+from datetime import date
+
+from app.config import get_settings
 from app.db.database import get_db
 from app.db.models import User
 from app.models.user import UserCreate, UserResponse, UserUpdate
-from app.utils.auth import is_admin_email
+from app.utils.auth import get_current_user as auth_get_current_user, is_admin_email
 
 
 def _to_response(user: User) -> dict:
@@ -149,3 +152,23 @@ async def delete_current_user(
         db.commit()
 
     return None
+
+
+@router.get("/me/usage")
+async def get_my_usage(
+    user: User = Depends(auth_get_current_user),
+):
+    """Daily usage + VIP trial status for the current user."""
+    settings = get_settings()
+    today = date.today()
+    is_vip = user.subscription_tier == "VIP"
+    used = user.daily_recommendation_count if user.daily_recommendation_date == today else 0
+    limit = settings.free_daily_recommendations
+    return {
+        "is_vip": is_vip,
+        "daily_used": used,
+        "daily_limit": limit,
+        "daily_remaining": None if is_vip else max(0, limit - used),
+        "vip_trial_used": user.vip_trial_used,
+        "vip_trial_available": (not is_vip) and (not user.vip_trial_used) and settings.vip_free_trial_uses > 0,
+    }
