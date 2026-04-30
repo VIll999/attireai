@@ -1,7 +1,8 @@
 "use client";
 
 import { useMemo, useState, useEffect } from "react";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
+import Link from "next/link";
 import AppNav from "@/components/AppNav";
 import { useAuth } from "@/context/AuthContext";
 import { useLocale } from "@/context/LocaleContext";
@@ -24,6 +25,10 @@ import {
   deleteSavedOutfit,
   getSavedOutfits,
   SavedOutfitWithDetailsResponse,
+  getMyUsage,
+  UsageStatus,
+  getWardrobe,
+  WardrobeItem,
 } from "@/lib/api";
 
 /* ── helpers ── */
@@ -100,6 +105,7 @@ export default function RecommendationsPage() {
   const { user, dbUser } = useAuth();
   useLocale();
   const searchParams = useSearchParams();
+  const router = useRouter();
 
   // Profile data
   const [profiles, setProfiles] = useState<MeasurementResponse[]>([]);
@@ -130,6 +136,10 @@ export default function RecommendationsPage() {
   const [savedOutfits, setSavedOutfits] = useState<SavedOutfitWithDetailsResponse[]>([]);
   const [savingOutfits, setSavingOutfits] = useState<Set<string>>(new Set());
   const [saveError, setSaveError] = useState<string>("");
+
+  const [usage, setUsage] = useState<UsageStatus | null>(null);
+  const [limitReached, setLimitReached] = useState(false);
+  const [pinnedItem, setPinnedItem] = useState<WardrobeItem | null>(null);
 
   const measurementIdFromUrl = searchParams.get("measurement_id");
 
@@ -193,10 +203,42 @@ export default function RecommendationsPage() {
       .catch(() => setSavedOutfits([]));
   }, [user]);
 
+  // Fetch daily usage status
+  const refreshUsage = () => {
+    if (!user) return;
+    getMyUsage(user.uid)
+      .then((u) => {
+        setUsage(u);
+        if (!u.is_vip && u.daily_remaining !== null && u.daily_remaining <= 0) {
+          setLimitReached(true);
+        }
+      })
+      .catch(() => {});
+  };
+  useEffect(() => {
+    refreshUsage();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user]);
+
   const outfitGroups = useMemo(() => {
     if (!result?.items?.length) return null;
     return groupByOutfit(result.items);
   }, [result]);
+
+  const pinnedItemId = searchParams.get("pin") || undefined;
+
+  useEffect(() => {
+    if (!user || !pinnedItemId) {
+      setPinnedItem(null);
+      return;
+    }
+    getWardrobe(user.uid)
+      .then((w) => {
+        const found = w.items.find((it) => it.id === pinnedItemId) || null;
+        setPinnedItem(found);
+      })
+      .catch(() => setPinnedItem(null));
+  }, [user, pinnedItemId]);
 
   const onGetRecommendations = async () => {
     if (!user || !selectedProfileId) return;
@@ -215,8 +257,10 @@ export default function RecommendationsPage() {
         styles: stylePrefs?.preferred_styles || [],
         budget: budgetFromPriceRange(stylePrefs?.price_range),
         currency: "USD",
+        pinned_item_id: pinnedItemId,
       });
       setResult(data);
+      refreshUsage();
 
       // Refresh past recommendations to include the new one
       getOutfitRecommendations(user.uid, selectedProfileId)
@@ -224,7 +268,13 @@ export default function RecommendationsPage() {
         .catch(() => {});
     } catch (e: any) {
       console.error(e);
-      setError(e?.message || "Failed to get recommendations.");
+      const msg = e?.message || "Failed to get recommendations.";
+      if (msg === "DAILY_LIMIT_REACHED") {
+        setLimitReached(true);
+        refreshUsage();
+      } else {
+        setError(msg);
+      }
     } finally {
       setIsLoading(false);
     }
@@ -645,11 +695,86 @@ export default function RecommendationsPage() {
               </div>
             )}
 
+            {/* Pinned wardrobe item banner (Story #6) */}
+            {pinnedItem && (
+              <div className="max-w-2xl mx-auto mb-6 p-4 rounded-xl bg-brand/5 dark:bg-brand/10 border border-brand/20 flex items-center gap-3">
+                {pinnedItem.image_url ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={pinnedItem.image_url}
+                    alt={pinnedItem.name}
+                    className="w-14 h-14 rounded-lg object-cover flex-shrink-0"
+                  />
+                ) : (
+                  <div className="w-14 h-14 rounded-lg bg-stone-100 dark:bg-stone-800 flex items-center justify-center text-2xl flex-shrink-0">
+                    🧺
+                  </div>
+                )}
+                <div className="flex-1 min-w-0">
+                  <div className="text-xs font-bold text-brand uppercase tracking-wide">
+                    Building around your wardrobe item
+                  </div>
+                  <div className="font-semibold text-stone-900 dark:text-stone-100 truncate">
+                    {pinnedItem.name}
+                  </div>
+                  <div className="text-xs text-stone-500 truncate">
+                    {pinnedItem.brand || "—"} · {pinnedItem.category || "OTHER"}
+                  </div>
+                </div>
+                <button
+                  onClick={() => router.push("/recommendations")}
+                  className="text-sm text-stone-500 hover:text-stone-900 dark:hover:text-stone-100 hover:underline flex-shrink-0"
+                >
+                  Clear pin
+                </button>
+              </div>
+            )}
+
+            {/* Usage / Limit banner */}
+            {usage && !usage.is_vip && (
+              <div className="max-w-2xl mx-auto mb-6">
+                {limitReached ? (
+                  <div className="p-5 rounded-xl bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 flex items-start gap-3">
+                    <div className="text-2xl">✨</div>
+                    <div className="flex-1">
+                      <div className="font-semibold text-amber-900 dark:text-amber-200">Daily limit reached</div>
+                      <p className="text-sm text-amber-800 dark:text-amber-300 mt-1">
+                        You&apos;ve used all {usage.daily_limit} free recommendations today. Upgrade to VIP for unlimited access, or come back tomorrow.
+                      </p>
+                      <Link
+                        href="/vip"
+                        className="inline-block mt-3 px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-lg text-sm font-medium"
+                      >
+                        Upgrade to VIP
+                      </Link>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="p-3 rounded-lg bg-stone-100 dark:bg-stone-800/60 border border-stone-200 dark:border-stone-700 text-sm text-stone-700 dark:text-stone-300 flex items-center justify-between">
+                    <span>
+                      <span className="font-medium">{usage.daily_remaining}</span> of {usage.daily_limit} free recommendations left today
+                    </span>
+                    <Link href="/vip" className="text-brand hover:underline font-medium">
+                      Go VIP →
+                    </Link>
+                  </div>
+                )}
+              </div>
+            )}
+            {usage?.is_vip && (
+              <div className="max-w-2xl mx-auto mb-6">
+                <div className="p-3 rounded-lg bg-gradient-to-r from-brand/10 to-amber-100/50 dark:from-brand/20 dark:to-amber-900/20 border border-brand/20 text-sm text-stone-700 dark:text-stone-200 flex items-center gap-2">
+                  <span>✨</span>
+                  <span className="font-medium">VIP — unlimited recommendations</span>
+                </div>
+              </div>
+            )}
+
             {/* Generate Button */}
             <div className="flex justify-center mb-20">
               <button
                 onClick={onGetRecommendations}
-                disabled={isLoading || !selectedProfileId}
+                disabled={isLoading || !selectedProfileId || limitReached}
                 className="group relative bg-brand text-white px-10 py-5 rounded-full font-bold text-xl hover:bg-brand-600 transition-all shadow-glow hover:shadow-[0_12px_40px_rgba(11,85,99,0.4)] transform hover:-translate-y-1 flex items-center gap-3 overflow-hidden disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
               >
                 <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-[150%] group-hover:animate-[shimmer_1.5s_infinite]"></div>
@@ -679,13 +804,13 @@ export default function RecommendationsPage() {
               <h2 className="text-2xl font-bold text-stone-900 dark:text-white">Your Outfits</h2>
               <button
                 onClick={onGetRecommendations}
-                disabled={isLoading}
+                disabled={isLoading || limitReached}
                 className="group relative bg-brand/10 hover:bg-brand dark:bg-brand/20 dark:hover:bg-brand text-brand hover:text-white dark:text-brand-400 dark:hover:text-white px-6 py-3 rounded-full font-bold text-sm transition-all shadow-sm hover:shadow-md flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                 </svg>
-                <span>Request New Recommendations</span>
+                <span>{limitReached ? "Daily limit reached" : "Request New Recommendations"}</span>
               </button>
             </div>
 

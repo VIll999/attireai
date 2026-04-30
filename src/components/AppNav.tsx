@@ -5,9 +5,10 @@ import { useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useTheme } from "@/context/ThemeContext";
 import { useLocale } from "@/context/LocaleContext";
+import NotificationBell from "@/components/NotificationBell";
 
 interface AppNavProps {
-  activePage?: "dashboard" | "tutorial" | "style-quiz" | "help" | "saved-outfits" | "profile" | "preferences";
+  activePage?: "dashboard" | "tutorial" | "style-quiz" | "help" | "saved-outfits" | "profile" | "preferences" | "vip" | "admin" | "wardrobe";
 }
 
 export default function AppNav({ activePage }: AppNavProps) {
@@ -25,9 +26,12 @@ export default function AppNav({ activePage }: AppNavProps) {
     { key: "tutorial" as const, href: "/tutorial", label: "Tutorial" },
     { key: "style-quiz" as const, href: "/style-quiz", label: "Style Quiz" },
     { key: "saved-outfits" as const, href: "/saved-outfits", label: "Saved Outfits" },
+    { key: "wardrobe" as const, href: "/wardrobe", label: "Wardrobe" },
+    { key: "vip" as const, href: "/vip", label: "VIP" },
     { key: "help" as const, href: "/help", label: "Help & FAQ" },
     { key: "profile" as const, href: "/profile", label: t("nav.profile") },
     { key: "preferences" as const, href: "/preferences", label: t("nav.preferences") },
+    ...(dbUser?.is_admin ? [{ key: "admin" as const, href: "/admin", label: "Admin" }] : []),
   ];
 
   const themeToggleIcon = theme === "dark" ? (
@@ -114,6 +118,9 @@ export default function AppNav({ activePage }: AppNavProps) {
               {themeToggleIcon}
             </button>
 
+            {/* Notifications */}
+            <NotificationBell />
+
             {/* Profile Link */}
             <Link href="/profile" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
               {profileAvatar}
@@ -133,6 +140,7 @@ export default function AppNav({ activePage }: AppNavProps) {
 
           {/* Mobile/Tablet: Theme Toggle + Hamburger — visible below lg (1024px) */}
           <div className="flex lg:hidden items-center gap-1">
+            <NotificationBell />
             <button onClick={toggleTheme} className="p-2.5 hover:bg-stone-100 dark:hover:bg-stone-800 rounded-lg transition-colors" aria-label="Toggle theme">
               {themeToggleIcon}
             </button>

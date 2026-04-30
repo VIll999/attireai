@@ -8,6 +8,10 @@ import {
   saveStylePreferences,
   getStylePreferences,
   PriceRange,
+  listStylePresets,
+  createStylePreset,
+  deleteStylePreset,
+  StylePreset,
 } from "@/lib/api";
 
 const OCCASIONS = [
@@ -76,6 +80,22 @@ export default function StylePreferencesPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
+  // Presets (Sprint 3 Story #7)
+  const [presets, setPresets] = useState<StylePreset[]>([]);
+  const [showSavePresetDialog, setShowSavePresetDialog] = useState(false);
+  const [presetName, setPresetName] = useState("");
+  const [presetError, setPresetError] = useState("");
+  const [savingPreset, setSavingPreset] = useState(false);
+  const [showCustomOccasion, setShowCustomOccasion] = useState(false);
+  const [customOccasionDraft, setCustomOccasionDraft] = useState("");
+
+  const refreshPresets = () => {
+    if (!user) return;
+    listStylePresets(user.uid)
+      .then(setPresets)
+      .catch(() => setPresets([]));
+  };
+
   // Load existing style preferences on mount
   useEffect(() => {
     if (!user) return;
@@ -91,7 +111,84 @@ export default function StylePreferencesPage() {
         }
       })
       .finally(() => setIsLoading(false));
+    refreshPresets();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
+
+  // Custom occasions = those persisted in presets but not in defaults
+  const defaultOccasionValues = OCCASIONS.map((o) => o.value);
+  const customOccasions = Array.from(
+    new Set(
+      presets
+        .map((p) => p.occasion)
+        .filter((o): o is string => !!o && !defaultOccasionValues.includes(o)),
+    ),
+  );
+  // Also include the currently-selected occasion if it's a custom one not yet saved
+  if (
+    selectedOccasion &&
+    !defaultOccasionValues.includes(selectedOccasion) &&
+    !customOccasions.includes(selectedOccasion)
+  ) {
+    customOccasions.push(selectedOccasion);
+  }
+
+  const applyPreset = (p: StylePreset) => {
+    if (p.occasion) setSelectedOccasion(p.occasion);
+    if (p.weather) setSelectedWeather(p.weather);
+    if (p.dress_code) setSelectedDressCode(p.dress_code);
+    setSelectedStyles(p.preferred_styles || []);
+    setShowCustomOccasion(false);
+  };
+
+  const handleDeletePreset = async (id: string) => {
+    if (!user) return;
+    if (!confirm("Delete this preset?")) return;
+    try {
+      await deleteStylePreset(user.uid, id);
+      setPresets((prev) => prev.filter((p) => p.id !== id));
+    } catch {
+      alert("Failed to delete preset");
+    }
+  };
+
+  const handleSavePreset = async () => {
+    if (!user) return;
+    const name = presetName.trim();
+    if (!name) {
+      setPresetError("Name is required");
+      return;
+    }
+    setSavingPreset(true);
+    setPresetError("");
+    try {
+      const created = await createStylePreset(user.uid, {
+        name,
+        occasion: selectedOccasion,
+        weather: selectedWeather,
+        dress_code: selectedDressCode,
+        preferred_styles: selectedStyles,
+      });
+      setPresets((prev) => [created, ...prev]);
+      setShowSavePresetDialog(false);
+      setPresetName("");
+    } catch (err: any) {
+      const msg = err?.message || "Failed";
+      if (msg === "DUPLICATE_NAME") setPresetError("A preset with this name already exists");
+      else setPresetError(msg);
+    } finally {
+      setSavingPreset(false);
+    }
+  };
+
+  const commitCustomOccasion = () => {
+    const v = customOccasionDraft.trim();
+    if (v) {
+      setSelectedOccasion(v);
+      setShowCustomOccasion(false);
+      setCustomOccasionDraft("");
+    }
+  };
 
   const toggleStyle = (value: string) => {
     setSelectedStyles((prev) =>
@@ -320,6 +417,131 @@ export default function StylePreferencesPage() {
           </p>
         </div>
 
+        {/* Saved Presets (Sprint 3 Story #7) */}
+        {!isLoading && (
+          <div className="w-full max-w-3xl mx-auto mb-8">
+            <div className="bg-white/85 dark:bg-stone-900/85 backdrop-blur-xl rounded-2xl border border-white/60 dark:border-stone-800 p-6 shadow-sm">
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <h3 className="font-cabinet font-bold text-lg text-gray-900 dark:text-white">Saved Presets</h3>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">
+                    Reusable combinations of occasion, weather, dress code, and styles.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setPresetError("");
+                    setShowSavePresetDialog(true);
+                  }}
+                  disabled={!selectedOccasion && !selectedWeather && !selectedDressCode && selectedStyles.length === 0}
+                  className="px-4 py-2 rounded-lg bg-brand text-white font-bold text-sm hover:bg-brand-600 disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  + Save current as preset
+                </button>
+              </div>
+              {presets.length === 0 ? (
+                <p className="text-sm text-gray-400 dark:text-gray-500">
+                  No presets yet. Configure the form below and save it as a preset.
+                </p>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {presets.map((p) => (
+                    <div
+                      key={p.id}
+                      className="group relative border border-gray-200 dark:border-stone-700 rounded-xl p-3 hover:border-brand dark:hover:border-brand-400 transition cursor-pointer"
+                      onClick={() => applyPreset(p)}
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="flex-1 min-w-0">
+                          <div className="font-bold text-sm text-gray-900 dark:text-white truncate">{p.name}</div>
+                          <div className="text-xs text-gray-500 dark:text-gray-400 mt-1 truncate">
+                            {[p.occasion, p.dress_code, p.weather].filter(Boolean).join(" · ") || "—"}
+                          </div>
+                          {p.preferred_styles.length > 0 && (
+                            <div className="text-[11px] text-gray-400 dark:text-gray-500 mt-1 truncate">
+                              {p.preferred_styles.join(", ")}
+                            </div>
+                          )}
+                        </div>
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDeletePreset(p.id);
+                          }}
+                          className="text-gray-400 hover:text-red-500 dark:hover:text-red-400 text-lg leading-none flex-shrink-0"
+                          aria-label="Delete preset"
+                        >
+                          ×
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Save Preset Dialog */}
+        {showSavePresetDialog && (
+          <div
+            className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4"
+            onClick={() => !savingPreset && setShowSavePresetDialog(false)}
+          >
+            <div
+              className="bg-white dark:bg-stone-900 rounded-2xl max-w-md w-full p-6 shadow-2xl"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">Save as Preset</h3>
+              <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
+                Name this combination so you can apply it again.
+              </p>
+              <input
+                autoFocus
+                value={presetName}
+                onChange={(e) => setPresetName(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), handleSavePreset())}
+                placeholder="e.g. Friday brunch, Wedding 2026"
+                className="w-full px-4 py-2.5 border border-gray-200 dark:border-stone-700 rounded-lg bg-white dark:bg-stone-800 text-gray-900 dark:text-white outline-none focus:border-brand"
+                maxLength={100}
+              />
+              <div className="text-xs text-gray-500 dark:text-gray-400 mt-2 space-y-1">
+                <div>Occasion: <span className="font-medium">{selectedOccasion || "—"}</span></div>
+                <div>Weather: <span className="font-medium">{selectedWeather || "—"}</span></div>
+                <div>Dress code: <span className="font-medium">{selectedDressCode || "—"}</span></div>
+                <div>Styles: <span className="font-medium">{selectedStyles.join(", ") || "—"}</span></div>
+              </div>
+              {presetError && (
+                <p className="text-sm text-red-600 dark:text-red-400 mt-3">{presetError}</p>
+              )}
+              <div className="flex justify-end gap-2 mt-5">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowSavePresetDialog(false);
+                    setPresetName("");
+                    setPresetError("");
+                  }}
+                  disabled={savingPreset}
+                  className="px-4 py-2 text-sm text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-stone-800 rounded-lg disabled:opacity-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={handleSavePreset}
+                  disabled={savingPreset || !presetName.trim()}
+                  className="px-4 py-2 bg-brand hover:bg-brand-600 text-white rounded-lg text-sm font-medium disabled:opacity-50"
+                >
+                  {savingPreset ? "Saving..." : "Save"}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Loading State */}
         {isLoading ? (
           <div className="flex items-center justify-center h-48">
@@ -363,7 +585,67 @@ export default function StylePreferencesPage() {
                       {o.label}
                     </button>
                   ))}
+                  {customOccasions.map((o) => (
+                    <button
+                      key={o}
+                      type="button"
+                      onClick={() => setSelectedOccasion(o)}
+                      className={pillClass(selectedOccasion === o)}
+                      title="Custom occasion"
+                    >
+                      {o} <span className="ml-1 text-[10px] opacity-60">★</span>
+                    </button>
+                  ))}
+                  {showCustomOccasion ? (
+                    <div className="flex items-center gap-2">
+                      <input
+                        autoFocus
+                        value={customOccasionDraft}
+                        onChange={(e) => setCustomOccasionDraft(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") {
+                            e.preventDefault();
+                            commitCustomOccasion();
+                          }
+                          if (e.key === "Escape") {
+                            setShowCustomOccasion(false);
+                            setCustomOccasionDraft("");
+                          }
+                        }}
+                        placeholder="e.g. Cocktail Hour"
+                        className="px-4 py-3 text-sm rounded-2xl border border-brand/40 dark:border-brand-400/40 outline-none focus:border-brand bg-white dark:bg-stone-800 text-gray-900 dark:text-white"
+                      />
+                      <button
+                        type="button"
+                        onClick={commitCustomOccasion}
+                        className="text-sm font-bold text-brand dark:text-brand-400 hover:underline"
+                      >
+                        Use
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setShowCustomOccasion(false);
+                          setCustomOccasionDraft("");
+                        }}
+                        className="text-sm text-gray-400 dark:text-gray-500 hover:text-gray-600"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => setShowCustomOccasion(true)}
+                      className="px-5 py-3 rounded-2xl border-2 border-dashed border-brand/30 dark:border-brand-400/30 text-brand dark:text-brand-400 font-bold text-sm hover:bg-brand/5 dark:hover:bg-brand-400/10"
+                    >
+                      + Other…
+                    </button>
+                  )}
                 </div>
+                <p className="text-xs text-gray-400 dark:text-gray-500 mt-2">
+                  Tip: type a custom occasion and save it as a preset to reuse it later.
+                </p>
               </div>
 
               {/* 2 & 3. Weather + Dress Code grid */}

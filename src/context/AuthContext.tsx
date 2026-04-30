@@ -18,6 +18,8 @@ export interface DbUser {
   name: string;
   profile_picture_url: string | null;
   subscription_tier: string;
+  vip_trial_used?: boolean;
+  is_admin?: boolean;
   created_at: string;
   updated_at: string;
 }

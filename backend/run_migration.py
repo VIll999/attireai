@@ -31,8 +31,12 @@ def run_migration(sql_file_path: str):
     with open(sql_file_path, 'r') as f:
         sql_content = f.read()
 
-    # Split by semicolons to execute each statement separately
-    statements = [s.strip() for s in sql_content.split(';') if s.strip() and not s.strip().startswith('--')]
+    # Strip comment-only lines first, then split by semicolons.
+    # (Previously this filtered statements that *started* with `--`, which
+    # silently skipped any statement preceded by a comment line.)
+    cleaned_lines = [line for line in sql_content.splitlines() if not line.strip().startswith('--')]
+    cleaned = '\n'.join(cleaned_lines)
+    statements = [s.strip() for s in cleaned.split(';') if s.strip()]
 
     print(f"\n🚀 Running migration: {sql_file_path}\n")
 
@@ -62,4 +66,3 @@ if __name__ == "__main__":
 
     migration_file = sys.argv[1]
     run_migration(migration_file)
-do

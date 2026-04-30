@@ -1,9 +1,10 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect, useRef } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import AppNav from "@/components/AppNav";
+import PriceDropBadge from "@/components/PriceDropBadge";
 import { useAuth } from "@/context/AuthContext";
 import { useLocale } from "@/context/LocaleContext";
 import {
@@ -12,6 +13,7 @@ import {
   updateSavedOutfit,
   getCollections,
   SavedOutfitWithDetailsResponse,
+  simulateSale,
 } from "@/lib/api";
 
 const CATEGORY_ICONS: Record<string, string> = {
@@ -25,6 +27,9 @@ const CATEGORY_ICONS: Record<string, string> = {
 export default function SavedOutfitsPage() {
   const { user } = useAuth();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const highlightItemId = searchParams.get("highlight");
+  const highlightedRef = useRef<HTMLDivElement | null>(null);
   useLocale();
 
   const [savedOutfits, setSavedOutfits] = useState<SavedOutfitWithDetailsResponse[]>([]);
@@ -121,6 +126,13 @@ export default function SavedOutfitsPage() {
       })
       .finally(() => setLoading(false));
   }, [user, selectedCollection, brandFilters, styleFilters, weatherFilter, occasionFilter, dressCodeFilter, priceRange]);
+
+  // Scroll the highlighted card into view when notifications send the user here
+  useEffect(() => {
+    if (highlightItemId && highlightedRef.current) {
+      highlightedRef.current.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+  }, [highlightItemId, savedOutfits]);
 
   const handleDelete = async (savedOutfitId: string) => {
     if (!user) return;
@@ -257,13 +269,40 @@ export default function SavedOutfitsPage() {
 
       <main className="flex-1 container mx-auto px-4 sm:px-6 lg:px-8 py-8 max-w-7xl">
         {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-4xl font-cabinet font-extrabold text-gray-900 dark:text-white mb-2">
-            Saved Outfits
-          </h1>
-          <p className="text-gray-600 dark:text-gray-400">
-            View and manage your favorite outfit recommendations
-          </p>
+        <div className="mb-8 flex flex-wrap items-start justify-between gap-4">
+          <div>
+            <h1 className="text-4xl font-cabinet font-extrabold text-gray-900 dark:text-white mb-2">
+              Saved Outfits
+            </h1>
+            <p className="text-gray-600 dark:text-gray-400">
+              View and manage your favorite outfit recommendations
+            </p>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              onClick={async () => {
+                if (!user) return;
+                try {
+                  await simulateSale(user.uid, { drop_percent: 25 });
+                  const updated = await getSavedOutfits(user.uid, buildFilters());
+                  setSavedOutfits(updated);
+                  alert("A sale was simulated on a random saved item — check the bell.");
+                } catch (err: any) {
+                  alert(err?.message || "Failed to simulate sale");
+                }
+              }}
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-rose-300 dark:border-rose-800 bg-rose-50 dark:bg-rose-900/20 text-sm font-medium text-rose-700 dark:text-rose-300 hover:bg-rose-100 dark:hover:bg-rose-900/30"
+              title="Demo: drop a random saved item's price 25% and create a notification"
+            >
+              🏷️ Simulate Sale
+            </button>
+            <Link
+              href="/virtual-try-on"
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-stone-300 dark:border-stone-700 text-sm font-medium text-stone-700 dark:text-stone-200 hover:bg-stone-50 dark:hover:bg-stone-800"
+            >
+              ✨ My Try-Ons
+            </Link>
+          </div>
         </div>
 
         {/* Collection Filter */}
@@ -613,13 +652,44 @@ export default function SavedOutfitsPage() {
                   (sum, item) => sum + (typeof item.price === "number" ? item.price : 0),
                   0
                 ) || 0;
-              const originalTotalPrice = saved.original_total_price || 0;
-              const priceDropped = saved.price_dropped || false;
+              // Item-level detection (Story #5: previous_price set by simulate-sale / admin edit)
+              const itemLevelOriginal =
+                rec.items?.reduce(
+                  (sum, item) =>
+                    sum +
+                    (typeof item.previous_price === "number"
+                      ? item.previous_price
+                      : typeof item.price === "number"
+                        ? item.price
+                        : 0),
+                  0
+                ) || 0;
+              const hasDroppedItem = rec.items?.some(
+                (item) =>
+                  typeof item.previous_price === "number" &&
+                  typeof item.price === "number" &&
+                  item.previous_price > item.price
+              );
+              // Prefer item-level original; fall back to outfit-level original_total_price (main).
+              const originalTotalPrice =
+                itemLevelOriginal || saved.original_total_price || rec.total_price || 0;
+              const priceDropped =
+                hasDroppedItem || saved.price_dropped || originalTotalPrice > currentTotalPrice;
+
+              const isHighlighted =
+                !!highlightItemId &&
+                rec.items?.some((item) => item.id === highlightItemId);
 
               return (
                 <div
                   key={saved.id}
-                  className="bg-white dark:bg-stone-900 rounded-xl shadow-sm border border-stone-200 dark:border-stone-800 overflow-hidden"
+                  ref={isHighlighted ? highlightedRef : undefined}
+                  className={
+                    "bg-white dark:bg-stone-900 rounded-xl shadow-sm border overflow-hidden transition " +
+                    (isHighlighted
+                      ? "border-rose-400 dark:border-rose-500 ring-2 ring-rose-300 dark:ring-rose-700"
+                      : "border-stone-200 dark:border-stone-800")
+                  }
                 >
                   <Link href={`/saved-outfits/${saved.id}`} className="block">
                     {/* Image */}
@@ -648,9 +718,9 @@ export default function SavedOutfitsPage() {
                       </div>
 
                       {/* Price Drop Badge */}
-                      {priceDropped && !saved.is_purchased && (
-                        <div className="absolute top-3 right-3 bg-red-500 text-white px-3 py-1 rounded-full text-xs font-bold shadow-lg animate-pulse">
-                          Price Drop!
+                      {priceDropped && !saved.is_purchased && originalTotalPrice > currentTotalPrice && (
+                        <div className="absolute top-3 right-3">
+                          <PriceDropBadge originalPrice={originalTotalPrice} currentPrice={currentTotalPrice} />
                         </div>
                       )}
 
@@ -734,6 +804,16 @@ export default function SavedOutfitsPage() {
                         <option value="__new__">+ New Collection</option>
                       </select>
                     </div>
+
+                    {/* Try-On (Sprint 3) */}
+                    {saved.recommendation_id && (
+                      <button
+                        onClick={() => router.push(`/virtual-try-on/${saved.recommendation_id}`)}
+                        className="w-full mb-2 py-2 px-3 rounded-lg text-xs font-semibold bg-gradient-to-r from-brand to-brand-600 text-white hover:opacity-90 transition-opacity flex items-center justify-center gap-1"
+                      >
+                        ✨ Virtual Try-On
+                      </button>
+                    )}
 
                     {/* Actions */}
                     <div className="flex items-center gap-2">

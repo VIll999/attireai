@@ -30,3 +30,6 @@ google-genai>=1.0.0
 
 # Machine Learning (for similarity calculations)
 numpy>=2.0.0
+
+# Stripe (subscriptions)
+stripe>=11.0.0

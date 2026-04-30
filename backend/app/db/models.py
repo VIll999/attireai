@@ -1,4 +1,4 @@
-from sqlalchemy import Column, String, Enum, TIMESTAMP, text, Boolean, ForeignKey, Numeric, JSON, Text, Integer
+from sqlalchemy import Column, String, Enum, TIMESTAMP, text, Boolean, ForeignKey, Numeric, JSON, Text, Integer, Date
 from sqlalchemy.dialects.mysql import CHAR
 from sqlalchemy.orm import relationship
 
@@ -19,6 +19,9 @@ class User(Base):
     name = Column(String(100), nullable=False)
     profile_picture_url = Column(String(500), nullable=True)
     subscription_tier = Column(Enum("FREE", "VIP"), default="FREE")
+    vip_trial_used = Column(Boolean, default=False, nullable=False)
+    daily_recommendation_count = Column(Integer, default=0, nullable=False)
+    daily_recommendation_date = Column(Date, nullable=True)
     created_at = Column(TIMESTAMP, server_default=text("CURRENT_TIMESTAMP"))
     updated_at = Column(
         TIMESTAMP,
@@ -52,6 +55,16 @@ class User(Base):
         "Subscription",
         back_populates="user",
         uselist=False,
+        cascade="all, delete-orphan",
+    )
+    style_presets = relationship(
+        "StylePreset",
+        back_populates="user",
+        cascade="all, delete-orphan",
+    )
+    notifications = relationship(
+        "Notification",
+        back_populates="user",
         cascade="all, delete-orphan",
     )
 
@@ -121,6 +134,21 @@ class StylePreferences(Base):
     user = relationship("User", back_populates="style_preferences")
 
 
+class StylePreset(Base):
+    __tablename__ = "style_presets"
+
+    id = Column(CHAR(36), primary_key=True, default=generate_uuid)
+    user_id = Column(CHAR(36), ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    name = Column(String(100), nullable=False)
+    occasion = Column(String(100), nullable=True)
+    weather = Column(String(50), nullable=True)
+    dress_code = Column(String(50), nullable=True)
+    preferred_styles = Column(JSON, nullable=True)
+    created_at = Column(TIMESTAMP, server_default=text("CURRENT_TIMESTAMP"))
+
+    user = relationship("User", back_populates="style_presets")
+
+
 class OutfitRecommendation(Base):
     __tablename__ = "outfit_recommendations"
 
@@ -174,6 +202,8 @@ class RecommendationItem(Base):
     brand = Column(String(100), nullable=True)
     category = Column(Enum("TOP", "BOTTOM", "SHOES", "ACCESSORY", "OUTERWEAR"), nullable=True)
     price = Column(Numeric(10, 2), nullable=True)
+    previous_price = Column(Numeric(10, 2), nullable=True)
+    price_changed_at = Column(TIMESTAMP, nullable=True)
     currency = Column(String(3), default="USD")
     image_url = Column(String(500), nullable=True)
     purchase_url = Column(String(500), nullable=True)
@@ -237,6 +267,22 @@ class VirtualTryOn(Base):
 
     user = relationship("User", back_populates="virtual_try_ons")
     outfit = relationship("OutfitRecommendation", back_populates="try_ons")
+
+
+class Notification(Base):
+    __tablename__ = "notifications"
+
+    id = Column(CHAR(36), primary_key=True, default=generate_uuid)
+    user_id = Column(CHAR(36), ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    type = Column(String(50), nullable=False)
+    title = Column(String(200), nullable=False)
+    body = Column(Text, nullable=True)
+    link = Column(String(500), nullable=True)
+    notification_metadata = Column("metadata", JSON, nullable=True)
+    read_at = Column(TIMESTAMP, nullable=True)
+    created_at = Column(TIMESTAMP, server_default=text("CURRENT_TIMESTAMP"))
+
+    user = relationship("User", back_populates="notifications")
 
 
 class Subscription(Base):

@@ -123,6 +123,9 @@ SYSTEM_PROMPT = (
     "- image_url and purchase_url should be real links when available\n"
     "- Each outfit should be stylistically different from the others\n"
     "- If location is provided but weather is not, infer current weather for that location\n"
+    "- If a 'pinned_item' is provided in the user context, EVERY outfit must include\n"
+    "  that exact item (use its name, brand, category, image_url, purchase_url verbatim)\n"
+    "  as one of its items, and the other items must be chosen to complement it.\n"
 )
 
 
@@ -231,6 +234,29 @@ class RecommendationsAIService:
                 "price_range": style.price_range,
                 "preferred_brands": style.preferred_brands,
             }
+
+        # Sprint 3 Story #6: pinned wardrobe item — every outfit must include it.
+        pinned_item_id = getattr(req, "pinned_item_id", None)
+        if pinned_item_id:
+            from app.db.models import RecommendationItem
+            from app.db.database import SessionLocal
+
+            with SessionLocal() as _db:
+                pinned = (
+                    _db.query(RecommendationItem)
+                    .filter(RecommendationItem.id == pinned_item_id)
+                    .first()
+                )
+                if pinned:
+                    payload["pinned_item"] = {
+                        "name": pinned.name,
+                        "brand": pinned.brand,
+                        "category": pinned.category,
+                        "image_url": pinned.image_url,
+                        "purchase_url": pinned.purchase_url,
+                        "price": float(pinned.price) if pinned.price is not None else None,
+                        "currency": pinned.currency,
+                    }
 
         return payload
 

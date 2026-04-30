@@ -14,8 +14,25 @@ interface UserResponse {
   name: string;
   profile_picture_url: string | null;
   subscription_tier: string;
+  vip_trial_used?: boolean;
+  is_admin?: boolean;
   created_at: string;
   updated_at: string;
+}
+
+export interface SubscriptionStatus {
+  tier: string;
+  status: string | null;
+  current_period_end: string | null;
+  cancel_at_period_end: boolean;
+  vip_trial_used: boolean;
+  is_admin: boolean;
+  monthly_price_usd: number;
+}
+
+export interface StripeConfig {
+  publishable_key: string;
+  monthly_price_usd: number;
 }
 
 /**
@@ -333,6 +350,8 @@ export interface OutfitRecommendationItemResponse {
   brand: string | null;
   category: string | null;
   price: number | null;
+  previous_price: number | null;
+  price_changed_at: string | null;
   currency: string | null;
   image_url: string | null;
   purchase_url: string | null;
@@ -467,6 +486,59 @@ export async function saveStylePreferences(
   return res.json();
 }
 
+// --- Style Presets (Sprint 3 Story #7) ---
+
+export interface StylePreset {
+  id: string;
+  name: string;
+  occasion: string | null;
+  weather: string | null;
+  dress_code: string | null;
+  preferred_styles: string[];
+  created_at: string;
+}
+
+export interface StylePresetCreate {
+  name: string;
+  occasion?: string | null;
+  weather?: string | null;
+  dress_code?: string | null;
+  preferred_styles?: string[];
+}
+
+export async function listStylePresets(firebaseUid: string): Promise<StylePreset[]> {
+  const res = await fetch(`${API_URL}/style-preferences/presets`, {
+    headers: { "X-Firebase-UID": firebaseUid },
+  });
+  if (!res.ok) throw new Error("Failed to load presets");
+  return res.json();
+}
+
+export async function createStylePreset(
+  firebaseUid: string,
+  data: StylePresetCreate,
+): Promise<StylePreset> {
+  const res = await fetch(`${API_URL}/style-preferences/presets`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "X-Firebase-UID": firebaseUid },
+    body: JSON.stringify(data),
+  });
+  if (res.status === 409) throw new Error("DUPLICATE_NAME");
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || "Failed to save preset");
+  }
+  return res.json();
+}
+
+export async function deleteStylePreset(firebaseUid: string, presetId: string): Promise<void> {
+  const res = await fetch(`${API_URL}/style-preferences/presets/${presetId}`, {
+    method: "DELETE",
+    headers: { "X-Firebase-UID": firebaseUid },
+  });
+  if (!res.ok && res.status !== 204) throw new Error("Failed to delete preset");
+}
+
 // --- AI Recommendations API ---
 
 export interface AIRecommendationRequest {
@@ -481,6 +553,7 @@ export interface AIRecommendationRequest {
   measurement_profile_id?: string;
   k?: number;
   save_to_db?: boolean;
+  pinned_item_id?: string;
 }
 
 export interface AIRecommendationItem {
@@ -519,10 +592,32 @@ export async function getAIRecommendations(
   });
 
   if (!response.ok) {
+    if (response.status === 429) {
+      throw new Error("DAILY_LIMIT_REACHED");
+    }
     const error = await response.json().catch(() => ({ detail: "Failed to get recommendations" }));
     throw new Error(error.detail || "Failed to get AI recommendations");
   }
 
+  return response.json();
+}
+
+export interface UsageStatus {
+  is_vip: boolean;
+  daily_used: number;
+  daily_limit: number;
+  daily_remaining: number | null;
+  vip_trial_used: boolean;
+  vip_trial_available: boolean;
+}
+
+export async function getMyUsage(firebaseUid: string): Promise<UsageStatus> {
+  const response = await fetch(`${API_URL}/users/me/usage`, {
+    headers: { "X-Firebase-UID": firebaseUid },
+  });
+  if (!response.ok) {
+    throw new Error("Failed to load usage");
+  }
   return response.json();
 }
 
@@ -905,6 +1000,393 @@ export async function getCollections(firebaseUid: string): Promise<string[]> {
   }
 
   return response.json();
+}
+
+/**
+ * Subscription / Stripe APIs
+ */
+export async function getStripeConfig(): Promise<StripeConfig> {
+  const response = await fetch(`${API_URL}/subscriptions/config`);
+  if (!response.ok) throw new Error("Failed to get Stripe config");
+  return response.json();
+}
+
+export async function getSubscriptionStatus(firebaseUid: string): Promise<SubscriptionStatus> {
+  const response = await fetch(`${API_URL}/subscriptions/status`, {
+    headers: { "X-Firebase-UID": firebaseUid },
+  });
+  if (!response.ok) throw new Error("Failed to get subscription status");
+  return response.json();
+}
+
+export async function createCheckoutSession(
+  firebaseUid: string,
+  successUrl: string,
+  cancelUrl: string,
+): Promise<{ checkout_url: string }> {
+  const response = await fetch(`${API_URL}/subscriptions/checkout`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "X-Firebase-UID": firebaseUid,
+    },
+    body: JSON.stringify({ success_url: successUrl, cancel_url: cancelUrl }),
+  });
+  if (!response.ok) {
+    const text = await response.text();
+    throw new Error(`Failed to start checkout: ${text}`);
+  }
+  return response.json();
+}
+
+export async function cancelSubscription(firebaseUid: string): Promise<SubscriptionStatus> {
+  const response = await fetch(`${API_URL}/subscriptions/cancel`, {
+    method: "POST",
+    headers: { "X-Firebase-UID": firebaseUid },
+  });
+  if (!response.ok) throw new Error("Failed to cancel subscription");
+  return response.json();
+}
+
+export async function reactivateSubscription(firebaseUid: string): Promise<SubscriptionStatus> {
+  const response = await fetch(`${API_URL}/subscriptions/reactivate`, {
+    method: "POST",
+    headers: { "X-Firebase-UID": firebaseUid },
+  });
+  if (!response.ok) throw new Error("Failed to reactivate subscription");
+  return response.json();
+}
+
+/**
+ * Virtual Try-On (Sprint 3 Story #1)
+ */
+export interface TryOnResponse {
+  id: string;
+  outfit_id: string;
+  user_photo_url: string;
+  result_image_url: string | null;
+  status: "PENDING" | "PROCESSING" | "COMPLETED" | "FAILED";
+  created_at: string;
+  completed_at: string | null;
+}
+
+export async function uploadTryOnPhoto(
+  firebaseUid: string,
+  file: File,
+): Promise<{ url: string }> {
+  const fd = new FormData();
+  fd.append("file", file);
+  const response = await fetch(`${API_URL}/virtual-try-on/upload-photo`, {
+    method: "POST",
+    headers: { "X-Firebase-UID": firebaseUid },
+    body: fd,
+  });
+  if (!response.ok) {
+    const text = await response.text();
+    throw new Error(text || "Upload failed");
+  }
+  return response.json();
+}
+
+export async function generateTryOn(
+  firebaseUid: string,
+  outfitId: string,
+  userPhotoUrl: string,
+): Promise<TryOnResponse> {
+  const response = await fetch(`${API_URL}/virtual-try-on/generate`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "X-Firebase-UID": firebaseUid,
+    },
+    body: JSON.stringify({ outfit_id: outfitId, user_photo_url: userPhotoUrl }),
+  });
+  if (response.status === 402) {
+    throw new Error("VIP_REQUIRED");
+  }
+  if (!response.ok) {
+    const text = await response.text();
+    throw new Error(text || "Try-on failed");
+  }
+  return response.json();
+}
+
+export async function generateTryOnItem(
+  firebaseUid: string,
+  itemId: string,
+  userPhotoUrl: string,
+): Promise<TryOnResponse> {
+  const response = await fetch(`${API_URL}/virtual-try-on/generate-item`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "X-Firebase-UID": firebaseUid,
+    },
+    body: JSON.stringify({ item_id: itemId, user_photo_url: userPhotoUrl }),
+  });
+  if (response.status === 402) {
+    throw new Error("VIP_REQUIRED");
+  }
+  if (!response.ok) {
+    const text = await response.text();
+    throw new Error(text || "Try-on failed");
+  }
+  return response.json();
+}
+
+export async function listTryOns(firebaseUid: string): Promise<TryOnResponse[]> {
+  const response = await fetch(`${API_URL}/virtual-try-on`, {
+    headers: { "X-Firebase-UID": firebaseUid },
+  });
+  if (!response.ok) throw new Error("Failed to list try-ons");
+  return response.json();
+}
+
+export async function deleteTryOn(firebaseUid: string, tryOnId: string): Promise<void> {
+  const response = await fetch(`${API_URL}/virtual-try-on/${tryOnId}`, {
+    method: "DELETE",
+    headers: { "X-Firebase-UID": firebaseUid },
+  });
+  if (!response.ok && response.status !== 204) {
+    throw new Error("Failed to delete try-on");
+  }
+}
+
+// --- Notifications (Sprint 3 Story #5) ---
+
+export interface NotificationItem {
+  id: string;
+  type: string;
+  title: string;
+  body: string | null;
+  link: string | null;
+  metadata: Record<string, unknown> | null;
+  read_at: string | null;
+  created_at: string;
+}
+
+export async function listNotifications(
+  firebaseUid: string,
+  unreadOnly = false,
+): Promise<NotificationItem[]> {
+  const url = `${API_URL}/notifications${unreadOnly ? "?unread_only=true" : ""}`;
+  const res = await fetch(url, { headers: { "X-Firebase-UID": firebaseUid } });
+  if (!res.ok) throw new Error("Failed to load notifications");
+  return res.json();
+}
+
+export async function getUnreadNotificationCount(firebaseUid: string): Promise<number> {
+  const res = await fetch(`${API_URL}/notifications/unread-count`, {
+    headers: { "X-Firebase-UID": firebaseUid },
+  });
+  if (!res.ok) return 0;
+  const data = await res.json();
+  return data.count ?? 0;
+}
+
+export async function markNotificationRead(firebaseUid: string, id: string): Promise<void> {
+  const res = await fetch(`${API_URL}/notifications/${id}/read`, {
+    method: "POST",
+    headers: { "X-Firebase-UID": firebaseUid },
+  });
+  if (!res.ok) throw new Error("Failed to mark read");
+}
+
+export async function markAllNotificationsRead(firebaseUid: string): Promise<void> {
+  const res = await fetch(`${API_URL}/notifications/read-all`, {
+    method: "POST",
+    headers: { "X-Firebase-UID": firebaseUid },
+  });
+  if (!res.ok) throw new Error("Failed to mark all read");
+}
+
+export async function deleteNotification(firebaseUid: string, id: string): Promise<void> {
+  const res = await fetch(`${API_URL}/notifications/${id}`, {
+    method: "DELETE",
+    headers: { "X-Firebase-UID": firebaseUid },
+  });
+  if (!res.ok && res.status !== 204) throw new Error("Failed to delete");
+}
+
+export async function simulateSale(
+  firebaseUid: string,
+  opts: { item_id?: string; drop_percent?: number } = {},
+): Promise<NotificationItem> {
+  const res = await fetch(`${API_URL}/notifications/simulate-sale`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "X-Firebase-UID": firebaseUid },
+    body: JSON.stringify({ drop_percent: 25, ...opts }),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || "Failed to simulate sale");
+  }
+  return res.json();
+}
+
+// --- Admin (Sprint 3 Story #9) ---
+
+export interface AdminStats {
+  total_users: number;
+  users_free: number;
+  users_vip: number;
+  new_users_7d: number;
+  total_recommendations: number;
+  recommendations_7d: number;
+  total_saved_outfits: number;
+  total_try_ons: number;
+  try_ons_completed: number;
+  try_ons_failed: number;
+  total_notifications: number;
+  unread_notifications: number;
+  subs_active: number;
+  subs_trialing: number;
+  subs_cancelled: number;
+}
+
+export interface AdminProduct {
+  id: string;
+  name: string;
+  brand: string | null;
+  category: string | null;
+  price: number | null;
+  previous_price: number | null;
+  currency: string | null;
+  image_url: string | null;
+  purchase_url: string | null;
+  stock_status: string | null;
+  recommendation_id: string;
+}
+
+export interface AdminProductsList {
+  items: AdminProduct[];
+  total: number;
+  page: number;
+  per_page: number;
+}
+
+export interface AdminProductPatch {
+  name?: string;
+  brand?: string | null;
+  category?: string | null;
+  price?: number;
+  stock_status?: string;
+  purchase_url?: string | null;
+}
+
+async function adminFetch(firebaseUid: string, path: string, init: RequestInit = {}) {
+  const res = await fetch(`${API_URL}/admin${path}`, {
+    ...init,
+    headers: {
+      ...(init.body ? { "Content-Type": "application/json" } : {}),
+      ...init.headers,
+      "X-Firebase-UID": firebaseUid,
+    },
+  });
+  if (res.status === 403) throw new Error("ADMIN_REQUIRED");
+  if (!res.ok && res.status !== 204) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || `Request failed (${res.status})`);
+  }
+  return res;
+}
+
+export async function getAdminStats(firebaseUid: string): Promise<AdminStats> {
+  const res = await adminFetch(firebaseUid, "/stats");
+  return res.json();
+}
+
+export async function listAdminProducts(
+  firebaseUid: string,
+  opts: { q?: string; category?: string; page?: number; per_page?: number } = {},
+): Promise<AdminProductsList> {
+  const params = new URLSearchParams();
+  if (opts.q) params.set("q", opts.q);
+  if (opts.category) params.set("category", opts.category);
+  if (opts.page) params.set("page", String(opts.page));
+  if (opts.per_page) params.set("per_page", String(opts.per_page));
+  const qs = params.toString();
+  const res = await adminFetch(firebaseUid, `/products${qs ? `?${qs}` : ""}`);
+  return res.json();
+}
+
+export async function updateAdminProduct(
+  firebaseUid: string,
+  id: string,
+  patch: AdminProductPatch,
+): Promise<AdminProduct> {
+  const res = await adminFetch(firebaseUid, `/products/${id}`, {
+    method: "PATCH",
+    body: JSON.stringify(patch),
+  });
+  return res.json();
+}
+
+export async function deleteAdminProduct(firebaseUid: string, id: string): Promise<void> {
+  await adminFetch(firebaseUid, `/products/${id}`, { method: "DELETE" });
+}
+
+// --- Wardrobe (Sprint 3 Story #6) ---
+
+export interface WardrobeItem {
+  id: string;
+  name: string;
+  brand: string | null;
+  category: string | null;
+  price: number | null;
+  currency: string | null;
+  image_url: string | null;
+  purchase_url: string | null;
+  saved_outfit_id: string;
+  purchased_at: string | null;
+}
+
+export interface WardrobeResponse {
+  items: WardrobeItem[];
+  by_category: Record<string, WardrobeItem[]>;
+  total: number;
+}
+
+export async function getWardrobe(firebaseUid: string): Promise<WardrobeResponse> {
+  const res = await fetch(`${API_URL}/wardrobe`, {
+    headers: { "X-Firebase-UID": firebaseUid },
+  });
+  if (!res.ok) throw new Error("Failed to load wardrobe");
+  return res.json();
+}
+
+// --- Price comparison (Sprint 3 Story #8) ---
+
+export interface PriceComparisonResult {
+  retailer: string;
+  price: number | null;
+  currency: string | null;
+  url: string;
+  stock_status: string | null;
+  image_url: string | null;
+  notes: string | null;
+}
+
+export interface PriceComparisonResponse {
+  item_id: string;
+  item_name: string;
+  item_brand: string | null;
+  current_price: number | null;
+  results: PriceComparisonResult[];
+}
+
+export async function comparePricesForItem(
+  firebaseUid: string,
+  itemId: string,
+): Promise<PriceComparisonResponse> {
+  const res = await fetch(`${API_URL}/recommendations/items/${itemId}/compare-prices`, {
+    headers: { "X-Firebase-UID": firebaseUid },
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || "Failed to compare prices");
+  }
+  return res.json();
 }
 
 export interface MockPriceDropResponse {
