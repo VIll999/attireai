@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState, useEffect } from "react";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import AppNav from "@/components/AppNav";
 import { useAuth } from "@/context/AuthContext";
@@ -27,6 +27,8 @@ import {
   SavedOutfitWithDetailsResponse,
   getMyUsage,
   UsageStatus,
+  getWardrobe,
+  WardrobeItem,
 } from "@/lib/api";
 
 /* ── helpers ── */
@@ -103,6 +105,7 @@ export default function RecommendationsPage() {
   const { user, dbUser } = useAuth();
   useLocale();
   const searchParams = useSearchParams();
+  const router = useRouter();
 
   // Profile data
   const [profiles, setProfiles] = useState<MeasurementResponse[]>([]);
@@ -136,6 +139,7 @@ export default function RecommendationsPage() {
 
   const [usage, setUsage] = useState<UsageStatus | null>(null);
   const [limitReached, setLimitReached] = useState(false);
+  const [pinnedItem, setPinnedItem] = useState<WardrobeItem | null>(null);
 
   const measurementIdFromUrl = searchParams.get("measurement_id");
 
@@ -221,6 +225,21 @@ export default function RecommendationsPage() {
     return groupByOutfit(result.items);
   }, [result]);
 
+  const pinnedItemId = searchParams.get("pin") || undefined;
+
+  useEffect(() => {
+    if (!user || !pinnedItemId) {
+      setPinnedItem(null);
+      return;
+    }
+    getWardrobe(user.uid)
+      .then((w) => {
+        const found = w.items.find((it) => it.id === pinnedItemId) || null;
+        setPinnedItem(found);
+      })
+      .catch(() => setPinnedItem(null));
+  }, [user, pinnedItemId]);
+
   const onGetRecommendations = async () => {
     if (!user || !selectedProfileId) return;
 
@@ -238,6 +257,7 @@ export default function RecommendationsPage() {
         styles: stylePrefs?.preferred_styles || [],
         budget: budgetFromPriceRange(stylePrefs?.price_range),
         currency: "USD",
+        pinned_item_id: pinnedItemId,
       });
       setResult(data);
       refreshUsage();
@@ -672,6 +692,41 @@ export default function RecommendationsPage() {
                     <p className="text-sm text-gray-400 dark:text-gray-500">No preferences saved yet</p>
                   )}
                 </div>
+              </div>
+            )}
+
+            {/* Pinned wardrobe item banner (Story #6) */}
+            {pinnedItem && (
+              <div className="max-w-2xl mx-auto mb-6 p-4 rounded-xl bg-brand/5 dark:bg-brand/10 border border-brand/20 flex items-center gap-3">
+                {pinnedItem.image_url ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={pinnedItem.image_url}
+                    alt={pinnedItem.name}
+                    className="w-14 h-14 rounded-lg object-cover flex-shrink-0"
+                  />
+                ) : (
+                  <div className="w-14 h-14 rounded-lg bg-stone-100 dark:bg-stone-800 flex items-center justify-center text-2xl flex-shrink-0">
+                    🧺
+                  </div>
+                )}
+                <div className="flex-1 min-w-0">
+                  <div className="text-xs font-bold text-brand uppercase tracking-wide">
+                    Building around your wardrobe item
+                  </div>
+                  <div className="font-semibold text-stone-900 dark:text-stone-100 truncate">
+                    {pinnedItem.name}
+                  </div>
+                  <div className="text-xs text-stone-500 truncate">
+                    {pinnedItem.brand || "—"} · {pinnedItem.category || "OTHER"}
+                  </div>
+                </div>
+                <button
+                  onClick={() => router.push("/recommendations")}
+                  className="text-sm text-stone-500 hover:text-stone-900 dark:hover:text-stone-100 hover:underline flex-shrink-0"
+                >
+                  Clear pin
+                </button>
               </div>
             )}
 

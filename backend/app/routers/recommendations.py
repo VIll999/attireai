@@ -1,17 +1,19 @@
 from fastapi import APIRouter, Depends, Header, HTTPException, status
+from pydantic import BaseModel
 from sqlalchemy.orm import Session
-from typing import Optional
+from typing import List, Optional
 import asyncio
 from functools import partial
 
 from app.db.database import get_db
-from app.db.models import User
+from app.db.models import RecommendationItem, User
 from app.models.recommendations_ai import (
     AIWebCandidatesRequest,
     AIWebCandidatesResponse,
     AlternativeItemsRequest,
     AlternativeItemsResponse,
 )
+from app.services.price_comparison_service import PriceComparisonService
 from app.services.recommendations_ai_service import RecommendationsAIService
 from app.utils.auth import check_daily_recommendation_limit, consume_daily_recommendation
 
@@ -121,3 +123,60 @@ async def get_alternative_items(
         raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=str(e))
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+class PriceComparisonResult(BaseModel):
+    retailer: str
+    price: Optional[float] = None
+    currency: Optional[str] = "USD"
+    url: str
+    stock_status: Optional[str] = "UNKNOWN"
+    image_url: Optional[str] = None
+    notes: Optional[str] = None
+
+
+class PriceComparisonResponse(BaseModel):
+    item_id: str
+    item_name: str
+    item_brand: Optional[str] = None
+    current_price: Optional[float] = None
+    results: List[PriceComparisonResult] = []
+
+
+@router.get("/recommendations/items/{item_id}/compare-prices", response_model=PriceComparisonResponse)
+async def compare_prices(
+    item_id: str,
+    x_firebase_uid: Optional[str] = Header(None),
+    db: Session = Depends(get_db),
+):
+    """Story #8: search the web for similar listings of this item and return them
+    grouped by retailer. Empty results list if nothing found."""
+    if not x_firebase_uid:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Missing Firebase UID")
+    item = db.query(RecommendationItem).filter(RecommendationItem.id == item_id).first()
+    if not item:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Item not found")
+
+    try:
+        loop = asyncio.get_event_loop()
+        results = await loop.run_in_executor(
+            None,
+            partial(
+                PriceComparisonService.compare,
+                name=item.name,
+                brand=item.brand,
+                currency=item.currency or "USD",
+            ),
+        )
+    except RuntimeError as e:
+        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+    return PriceComparisonResponse(
+        item_id=item.id,
+        item_name=item.name,
+        item_brand=item.brand,
+        current_price=float(item.price) if item.price is not None else None,
+        results=[PriceComparisonResult(**r) for r in results],
+    )

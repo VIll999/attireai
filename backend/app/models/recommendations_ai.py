@@ -36,6 +36,9 @@ class AIWebCandidatesRequest(BaseModel):
     weather: Optional[str] = None
     dress_code: Optional[str] = None
 
+    # Sprint 3 Story #6: pin a wardrobe item that every generated outfit must include
+    pinned_item_id: Optional[str] = None
+
 
 class CandidateItem(BaseModel):
     name: str

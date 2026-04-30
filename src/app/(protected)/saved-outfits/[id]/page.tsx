@@ -6,6 +6,7 @@ import AppNav from "@/components/AppNav";
 import { useAuth } from "@/context/AuthContext";
 import { useLocale } from "@/context/LocaleContext";
 import PriceDropBadge from "@/components/PriceDropBadge";
+import ComparePricesButton from "@/components/ComparePricesButton";
 import {
   getSavedOutfit,
   deleteSavedOutfit,
@@ -365,11 +366,12 @@ export default function SavedOutfitDetailPage() {
                         href={item.purchase_url}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="block w-full py-2 px-3 bg-brand hover:bg-brand/90 text-white rounded-lg text-sm font-semibold text-center transition-colors"
+                        className="block w-full py-2 px-3 bg-brand hover:bg-brand/90 text-white rounded-lg text-sm font-semibold text-center transition-colors mb-2"
                       >
                         View Product
                       </a>
                     )}
+                    <ComparePricesButton itemId={item.id} itemName={item.name} className="w-full !py-2 !text-sm" />
                   </div>
                 </div>
               );

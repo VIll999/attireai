@@ -553,6 +553,7 @@ export interface AIRecommendationRequest {
   measurement_profile_id?: string;
   k?: number;
   save_to_db?: boolean;
+  pinned_item_id?: string;
 }
 
 export interface AIRecommendationItem {
@@ -1297,4 +1298,67 @@ export async function updateAdminProduct(
 
 export async function deleteAdminProduct(firebaseUid: string, id: string): Promise<void> {
   await adminFetch(firebaseUid, `/products/${id}`, { method: "DELETE" });
+}
+
+// --- Wardrobe (Sprint 3 Story #6) ---
+
+export interface WardrobeItem {
+  id: string;
+  name: string;
+  brand: string | null;
+  category: string | null;
+  price: number | null;
+  currency: string | null;
+  image_url: string | null;
+  purchase_url: string | null;
+  saved_outfit_id: string;
+  purchased_at: string | null;
+}
+
+export interface WardrobeResponse {
+  items: WardrobeItem[];
+  by_category: Record<string, WardrobeItem[]>;
+  total: number;
+}
+
+export async function getWardrobe(firebaseUid: string): Promise<WardrobeResponse> {
+  const res = await fetch(`${API_URL}/wardrobe`, {
+    headers: { "X-Firebase-UID": firebaseUid },
+  });
+  if (!res.ok) throw new Error("Failed to load wardrobe");
+  return res.json();
+}
+
+// --- Price comparison (Sprint 3 Story #8) ---
+
+export interface PriceComparisonResult {
+  retailer: string;
+  price: number | null;
+  currency: string | null;
+  url: string;
+  stock_status: string | null;
+  image_url: string | null;
+  notes: string | null;
+}
+
+export interface PriceComparisonResponse {
+  item_id: string;
+  item_name: string;
+  item_brand: string | null;
+  current_price: number | null;
+  results: PriceComparisonResult[];
+}
+
+export async function comparePricesForItem(
+  firebaseUid: string,
+  itemId: string,
+): Promise<PriceComparisonResponse> {
+  const res = await fetch(`${API_URL}/recommendations/items/${itemId}/compare-prices`, {
+    headers: { "X-Firebase-UID": firebaseUid },
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || "Failed to compare prices");
+  }
+  return res.json();
 }

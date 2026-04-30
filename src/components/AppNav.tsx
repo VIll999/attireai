@@ -8,7 +8,7 @@ import { useLocale } from "@/context/LocaleContext";
 import NotificationBell from "@/components/NotificationBell";
 
 interface AppNavProps {
-  activePage?: "dashboard" | "tutorial" | "style-quiz" | "help" | "saved-outfits" | "profile" | "preferences" | "vip" | "admin";
+  activePage?: "dashboard" | "tutorial" | "style-quiz" | "help" | "saved-outfits" | "profile" | "preferences" | "vip" | "admin" | "wardrobe";
 }
 
 export default function AppNav({ activePage }: AppNavProps) {
@@ -26,6 +26,7 @@ export default function AppNav({ activePage }: AppNavProps) {
     { key: "tutorial" as const, href: "/tutorial", label: "Tutorial" },
     { key: "style-quiz" as const, href: "/style-quiz", label: "Style Quiz" },
     { key: "saved-outfits" as const, href: "/saved-outfits", label: "Saved Outfits" },
+    { key: "wardrobe" as const, href: "/wardrobe", label: "Wardrobe" },
     { key: "vip" as const, href: "/vip", label: "VIP" },
     { key: "help" as const, href: "/help", label: "Help & FAQ" },
     { key: "profile" as const, href: "/profile", label: t("nav.profile") },
