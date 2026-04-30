@@ -8,6 +8,11 @@ class TryOnGenerateRequest(BaseModel):
     user_photo_url: str
 
 
+class TryOnGenerateItemRequest(BaseModel):
+    item_id: str
+    user_photo_url: str
+
+
 class TryOnResponse(BaseModel):
     id: str
     outfit_id: str

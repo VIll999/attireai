@@ -10,7 +10,7 @@ from sqlalchemy.orm import Session
 from app.config import get_settings
 from app.db.database import get_db
 from app.db.models import OutfitRecommendation, RecommendationItem, User, VirtualTryOn
-from app.models.virtual_try_on import TryOnGenerateRequest, TryOnResponse
+from app.models.virtual_try_on import TryOnGenerateItemRequest, TryOnGenerateRequest, TryOnResponse
 from app.services import try_on_service
 from app.services.s3 import get_s3_client
 from app.utils.auth import consume_vip_trial_if_free, get_current_user, require_vip
@@ -128,6 +128,72 @@ async def generate(
 
     consume_vip_trial_if_free(user, db)
 
+    return record
+
+
+@router.post("/generate-item", response_model=TryOnResponse)
+async def generate_item(
+    body: TryOnGenerateItemRequest,
+    user: User = Depends(require_vip),
+    db: Session = Depends(get_db),
+):
+    """Story #2 AC1: try a single item on the user's photo.
+    The item must belong to one of the user's recommendations."""
+    item = (
+        db.query(RecommendationItem)
+        .filter(RecommendationItem.id == body.item_id)
+        .first()
+    )
+    if not item:
+        raise HTTPException(status_code=404, detail="Item not found")
+    parent = (
+        db.query(OutfitRecommendation)
+        .filter(
+            OutfitRecommendation.id == item.recommendation_id,
+            OutfitRecommendation.user_id == user.id,
+        )
+        .first()
+    )
+    if not parent:
+        raise HTTPException(status_code=403, detail="Item not in your recommendations")
+
+    record = VirtualTryOn(
+        user_id=user.id,
+        outfit_id=parent.id,
+        user_photo_url=body.user_photo_url,
+        status="PROCESSING",
+    )
+    db.add(record)
+    db.commit()
+    db.refresh(record)
+
+    try:
+        item_urls = [item.image_url] if item.image_url else []
+        descriptor_bits = [item.name]
+        if item.brand:
+            descriptor_bits.append(f"by {item.brand}")
+        if item.category:
+            descriptor_bits.append(f"({item.category.lower()})")
+        description = "Single item try-on: " + " ".join(descriptor_bits)
+        image_bytes = try_on_service.TryOnService.generate(
+            user_photo_url=body.user_photo_url,
+            item_image_urls=item_urls,
+            outfit_description=description,
+        )
+        result_url = _save_result(image_bytes, user.firebase_uid)
+    except Exception as exc:
+        record.status = "FAILED"
+        db.commit()
+        logger.error("Single-item try-on failed for user %s item %s: %s", user.id, item.id, exc)
+        raise HTTPException(status_code=502, detail=f"Try-on generation failed: {exc}")
+
+    record.result_image_url = result_url
+    record.status = "COMPLETED"
+    record.completed_at = datetime.utcnow()
+    db.commit()
+    db.refresh(record)
+
+    consume_vip_trial_if_free(user, db)
     return record
 
 

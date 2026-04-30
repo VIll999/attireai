@@ -371,6 +371,12 @@ export default function SavedOutfitDetailPage() {
                         View Product
                       </a>
                     )}
+                    <button
+                      onClick={() => router.push(`/virtual-try-on/item/${item.id}`)}
+                      className="block w-full py-2 px-3 bg-gradient-to-r from-brand to-brand-600 hover:opacity-90 text-white rounded-lg text-sm font-semibold text-center transition-opacity mb-2"
+                    >
+                      ✨ Try on this item
+                    </button>
                     <ComparePricesButton itemId={item.id} itemName={item.name} className="w-full !py-2 !text-sm" />
                   </div>
                 </div>

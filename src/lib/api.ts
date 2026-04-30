@@ -1108,6 +1108,29 @@ export async function generateTryOn(
   return response.json();
 }
 
+export async function generateTryOnItem(
+  firebaseUid: string,
+  itemId: string,
+  userPhotoUrl: string,
+): Promise<TryOnResponse> {
+  const response = await fetch(`${API_URL}/virtual-try-on/generate-item`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "X-Firebase-UID": firebaseUid,
+    },
+    body: JSON.stringify({ item_id: itemId, user_photo_url: userPhotoUrl }),
+  });
+  if (response.status === 402) {
+    throw new Error("VIP_REQUIRED");
+  }
+  if (!response.ok) {
+    const text = await response.text();
+    throw new Error(text || "Try-on failed");
+  }
+  return response.json();
+}
+
 export async function listTryOns(firebaseUid: string): Promise<TryOnResponse[]> {
   const response = await fetch(`${API_URL}/virtual-try-on`, {
     headers: { "X-Firebase-UID": firebaseUid },

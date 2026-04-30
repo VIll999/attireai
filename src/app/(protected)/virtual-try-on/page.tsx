@@ -25,6 +25,25 @@ export default function TryOnGalleryPage() {
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [shareToast, setShareToast] = useState("");
 
+  // Compare mode (Story #2 AC3)
+  const [compareMode, setCompareMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [showCompare, setShowCompare] = useState(false);
+
+  const exitCompareMode = () => {
+    setCompareMode(false);
+    setSelectedIds([]);
+    setShowCompare(false);
+  };
+
+  const toggleSelect = (id: string) => {
+    setSelectedIds((prev) => {
+      if (prev.includes(id)) return prev.filter((x) => x !== id);
+      if (prev.length >= 2) return [prev[1], id];
+      return [...prev, id];
+    });
+  };
+
   const refresh = async () => {
     if (!user) return;
     setLoading(true);
@@ -91,12 +110,45 @@ export default function TryOnGalleryPage() {
               Your virtual try-on gallery — view, share, or delete past results.
             </p>
           </div>
-          <Link
-            href="/saved-outfits"
-            className="text-sm px-4 py-2 rounded-lg bg-brand hover:bg-brand-600 text-white font-medium"
-          >
-            + New Try-On
-          </Link>
+          <div className="flex items-center gap-2">
+            {compareMode ? (
+              <>
+                <span className="text-xs text-stone-500 dark:text-stone-400">
+                  {selectedIds.length}/2 selected
+                </span>
+                <button
+                  onClick={() => setShowCompare(true)}
+                  disabled={selectedIds.length !== 2}
+                  className="text-sm px-4 py-2 rounded-lg bg-brand hover:bg-brand-600 text-white font-medium disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  Compare selected
+                </button>
+                <button
+                  onClick={exitCompareMode}
+                  className="text-sm px-4 py-2 rounded-lg border border-stone-300 dark:border-stone-700 hover:bg-stone-50 dark:hover:bg-stone-800"
+                >
+                  Cancel
+                </button>
+              </>
+            ) : (
+              <>
+                {completed.length >= 2 && (
+                  <button
+                    onClick={() => setCompareMode(true)}
+                    className="text-sm px-4 py-2 rounded-lg border border-stone-300 dark:border-stone-700 hover:bg-stone-50 dark:hover:bg-stone-800 font-medium"
+                  >
+                    🆚 Compare
+                  </button>
+                )}
+                <Link
+                  href="/saved-outfits"
+                  className="text-sm px-4 py-2 rounded-lg bg-brand hover:bg-brand-600 text-white font-medium"
+                >
+                  + New Try-On
+                </Link>
+              </>
+            )}
+          </div>
         </div>
 
         {error && (
@@ -125,30 +177,50 @@ export default function TryOnGalleryPage() {
           </div>
         ) : (
           <>
+            {compareMode && (
+              <div className="mb-4 p-3 rounded-lg bg-brand/5 dark:bg-brand/10 border border-brand/20 text-sm text-stone-700 dark:text-stone-300">
+                Pick <strong>2</strong> try-ons to compare side by side.
+              </div>
+            )}
+
             {completed.length > 0 && (
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 mb-8">
-                {completed.map((t) => (
-                  <button
-                    key={t.id}
-                    onClick={() => setActive(t)}
-                    className="group relative bg-white dark:bg-stone-900 rounded-xl overflow-hidden border border-stone-200 dark:border-stone-800 hover:shadow-lg transition text-left"
-                  >
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={t.result_image_url!}
-                      alt="Try-on"
-                      className="w-full aspect-[3/4] object-cover"
-                    />
-                    <div className="p-3">
-                      <div className="text-xs text-stone-500 dark:text-stone-400">
-                        {formatDate(t.created_at)}
+                {completed.map((t) => {
+                  const selected = selectedIds.includes(t.id);
+                  return (
+                    <button
+                      key={t.id}
+                      onClick={() => (compareMode ? toggleSelect(t.id) : setActive(t))}
+                      className={
+                        "group relative bg-white dark:bg-stone-900 rounded-xl overflow-hidden border transition text-left " +
+                        (selected
+                          ? "border-brand ring-2 ring-brand"
+                          : "border-stone-200 dark:border-stone-800 hover:shadow-lg")
+                      }
+                    >
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={t.result_image_url!}
+                        alt="Try-on"
+                        className="w-full aspect-[3/4] object-cover"
+                      />
+                      <div className="p-3">
+                        <div className="text-xs text-stone-500 dark:text-stone-400">
+                          {formatDate(t.created_at)}
+                        </div>
                       </div>
-                    </div>
-                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition flex items-center justify-center">
-                      <span className="text-white font-medium text-sm">View</span>
-                    </div>
-                  </button>
-                ))}
+                      {compareMode ? (
+                        <div className="absolute top-2 right-2 w-6 h-6 rounded-full bg-white dark:bg-stone-900 border-2 border-brand flex items-center justify-center text-brand text-xs font-bold shadow">
+                          {selected ? (selectedIds.indexOf(t.id) + 1) : ""}
+                        </div>
+                      ) : (
+                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition flex items-center justify-center">
+                          <span className="text-white font-medium text-sm">View</span>
+                        </div>
+                      )}
+                    </button>
+                  );
+                })}
               </div>
             )}
 
@@ -264,6 +336,86 @@ export default function TryOnGalleryPage() {
             </div>
           </div>
         )}
+
+        {/* Compare modal — Story #2 AC3 */}
+        {showCompare && selectedIds.length === 2 && (() => {
+          const a = completed.find((t) => t.id === selectedIds[0]);
+          const b = completed.find((t) => t.id === selectedIds[1]);
+          if (!a || !b) return null;
+          return (
+            <div
+              className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4"
+              onClick={() => setShowCompare(false)}
+            >
+              <div
+                className="bg-white dark:bg-stone-900 rounded-2xl max-w-6xl w-full max-h-[92vh] overflow-y-auto shadow-2xl"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div className="flex items-center justify-between p-4 border-b border-stone-200 dark:border-stone-800 sticky top-0 bg-white dark:bg-stone-900">
+                  <h3 className="font-bold text-stone-900 dark:text-stone-100">Side-by-side</h3>
+                  <button
+                    onClick={() => setShowCompare(false)}
+                    className="text-stone-500 hover:text-stone-900 dark:hover:text-stone-100 text-2xl leading-none"
+                    aria-label="Close"
+                  >
+                    ×
+                  </button>
+                </div>
+                <div className="grid md:grid-cols-2 gap-4 p-4">
+                  {[a, b].map((t, i) => (
+                    <div key={t.id} className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs uppercase tracking-wide text-brand font-bold">
+                          Option {i + 1}
+                        </span>
+                        <span className="text-xs text-stone-500">{formatDate(t.created_at)}</span>
+                      </div>
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={t.result_image_url!}
+                        alt={`Try-on ${i + 1}`}
+                        className="w-full rounded-lg"
+                      />
+                      <div className="flex gap-2">
+                        <a
+                          href={t.result_image_url!}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex-1 text-center px-3 py-1.5 border border-stone-300 dark:border-stone-700 rounded-lg text-xs font-medium hover:bg-stone-50 dark:hover:bg-stone-800"
+                        >
+                          Full size
+                        </a>
+                        <button
+                          onClick={() => handleShare(t.result_image_url!)}
+                          className="flex-1 px-3 py-1.5 bg-brand hover:bg-brand-600 text-white rounded-lg text-xs font-medium"
+                        >
+                          Share
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <div className="p-4 border-t border-stone-200 dark:border-stone-800 flex justify-end gap-2">
+                  <button
+                    onClick={() => {
+                      setShowCompare(false);
+                      setSelectedIds([]);
+                    }}
+                    className="px-4 py-2 text-sm border border-stone-300 dark:border-stone-700 rounded-lg hover:bg-stone-50 dark:hover:bg-stone-800"
+                  >
+                    Pick different
+                  </button>
+                  <button
+                    onClick={exitCompareMode}
+                    className="px-4 py-2 text-sm bg-brand hover:bg-brand-600 text-white rounded-lg font-medium"
+                  >
+                    Done
+                  </button>
+                </div>
+              </div>
+            </div>
+          );
+        })()}
 
         {shareToast && (
           <div className="fixed bottom-6 left-1/2 -translate-x-1/2 px-4 py-2 bg-stone-900 dark:bg-stone-100 text-white dark:text-stone-900 rounded-lg shadow-lg text-sm">
