@@ -4,9 +4,9 @@ import { useState, useEffect, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import AppNav from "@/components/AppNav";
+import PriceDropBadge from "@/components/PriceDropBadge";
 import { useAuth } from "@/context/AuthContext";
 import { useLocale } from "@/context/LocaleContext";
-import PriceDropBadge from "@/components/PriceDropBadge";
 import {
   getSavedOutfits,
   deleteSavedOutfit,
@@ -647,13 +647,13 @@ export default function SavedOutfitsPage() {
               if (!rec) return null;
 
               const displayItem = rec.items?.find((item) => item.image_url) || rec.items?.[0];
-              const totalPrice =
+              const currentTotalPrice = saved.current_total_price ||
                 rec.items?.reduce(
                   (sum, item) => sum + (typeof item.price === "number" ? item.price : 0),
                   0
                 ) || 0;
-              // Original = sum of (previous_price if available, else current price)
-              const originalTotalPrice =
+              // Item-level detection (Story #5: previous_price set by simulate-sale / admin edit)
+              const itemLevelOriginal =
                 rec.items?.reduce(
                   (sum, item) =>
                     sum +
@@ -663,13 +663,18 @@ export default function SavedOutfitsPage() {
                         ? item.price
                         : 0),
                   0
-                ) || rec.total_price || 0;
+                ) || 0;
               const hasDroppedItem = rec.items?.some(
                 (item) =>
                   typeof item.previous_price === "number" &&
                   typeof item.price === "number" &&
                   item.previous_price > item.price
               );
+              // Prefer item-level original; fall back to outfit-level original_total_price (main).
+              const originalTotalPrice =
+                itemLevelOriginal || saved.original_total_price || rec.total_price || 0;
+              const priceDropped =
+                hasDroppedItem || saved.price_dropped || originalTotalPrice > currentTotalPrice;
 
               const isHighlighted =
                 !!highlightItemId &&
@@ -713,9 +718,9 @@ export default function SavedOutfitsPage() {
                       </div>
 
                       {/* Price Drop Badge */}
-                      {hasDroppedItem && originalTotalPrice > totalPrice && (
+                      {priceDropped && !saved.is_purchased && originalTotalPrice > currentTotalPrice && (
                         <div className="absolute top-3 right-3">
-                          <PriceDropBadge originalPrice={originalTotalPrice} currentPrice={totalPrice} />
+                          <PriceDropBadge originalPrice={originalTotalPrice} currentPrice={currentTotalPrice} />
                         </div>
                       )}
 
@@ -738,11 +743,20 @@ export default function SavedOutfitsPage() {
                             Saved {formatDate(saved.created_at)}
                           </p>
                         </div>
-                        {totalPrice > 0 && (
-                          <div className="text-lg font-bold text-brand">
-                            ${totalPrice.toFixed(0)}
+                        {priceDropped && originalTotalPrice && currentTotalPrice ? (
+                          <div className="text-right">
+                            <div className="text-xs text-gray-500 dark:text-gray-400 line-through">
+                              ${originalTotalPrice.toFixed(0)}
+                            </div>
+                            <div className="text-lg font-bold text-red-500 dark:text-red-400">
+                              ${currentTotalPrice.toFixed(0)}
+                            </div>
                           </div>
-                        )}
+                        ) : currentTotalPrice > 0 ? (
+                          <div className="text-lg font-bold text-brand">
+                            ${currentTotalPrice.toFixed(0)}
+                          </div>
+                        ) : null}
                       </div>
 
                       {/* Metadata */}

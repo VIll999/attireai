@@ -7,8 +7,9 @@ import { useAuth } from "@/context/AuthContext";
 import { useProfile } from "@/context/ProfileContext";
 import { useLocale } from "@/context/LocaleContext";
 import { auth, deleteUser } from "@/lib/firebase";
-import { deleteUserFromBackend, getSavedOutfits, SavedOutfitWithDetailsResponse } from "@/lib/api";
+import { deleteUserFromBackend, getSavedOutfits, SavedOutfitWithDetailsResponse, updateItemPrice } from "@/lib/api";
 import AppNav from "@/components/AppNav";
+import PriceEditModal from "@/components/PriceEditModal";
 
 export default function DashboardPage() {
   const { user, dbUser, signOut } = useAuth();
@@ -30,6 +31,7 @@ export default function DashboardPage() {
   const [isDeleting, setIsDeleting] = useState(false);
   const [savedOutfits, setSavedOutfits] = useState<SavedOutfitWithDetailsResponse[]>([]);
   const [savedOutfitsLoading, setSavedOutfitsLoading] = useState(true);
+  const [showPriceEditModal, setShowPriceEditModal] = useState(false);
 
   // Fetch saved outfits
   useEffect(() => {
@@ -64,6 +66,16 @@ export default function DashboardPage() {
       setIsDeleting(false);
       setShowDeleteConfirm(false);
     }
+  };
+
+  const handlePriceUpdate = async (itemId: string, newPrice: number) => {
+    if (!user) return;
+
+    await updateItemPrice(user.uid, itemId, newPrice);
+
+    // Refresh saved outfits to show the price change
+    const data = await getSavedOutfits(user.uid);
+    setSavedOutfits(data);
   };
 
   const firstName = dbUser?.name ? dbUser.name.split(" ")[0] : "Guest";
@@ -342,7 +354,16 @@ export default function DashboardPage() {
             <section>
               <div className="flex items-center justify-between mb-6">
                 <h3 className="text-2xl font-bold text-gray-900 dark:text-white font-cabinet">Recently Saved Outfits</h3>
-                <Link href="/saved-outfits" className="text-sm font-bold text-brand dark:text-brand-400 hover:underline">View All</Link>
+                <div className="flex items-center gap-3">
+                  <button
+                    onClick={() => setShowPriceEditModal(true)}
+                    disabled={savedOutfits.length === 0}
+                    className="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white text-sm font-bold rounded-full transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
+                  >
+                    ✏️ Edit Prices
+                  </button>
+                  <Link href="/saved-outfits" className="text-sm font-bold text-brand dark:text-brand-400 hover:underline">View All</Link>
+                </div>
               </div>
 
               {savedOutfitsLoading ? (
@@ -376,6 +397,15 @@ export default function DashboardPage() {
                     const displayItem = rec.items?.find((item) => item.image_url) || rec.items?.[0];
                     const totalPrice = rec.items?.reduce((sum, item) => sum + (typeof item.price === "number" ? item.price : 0), 0) || 0;
 
+                    // Calculate stock status summary
+                    const stockSummary = rec.items?.reduce((acc, item) => {
+                      if (item.stock_status === "IN_STOCK") acc.inStock++;
+                      else if (item.stock_status === "LOW_STOCK") acc.lowStock++;
+                      else if (item.stock_status === "OUT_OF_STOCK") acc.outOfStock++;
+                      else acc.unknown++;
+                      return acc;
+                    }, { inStock: 0, lowStock: 0, outOfStock: 0, unknown: 0 }) || { inStock: 0, lowStock: 0, outOfStock: 0, unknown: 0 };
+
                     return (
                       <Link
                         key={saved.id}
@@ -404,6 +434,11 @@ export default function DashboardPage() {
                               Purchased
                             </div>
                           )}
+                          {saved.price_dropped && !saved.is_purchased && (
+                            <div className="absolute top-3 left-3 bg-red-500 text-white px-3 py-1 rounded-full text-xs font-bold shadow-lg animate-pulse">
+                              Price Drop!
+                            </div>
+                          )}
                         </div>
                         <div className="p-4">
                           <h4 className="font-bold text-gray-900 dark:text-white line-clamp-1 mb-1">
@@ -412,11 +447,47 @@ export default function DashboardPage() {
                           <p className="text-xs text-stone-500 dark:text-stone-400 mb-2">
                             {rec.items?.length || 0} items
                           </p>
-                          {totalPrice > 0 && (
+                          {saved.price_dropped && saved.current_total_price && saved.original_total_price ? (
+                            <div className="space-y-1">
+                              <p className="text-xs text-gray-500 dark:text-gray-400 line-through">
+                                ${saved.original_total_price.toFixed(0)}
+                              </p>
+                              <p className="text-lg font-bold text-red-500 dark:text-red-400">
+                                ${saved.current_total_price.toFixed(0)}
+                              </p>
+                              <p className="text-xs text-red-600 dark:text-red-400 font-semibold">
+                                Save ${(saved.original_total_price - saved.current_total_price).toFixed(0)}
+                              </p>
+                            </div>
+                          ) : totalPrice > 0 ? (
                             <p className="text-lg font-bold text-brand dark:text-brand-400">
                               ${totalPrice.toFixed(0)}
                             </p>
-                          )}
+                          ) : null}
+
+                          {/* Stock Status Summary */}
+                          <div className="mt-3 flex flex-wrap gap-1">
+                            {stockSummary.outOfStock > 0 && (
+                              <span className="text-xs px-2 py-0.5 rounded-full font-semibold bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400">
+                                {stockSummary.outOfStock} Out of Stock
+                              </span>
+                            )}
+                            {stockSummary.lowStock > 0 && (
+                              <span className="text-xs px-2 py-0.5 rounded-full font-semibold bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400">
+                                {stockSummary.lowStock} Low Stock
+                              </span>
+                            )}
+                            {stockSummary.unknown > 0 && (
+                              <span className="text-xs px-2 py-0.5 rounded-full font-semibold bg-gray-100 dark:bg-gray-700/30 text-gray-600 dark:text-gray-400">
+                                {stockSummary.unknown} Unknown Stock
+                              </span>
+                            )}
+                            {stockSummary.inStock > 0 && stockSummary.outOfStock === 0 && stockSummary.lowStock === 0 && stockSummary.unknown === 0 && (
+                              <span className="text-xs px-2 py-0.5 rounded-full font-semibold bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400">
+                                All In Stock
+                              </span>
+                            )}
+                          </div>
                         </div>
                       </Link>
                     );
@@ -521,6 +592,14 @@ export default function DashboardPage() {
           </div>
         </div>
       )}
+
+      {/* Price Edit Modal */}
+      <PriceEditModal
+        isOpen={showPriceEditModal}
+        onClose={() => setShowPriceEditModal(false)}
+        savedOutfits={savedOutfits}
+        onPriceUpdate={handlePriceUpdate}
+      />
     </div>
   );
 }

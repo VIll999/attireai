@@ -245,6 +245,7 @@ class SavedOutfit(Base):
     )
     collection_name = Column(String(50), default="Favorites")
     is_purchased = Column(Boolean, default=False)
+    original_total_price = Column(Numeric(10, 2), nullable=True)
     try_on_image_url = Column(String(500), nullable=True)
     created_at = Column(TIMESTAMP, server_default=text("CURRENT_TIMESTAMP"))
 

@@ -934,16 +934,24 @@ export default function RecommendationsPage() {
                                   </a>
                                 )}
                               </div>
-                              {it.stock_status && it.stock_status !== "UNKNOWN" && (
+                              {it.stock_status && (
                                 <div className="mt-2">
                                   <span className={`text-xs px-2 py-0.5 rounded-full font-semibold ${
                                     it.stock_status === "IN_STOCK"
                                       ? "bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400"
                                       : it.stock_status === "LOW_STOCK"
                                       ? "bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400"
-                                      : "bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400"
+                                      : it.stock_status === "OUT_OF_STOCK"
+                                      ? "bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400"
+                                      : "bg-gray-100 dark:bg-gray-700/30 text-gray-600 dark:text-gray-400"
                                   }`}>
-                                    {it.stock_status === "IN_STOCK" ? "✓ In Stock" : it.stock_status === "LOW_STOCK" ? "⚠ Low Stock" : "✕ Out of Stock"}
+                                    {it.stock_status === "IN_STOCK"
+                                      ? "In Stock"
+                                      : it.stock_status === "LOW_STOCK"
+                                      ? "Low Stock"
+                                      : it.stock_status === "OUT_OF_STOCK"
+                                      ? "Out of Stock"
+                                      : "Availability Unknown"}
                                   </span>
                                 </div>
                               )}
@@ -1101,30 +1109,53 @@ export default function RecommendationsPage() {
                             {rec.items.map((item) => {
                               const itemUrl = pickBestUrl(item);
                               return (
-                                <div key={item.id} className="flex items-center gap-2 text-xs group">
-                                  <span className="text-lg">{CATEGORY_ICONS[(item.category || "").toUpperCase()] || "👔"}</span>
-                                  <span className="flex-1 truncate text-gray-700 dark:text-gray-300">{item.name}</span>
+                                <div key={item.id} className="flex flex-col gap-1 text-xs group py-2">
                                   <div className="flex items-center gap-2">
-                                    {item.recommended_size && (
-                                      <span className="text-xs bg-stone-200 dark:bg-stone-700 px-2 py-0.5 rounded text-stone-600 dark:text-stone-300">
-                                        {item.recommended_size}
-                                      </span>
-                                    )}
-                                    {typeof item.price === "number" && (
-                                      <span className="font-semibold text-brand dark:text-brand-400">${item.price.toFixed(0)}</span>
-                                    )}
-                                    {itemUrl && (
-                                      <a
-                                        href={itemUrl}
-                                        target="_blank"
-                                        rel="noreferrer"
-                                        onClick={(e) => e.stopPropagation()}
-                                        className="text-brand dark:text-brand-400 hover:underline font-semibold"
-                                      >
-                                        View
-                                      </a>
-                                    )}
+                                    <span className="text-lg">{CATEGORY_ICONS[(item.category || "").toUpperCase()] || "👔"}</span>
+                                    <span className="flex-1 truncate text-gray-700 dark:text-gray-300">{item.name}</span>
+                                    <div className="flex items-center gap-2">
+                                      {item.recommended_size && (
+                                        <span className="text-xs bg-stone-200 dark:bg-stone-700 px-2 py-0.5 rounded text-stone-600 dark:text-stone-300">
+                                          {item.recommended_size}
+                                        </span>
+                                      )}
+                                      {typeof item.price === "number" && (
+                                        <span className="font-semibold text-brand dark:text-brand-400">${item.price.toFixed(0)}</span>
+                                      )}
+                                      {itemUrl && (
+                                        <a
+                                          href={itemUrl}
+                                          target="_blank"
+                                          rel="noreferrer"
+                                          onClick={(e) => e.stopPropagation()}
+                                          className="text-brand dark:text-brand-400 hover:underline font-semibold"
+                                        >
+                                          View
+                                        </a>
+                                      )}
+                                    </div>
                                   </div>
+                                  {item.stock_status && (
+                                    <div className="ml-7">
+                                      <span className={`text-xs px-2 py-0.5 rounded-full font-semibold ${
+                                        item.stock_status === "IN_STOCK"
+                                          ? "bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400"
+                                          : item.stock_status === "LOW_STOCK"
+                                          ? "bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400"
+                                          : item.stock_status === "OUT_OF_STOCK"
+                                          ? "bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400"
+                                          : "bg-gray-100 dark:bg-gray-700/30 text-gray-600 dark:text-gray-400"
+                                      }`}>
+                                        {item.stock_status === "IN_STOCK"
+                                          ? "In Stock"
+                                          : item.stock_status === "LOW_STOCK"
+                                          ? "Low Stock"
+                                          : item.stock_status === "OUT_OF_STOCK"
+                                          ? "Out of Stock"
+                                          : "Availability Unknown"}
+                                      </span>
+                                    </div>
+                                  )}
                                 </div>
                               );
                             })}

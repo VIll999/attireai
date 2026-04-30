@@ -3,9 +3,10 @@ from sqlalchemy.orm import Session
 from sqlalchemy import func
 from typing import Optional, List
 from pydantic import BaseModel
+import random
 
 from app.db.database import get_db
-from app.db.models import SavedOutfit, User, OutfitRecommendation
+from app.db.models import SavedOutfit, User, OutfitRecommendation, RecommendationItem
 
 
 router = APIRouter()
@@ -49,6 +50,7 @@ class SavedOutfitResponse(BaseModel):
     recommendation_id: str
     collection_name: str
     is_purchased: bool
+    original_total_price: Optional[float]
     try_on_image_url: Optional[str]
     created_at: str
 
@@ -59,6 +61,8 @@ class SavedOutfitResponse(BaseModel):
 class SavedOutfitWithDetailsResponse(SavedOutfitResponse):
     """Saved outfit with full recommendation details"""
     recommendation: Optional[dict] = None
+    price_dropped: bool = False
+    current_total_price: Optional[float] = None
 
 
 # --- Endpoints ---
@@ -102,11 +106,18 @@ def save_outfit(
             detail="Outfit already saved"
         )
 
+    # Calculate original total price from recommendation items
+    original_total = sum(
+        float(item.price) if item.price else 0
+        for item in recommendation.items
+    )
+
     # Create saved outfit
     saved_outfit = SavedOutfit(
         user_id=user.id,
         recommendation_id=data.recommendation_id,
         collection_name=data.collection_name,
+        original_total_price=original_total if original_total > 0 else None,
     )
 
     db.add(saved_outfit)
@@ -120,6 +131,7 @@ def save_outfit(
         recommendation_id=saved_outfit.recommendation_id,
         collection_name=saved_outfit.collection_name,
         is_purchased=saved_outfit.is_purchased,
+        original_total_price=float(saved_outfit.original_total_price) if saved_outfit.original_total_price else None,
         try_on_image_url=saved_outfit.try_on_image_url,
         created_at=saved_outfit.created_at.isoformat() if saved_outfit.created_at else "",
     )
@@ -245,15 +257,30 @@ def get_saved_outfits(
                 ]
             }
 
+        # Calculate current total price and check for price drop
+        current_total = 0.0
+        price_dropped = False
+        if recommendation and recommendation.items:
+            current_total = sum(
+                float(item.price) if item.price else 0
+                for item in recommendation.items
+            )
+            # Check if price dropped (current price < original price)
+            if saved.original_total_price and current_total < float(saved.original_total_price):
+                price_dropped = True
+
         results.append({
             "id": saved.id,
             "user_id": saved.user_id,
             "recommendation_id": saved.recommendation_id,
             "collection_name": saved.collection_name,
             "is_purchased": saved.is_purchased,
+            "original_total_price": float(saved.original_total_price) if saved.original_total_price else None,
             "try_on_image_url": saved.try_on_image_url,
             "created_at": saved.created_at.isoformat() if saved.created_at else None,
             "recommendation": rec_dict,
+            "price_dropped": price_dropped,
+            "current_total_price": current_total if current_total > 0 else None,
         })
 
     return results
@@ -316,15 +343,30 @@ def get_saved_outfit(
             ]
         }
 
+    # Calculate current total price and check for price drop
+    current_total = 0.0
+    price_dropped = False
+    if recommendation and recommendation.items:
+        current_total = sum(
+            float(item.price) if item.price else 0
+            for item in recommendation.items
+        )
+        # Check if price dropped (current price < original price)
+        if saved_outfit.original_total_price and current_total < float(saved_outfit.original_total_price):
+            price_dropped = True
+
     return {
         "id": saved_outfit.id,
         "user_id": saved_outfit.user_id,
         "recommendation_id": saved_outfit.recommendation_id,
         "collection_name": saved_outfit.collection_name,
         "is_purchased": saved_outfit.is_purchased,
+        "original_total_price": float(saved_outfit.original_total_price) if saved_outfit.original_total_price else None,
         "try_on_image_url": saved_outfit.try_on_image_url,
         "created_at": saved_outfit.created_at.isoformat() if saved_outfit.created_at else None,
         "recommendation": rec_dict,
+        "price_dropped": price_dropped,
+        "current_total_price": current_total if current_total > 0 else None,
     }
 
 
@@ -371,6 +413,7 @@ def update_saved_outfit(
         recommendation_id=saved_outfit.recommendation_id,
         collection_name=saved_outfit.collection_name,
         is_purchased=saved_outfit.is_purchased,
+        original_total_price=float(saved_outfit.original_total_price) if saved_outfit.original_total_price else None,
         try_on_image_url=saved_outfit.try_on_image_url,
         created_at=saved_outfit.created_at.isoformat() if saved_outfit.created_at else "",
     )
@@ -425,3 +468,146 @@ def get_collections(
     ).distinct().all()
 
     return [c[0] for c in collections]
+
+
+class MockPriceDropResponse(BaseModel):
+    success: bool
+    message: str
+    item_name: str
+    original_price: float
+    new_price: float
+    saved_outfit_id: str
+
+
+class UpdateItemPriceRequest(BaseModel):
+    new_price: float
+
+
+class UpdateItemPriceResponse(BaseModel):
+    success: bool
+    item_id: str
+    item_name: str
+    old_price: float
+    new_price: float
+
+
+@router.post("/saved-outfits/mock-price-drop", response_model=MockPriceDropResponse)
+def mock_price_drop(
+    x_firebase_uid: Optional[str] = Header(None),
+    db: Session = Depends(get_db),
+):
+    """
+    Mock a price drop for demo purposes.
+
+    - Randomly selects a saved outfit
+    - Randomly reduces one item's price by 20-40%
+    - Returns details about the price change
+    """
+    user = get_user_by_uid(x_firebase_uid, db)
+
+    # Get all saved outfits for this user
+    saved_outfits = db.query(SavedOutfit).filter(
+        SavedOutfit.user_id == user.id,
+        SavedOutfit.is_purchased == False  # Only unpurchased outfits
+    ).all()
+
+    if not saved_outfits:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="No saved outfits found to mock price drop"
+        )
+
+    # Randomly select a saved outfit
+    selected_saved = random.choice(saved_outfits)
+
+    # Get recommendation and its items
+    recommendation = db.query(OutfitRecommendation).filter(
+        OutfitRecommendation.id == selected_saved.recommendation_id
+    ).first()
+
+    if not recommendation or not recommendation.items:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="No items found in selected outfit"
+        )
+
+    # Filter items with valid prices
+    valid_items = [item for item in recommendation.items if item.price and float(item.price) > 0]
+
+    if not valid_items:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="No items with valid prices found"
+        )
+
+    # Randomly select an item
+    selected_item = random.choice(valid_items)
+    original_price = float(selected_item.price)
+
+    # Reduce price by 20-40%
+    reduction_percent = random.uniform(0.2, 0.4)
+    new_price = round(original_price * (1 - reduction_percent), 2)
+
+    # Update the item price
+    selected_item.price = new_price
+    db.commit()
+
+    return MockPriceDropResponse(
+        success=True,
+        message=f"Price dropped for '{selected_item.name}'",
+        item_name=selected_item.name,
+        original_price=original_price,
+        new_price=new_price,
+        saved_outfit_id=selected_saved.id
+    )
+
+
+@router.put("/recommendation-items/{item_id}/price", response_model=UpdateItemPriceResponse)
+def update_item_price(
+    item_id: str,
+    data: UpdateItemPriceRequest,
+    x_firebase_uid: Optional[str] = Header(None),
+    db: Session = Depends(get_db),
+):
+    """
+    Update the price of a specific recommendation item.
+
+    - For demo/testing purposes only
+    - Updates the price in the database
+    - Returns old and new price
+    """
+    user = get_user_by_uid(x_firebase_uid, db)
+
+    # Get the item
+    item = db.query(RecommendationItem).filter(
+        RecommendationItem.id == item_id
+    ).first()
+
+    if not item:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Item not found"
+        )
+
+    # Verify user owns this item (through recommendation)
+    recommendation = db.query(OutfitRecommendation).filter(
+        OutfitRecommendation.id == item.recommendation_id
+    ).first()
+
+    if not recommendation or recommendation.user_id != user.id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You don't have permission to edit this item"
+        )
+
+    old_price = float(item.price) if item.price else 0.0
+    item.price = data.new_price
+    db.commit()
+
+    return UpdateItemPriceResponse(
+        success=True,
+        item_id=item.id,
+        item_name=item.name,
+        old_price=old_price,
+        new_price=data.new_price
+    )
